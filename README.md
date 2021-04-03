@@ -23,8 +23,8 @@ Sends ARP request to all the IP addresses in a given subnet to discover hosts.
 # Start listening for messages
 python3 -m agave arp listen
 # Change terminal
-python3 -m agave arp stimulate {interface} {subnet} {your_ip} {your_mac}
-python3 -m agave arp stimulate wlp3s0 192.168.1.0/24 192.168.1.100 aa:bb:cc:11:22:33
+python3 -m agave arp solicit {interface} {subnet} {your_ip} {your_mac}
+python3 -m agave arp solicit wlp3s0 192.168.1.0/24 192.168.1.100 aa:bb:cc:11:22:33
 ```
 
 ## TODOs

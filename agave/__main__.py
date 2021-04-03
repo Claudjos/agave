@@ -1,6 +1,6 @@
 import sys
 import logging
-from .modules import arp_listen, arp_solicit
+from .modules import arp_listen, arp_solicit, arp_mitm
 
 
 if len(sys.argv) < 2:
@@ -18,6 +18,8 @@ if protocol.upper() == "ARP":
 		arp_listen.main(argv)
 	elif command.upper() == "SOLICIT":
 		arp_solicit.main(argv)
+	elif command.upper() == "MITM":
+		arp_mitm.main(argv)
 	else:
 		logging.error(f"Unknown command '{command}' for protocol {protocol}")
 else:

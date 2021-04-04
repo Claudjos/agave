@@ -1,10 +1,10 @@
 # Agave
 
 ## About
-Collection of scripts working with raw socket. Written for self education.
+Collection of scripts working with raw socket. Written for self education on common protocols of link and network layers. Transportation and application layers protocols, and their vulnerabilities, will be examined in a different repository.
 
 ## Disclaimer
-The author is not responsible for the use of this software. This code is shared for educational purpose. Beware that unless everyone involved in a man in the middle attack is informed and is consenting, it is almost certainly illegal in your country.
+The author is not responsible for the use of this software. This code is shared for educational purpose.
 
 ## Requirements
 - Linux, for these scripts use raw socket.
@@ -52,4 +52,7 @@ arp
 ## TODOs
 - ICMP mitm
 - ICMP scanner
-- DNS mitm
+- IRDP spoofing
+- MAC flooding
+- port stealing
+- move the package frame in its own repository (?)

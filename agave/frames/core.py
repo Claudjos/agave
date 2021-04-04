@@ -46,8 +46,12 @@ class Buffer:
 		return self.write(number.to_bytes(4, byteorder="big"))
 
 	def __bytes__(self):
-		self._buf.seek(0)
+		self._buf.seek(0) # use rewind instead (?)
 		return self._buf.read()
+
+	def rewind(self):
+		self._buf.seek(0)
+
 
 class Frame:
 

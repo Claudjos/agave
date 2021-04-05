@@ -1,6 +1,6 @@
 import sys
-from .modules import arp_listen, arp_solicit, arp_mitm
-from .modules import icmp_discover
+from .modules.arp import listen, solicit, mitm
+from .modules.icmp import discover
 
 
 if len(sys.argv) < 2:
@@ -15,12 +15,12 @@ argv = sys.argv[3:]
 
 MAP = {
 	"ARP": {
-		"LISTEN": arp_listen.main,
-		"SOLICIT": arp_solicit.main,
-		"MITM": arp_mitm.main
+		"LISTEN": listen.main,
+		"SOLICIT": solicit.main,
+		"MITM": mitm.main
 	},
 	"ICMP": {
-		"DISCOVER": icmp_discover.main
+		"DISCOVER": discover.main
 	}
 }
 

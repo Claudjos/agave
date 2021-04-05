@@ -75,9 +75,27 @@ echo 1 | sudo tee /proc/sys/net/ipv4/conf/*/forwarding
 echo 0 | sudo tee /proc/sys/net/ipv4/conf/*/send_redirects
 ```
 
+### IRDP
+I've never tried this one, I saw it and decided to implement it. I just know the messages format is correct (or at least it is for Wireshark).
+
+#### Solicitation
+You need to use a sniffer to listen for replies.
+```
+python3 -m agave irdp solicit
+```
+
+#### Advertise
+General command to advertise a list of routers.
+```
+python3 -m agave irdp advertise {preference} {router_1_ip} ... {router_n_ip}
+```
+Example:
+```
+python3 -m agave irdp advertise 100 192.168.1.10 192.168.1.20
+```
+
 
 ## TODOs
-- IRDP spoofing
 - MAC flooding
 - port stealing
 - move the package frame in its own repository (?)

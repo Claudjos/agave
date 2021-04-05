@@ -3,7 +3,6 @@ from agave.frames.core import Buffer
 from ipaddress import ip_address, ip_network, IPv4Address
 import socket
 import time
-import logging
 
 
 def who_is_at(
@@ -23,7 +22,7 @@ def who_is_at(
 
 
 def hosts(subnet, me: IPv4Address):
-	for address in ip_network(subnet):
+	for address in ip_network(subnet).hosts():
 		if address != me:
 			yield address
 	return
@@ -38,7 +37,7 @@ def all_packet(subnet, sender_mac, sender_ipv4, broadcast, repeat=1):
 
 def main(argv):
 	if len(argv) < 4:
-		logging.error("Too few parameters")
+		print("Too few parameters")
 	else:
 		_main(argv[0], argv[1], argv[2], argv[3])
 
@@ -49,7 +48,7 @@ def _main(iface: str, subnet: str, ipv4: str, mac: str):
 	sender_ipv4 = ip_address(ipv4)
 	broadcast = b'\xff\xff\xff\xff\xff\xff'
 	rawsocket = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(3))
-	logging.info("Sending ARP requests...")
+	print("Sending ARP requests...")
 	for data in all_packet(subnet, sender_mac, sender_ipv4, broadcast, repeat=3):
 		rawsocket.sendto(data, interface)
 		time.sleep(0.01)

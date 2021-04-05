@@ -4,7 +4,6 @@ from ipaddress import ip_address, IPv4Address
 import select
 import socket
 import time
-import logging
 
 
 def main(argv):

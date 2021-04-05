@@ -3,7 +3,6 @@ from agave.frames.core import Buffer
 from ipaddress import ip_address, ip_network, IPv4Address
 import socket
 import select
-import logging
 
 
 _NETWORK = {}
@@ -39,7 +38,7 @@ def process(buf: Buffer):
 
 
 def loop(rawsocket, timeout):
-	logging.info("Listening for ARP messages...")
+	print("Listening for ARP messages...")
 	while True:
 		rl, wl, xl = select.select([rawsocket], [], [], timeout)
 		if rl != []:

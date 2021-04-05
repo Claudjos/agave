@@ -1,6 +1,6 @@
 import sys
-import logging
 from .modules import arp_listen, arp_solicit, arp_mitm
+from .modules import icmp_discover
 
 
 if len(sys.argv) < 2:
@@ -8,19 +8,26 @@ if len(sys.argv) < 2:
 	exit(1)
 
 
-protocol = sys.argv[1]
-command = sys.argv[2]
+protocol = sys.argv[1].upper()
+command = sys.argv[2].upper()
 argv = sys.argv[3:]
 
 
-if protocol.upper() == "ARP":
-	if command.upper() == "LISTEN":
-		arp_listen.main(argv)
-	elif command.upper() == "SOLICIT":
-		arp_solicit.main(argv)
-	elif command.upper() == "MITM":
-		arp_mitm.main(argv)
+MAP = {
+	"ARP": {
+		"LISTEN": arp_listen.main,
+		"SOLICIT": arp_solicit.main,
+		"MITM": arp_solicit.main
+	},
+	"ICMP": {
+		"DISCOVER": icmp_discover.main
+	}
+}
+
+if protocol in MAP:
+	if command in MAP[protocol]:
+		MAP[protocol][command](argv)
 	else:
-		logging.error(f"Unknown command '{command}' for protocol {protocol}")
+		print(f"Unknown command '{command}' for protocol {protocol}")
 else:
-	logging.error(f"Unknown protocol '{protocol}'")
+	print(f"Unknown protocol '{protocol}'")

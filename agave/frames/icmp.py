@@ -54,22 +54,31 @@ class ICMP(FrameWithChecksum):
 			sequence_number | (identifier << 16),
 			data
 		)
+
+	@classmethod
+	def reply(cls, data = b'', identifier = 0, sequence_number = 0):
+		return cls(
+			TYPE_ECHO_REPLY,
+			0,
+			0,
+			sequence_number | (identifier << 16),
+			data
+		)
 	
 	@classmethod
-	def redirect(cls, buf: Buffer, code: int, gway):
+	def redirect(cls, code: int, gway: bytes, data: bytes):
 		"""
 		PARAMS
-			buf: original datagram, with position set to the start of the IP
-				header.
-			code: code
-			gway: the router to use instead to route the original datagram.
+			code: code.
+			gway: the router to use instead.
+			data: original message.
 		"""
 		return cls(
-			ICMP.TYPE_REDIRECT_MESSAGE,
+			TYPE_REDIRECT_MESSAGE,
 			code,
 			0,
 			gway,
-			buf.read(28) # assuming IP header len of 20 - TODO: do not assume!
+			data
 		)
 
 	def compute_checksum(self):

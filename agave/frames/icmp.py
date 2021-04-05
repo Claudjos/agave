@@ -5,10 +5,12 @@ from .core import FrameWithChecksum, Buffer
 
 
 TYPE_ECHO_REPLY = 0
+TYPE_DESTINATION_UNREACHABLE = 3
 TYPE_REDIRECT_MESSAGE = 5
 TYPE_ECHO_MESSAGE = 8
 TYPE_ROUTER_ADVERTISMENT_MESSAGE = 9
 TYPE_ROUTER_SOLICITATION_MESSAGE = 10
+TYPE_TIME_EXCEEDED = 11
 
 REDIRECT_CODE_NETWORK = 0
 REDIRECT_CODE_HOST = 1
@@ -48,6 +50,7 @@ class ICMP(FrameWithChecksum):
 		return cls(
 			TYPE_ECHO_MESSAGE,
 			0,
+			0,
 			sequence_number | (identifier << 16),
 			data
 		)
@@ -56,7 +59,7 @@ class ICMP(FrameWithChecksum):
 	def redirect(cls, buf: Buffer, code: int, gway):
 		"""
 		PARAMS
-			buf (Buffer): original datagram, with position set to the start of the IP
+			buf: original datagram, with position set to the start of the IP
 				header.
 			code: code
 			gway: the router to use instead to route the original datagram.
@@ -64,6 +67,7 @@ class ICMP(FrameWithChecksum):
 		return cls(
 			ICMP.TYPE_REDIRECT_MESSAGE,
 			code,
+			0,
 			gway,
 			buf.read(28) # assuming IP header len of 20 - TODO: do not assume!
 		)

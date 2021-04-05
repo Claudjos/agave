@@ -1,6 +1,6 @@
 import sys
 from .modules.arp import listen, solicit, mitm
-from .modules.icmp import discover
+from .modules.icmp import discover, redirect
 
 
 if len(sys.argv) < 2:
@@ -20,7 +20,8 @@ MAP = {
 		"MITM": mitm.main
 	},
 	"ICMP": {
-		"DISCOVER": discover.main
+		"DISCOVER": discover.main,
+		"REDIRECT": redirect.main
 	}
 }
 

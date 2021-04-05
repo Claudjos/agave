@@ -17,7 +17,7 @@ MAP = {
 	"ARP": {
 		"LISTEN": arp_listen.main,
 		"SOLICIT": arp_solicit.main,
-		"MITM": arp_solicit.main
+		"MITM": arp_mitm.main
 	},
 	"ICMP": {
 		"DISCOVER": icmp_discover.main

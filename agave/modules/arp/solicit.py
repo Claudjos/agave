@@ -39,16 +39,16 @@ def main(argv):
 	if len(argv) < 4:
 		print("Too few parameters")
 	else:
-		_main(argv[0], argv[1], argv[2], argv[3])
+		print("Sending ARP requests...")
+		solicit(argv[0], argv[1], argv[2], argv[3])
 
 
-def _main(iface: str, subnet: str, ipv4: str, mac: str):
+def solicit(iface: str, subnet: str, ipv4: str, mac: str, send_interval = 0.01, repeat_solicit = 3):
 	interface = (iface, 1)
 	sender_mac = ethernet.str_to_mac(mac)
 	sender_ipv4 = ip_address(ipv4)
 	broadcast = b'\xff\xff\xff\xff\xff\xff'
 	rawsocket = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(3))
-	print("Sending ARP requests...")
-	for data in all_packet(subnet, sender_mac, sender_ipv4, broadcast, repeat=3):
+	for data in all_packet(subnet, sender_mac, sender_ipv4, broadcast, repeat_solicit):
 		rawsocket.sendto(data, interface)
-		time.sleep(0.01)
+		time.sleep(send_interval)

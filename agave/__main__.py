@@ -1,5 +1,5 @@
 import sys
-from .modules.arp import listen, solicit, mitm
+from .modules.arp import listen, solicit, mitm, discover as arp_discover
 from .modules.icmp import discover, redirect
 from .modules.irdp import advertise, solicit as solicit2
 
@@ -18,6 +18,7 @@ MAP = {
 	"ARP": {
 		"LISTEN": listen.main,
 		"SOLICIT": solicit.main,
+		"DISCOVER": arp_discover.main,
 		"MITM": mitm.main
 	},
 	"ICMP": {

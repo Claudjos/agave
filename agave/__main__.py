@@ -2,6 +2,7 @@ import sys
 from .modules.arp import listen, solicit, mitm, discover as arp_discover
 from .modules.icmp import discover, redirect
 from .modules.irdp import advertise, solicit as solicit2
+from .modules.info import iface
 
 
 if len(sys.argv) < 2:
@@ -15,6 +16,9 @@ argv = sys.argv[3:]
 
 
 MAP = {
+	"INFO": {
+		"INTERFACES": iface.main
+	},
 	"ARP": {
 		"LISTEN": listen.main,
 		"SOLICIT": solicit.main,

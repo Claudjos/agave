@@ -1,18 +1,23 @@
 # Agave
 
 ## About
-Collection of scripts working with raw socket. Written for self education on common protocols of link and network layers. Transportation and application layers protocols, and their vulnerabilities, will be examined in a different repository.
+Collection of scripts working with raw socket. Written for self education on common network protocols.
 
 Efficiency and best practices are out of the scope of this repository. These are "learn by doing" scripts gathered together.
-
-## Disclaimer
-The author is not responsible for the use of this software. This code is shared for educational purpose.
 
 ## Requirements
 - Linux, for these scripts use raw socket.
 - SUDO privileges, for the very same reason.
 
 ## Usage
+
+### General Info
+
+#### Network interfaces
+Lists information for all network interfaces, or a single one identified by name.
+```
+python3 -m agave info interfaces [name]
+```
 
 ### ARP
 
@@ -93,9 +98,3 @@ Example:
 ```
 python3 -m agave irdp advertise 100 192.168.1.10 192.168.1.20
 ```
-
-
-## TODOs
-- MAC flooding
-- port stealing
-- move the package frame in its own repository (?)

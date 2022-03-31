@@ -5,22 +5,6 @@ import socket
 import time
 
 
-def who_is_at(
-	sender_mac: bytes, sender_ipv4: IPv4Address,
-	broadcast: bytes, target_ipv4: IPv4Address
-) -> bytes:
-	eth_frame = ethernet.Ethernet(broadcast, sender_mac, ethernet.ETHER_TYPE_ARP)
-	arp_frame = arp.ARP.build(
-		arp.OPERATION_REQUEST,
-		sender_mac, sender_ipv4.packed,
-		broadcast, target_ipv4.packed
-	)
-	buf = Buffer.from_bytes()
-	eth_frame.write_to_buffer(buf)
-	arp_frame.write_to_buffer(buf)
-	return bytes(buf)
-
-
 def hosts(subnet, me: IPv4Address):
 	for address in ip_network(subnet).hosts():
 		if address != me:
@@ -31,7 +15,7 @@ def hosts(subnet, me: IPv4Address):
 def all_packet(subnet, sender_mac, sender_ipv4, broadcast, repeat=1):
 	for _ in range(0, repeat):
 		for address in hosts(subnet, sender_ipv4):
-			yield who_is_at(sender_mac, sender_ipv4, broadcast, address)
+			yield arp.ARP.who_has(sender_mac, sender_ipv4, broadcast, address)
 	return
 
 

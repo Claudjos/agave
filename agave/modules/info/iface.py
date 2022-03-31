@@ -1,12 +1,15 @@
-from .interfaces import get_interfaces, get_interface_by_name
+from .interfaces import (
+	get_interfaces, get_interface_by_name,
+	NetworkInterfaceNotFound
+)
 
 
 def main(args):
 	if len(args) > 0:
 		try:
 			nic = get_interface_by_name(args[0])
-		except NetworkInterfaceNotFound:
-			print("Interfaces not found")
+		except NetworkInterfaceNotFound as e:
+			print(e)
 		else:
 			print("{:20}{}\n{:20}{}\n{:20}{}\n{:20}{}\n{:20}{}".format(
 				"NAME", nic.name,

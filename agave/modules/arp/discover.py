@@ -5,14 +5,18 @@ from ipaddress import ip_address
 import socket, select, time
 from .solicit import all_packet
 from .listen import Network
+from ipaddress import IPv4Address, IPv4Network, ip_network
+from agave.modules.nic.interfaces import NetworkInterface, NetworkInterfaceNotFound
+from typing import Union
 
 
 def main(argv):
-	if len(argv) < 4:
+	if len(argv) < 1:
 		print("Too few parameters")
 	else:
 		print("Looking for hosts...")
-		for op, ip, mac in discover(argv[0], argv[1], argv[2], argv[3]):
+		subnet = argv[1] if len(argv) > 1 else None
+		for op, ip, mac in discover(argv[0], subnet=subnet):
 			print("[{}] {}\t{}".format(
 				Network.OP[op],
 				ip,
@@ -21,21 +25,24 @@ def main(argv):
 
 
 def discover(
-	iface: str,
-	subnet: str,
-	ipv4: str,
-	mac: str,
-	send_interval = 0.005,
-	final_wait = 1,
-	repeat_solicit = 3
+	interface: Union[str, NetworkInterface],
+	subnet: Union[str, IPv4Network] = None,
+	send_interval: float = 0.005,
+	final_wait: float = 1,
+	repeat_solicit: int = 2
 ) -> Iterator[Tuple[str, str, str]]:
 	
+	if type(interface) == str:
+		interface = NetworkInterface.get_by_name(interface)
+	if type(subnet) == str:
+		subnet = ip_network(subnet)
+	if subnet is None:
+		subnet = interface.network
 	net = Network()
-	interface = (iface, 1)
-	sender_mac = ethernet.str_to_mac(mac)
-	sender_ipv4 = ip_address(ipv4)
+	sender_mac = interface.mac.address
+	sender_ipv4 = interface.ip
 	broadcast = b'\xff\xff\xff\xff\xff\xff'
-	rawsocket = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(3))
+	rawsocket = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(ethernet.ETHER_TYPE_ARP))
 	
 	frame_iterator = all_packet(subnet, sender_mac, sender_ipv4, broadcast, repeat=repeat_solicit)
 	flag_loop = True
@@ -61,7 +68,7 @@ def discover(
 					next_send = time.time() + final_wait
 					select_timeout = final_wait
 				else:
-					rawsocket.sendto(frame, interface)
+					rawsocket.sendto(frame, (interface.name, 1))
 					next_send = time.time() + send_interval
 			else:
 				flag_loop = False

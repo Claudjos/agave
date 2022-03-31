@@ -1,13 +1,10 @@
-from .interfaces import (
-	get_interfaces, get_interface_by_name,
-	NetworkInterfaceNotFound
-)
+from .interfaces import NetworkInterface, NetworkInterfaceNotFound
 
 
 def main(args):
 	if len(args) > 0:
 		try:
-			nic = get_interface_by_name(args[0])
+			nic = NetworkInterface.get_by_name(args[0])
 		except NetworkInterfaceNotFound as e:
 			print(e)
 		else:
@@ -21,7 +18,7 @@ def main(args):
 	else:
 		print("{:20}\t{:20}\t{:20}\t{:20}\t".format("NAME", "MAC", "IP", "NETWORK"))
 		print("".join(["-"] * 88))
-		nics = get_interfaces()
+		nics = NetworkInterface.list()
 		for i in range(0, len(nics)):
 			nic = nics[i]
 			print("{:20}\t{:20}\t{:20}\t{:20}\t".format(

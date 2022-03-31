@@ -32,18 +32,28 @@ class NetworkInterfaceNotFound(Exception):
 
 
 class NetworkInterface:
+    """This class represents a Network Interface.
+
+    Attributes:
+        name: the interface name.
+        mac: the interface hardware address.
+        ip: the interface network address.
+        network: the network this device is connected to.
+        broadcast: the broadcast address for the network.
+
+    """
 
     __slots__ = ["name", "mac", "ip", "network", "broadcast"]
 
     def __init__(self, name: str, mac: MACAddress, ip: IPAddress, 
         network: IPNetwork, broadcast: IPAddress):
-        self.name = name
-        self.mac = mac
-        self.ip = ip
-        self.network = network
-        self.broadcast = broadcast
+        self.name : str = name
+        self.mac : MACAddress = mac
+        self.ip : IPAddress = ip
+        self.network : Network = network
+        self.broadcast : IPAddress = broadcast
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
 

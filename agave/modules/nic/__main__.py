@@ -1,3 +1,4 @@
+import sys
 from .interfaces import NetworkInterface, NetworkInterfaceNotFound
 
 
@@ -24,3 +25,7 @@ def main(args):
 			print("{:20}\t{:20}\t{:20}\t{:20}\t".format(
 				nic.name, str(nic.mac), str(nic.ip), str(nic.network)
 			))
+
+
+if __name__ == "__main__":
+	main(sys.argv[1:])

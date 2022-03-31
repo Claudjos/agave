@@ -2,7 +2,7 @@ import sys
 from .modules.arp import listen, solicit, mitm, discover as arp_discover
 from .modules.icmp import discover, redirect
 from .modules.irdp import advertise, solicit as solicit2
-from .modules.info import iface
+from .modules.nic import __main__ as iface
 
 
 if len(sys.argv) < 2:

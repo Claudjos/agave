@@ -153,7 +153,7 @@ class NetworkInterface:
                 interfaces.append(cls.get_by_name_fileno(nic_name, fileno))
         return interfaces
 
-
+    @classmethod
     def get_by_host(cls, host: IPAddress) -> "NetworkInterface":
         """Finds a network interface directly connected to a network
         including a given host address.
@@ -169,7 +169,7 @@ class NetworkInterface:
 
         """
         for interface in cls.list():
-            if host in interface.network:
+            if interface.network is not None and host in interface.network:
                 return interface
         raise NetworkInterfaceNotFound(
             "No interface found connected to a network including %s" % (host)

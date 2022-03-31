@@ -1,5 +1,6 @@
 import sys
 from .modules.arp import listen, solicit, mitm, discover as arp_discover
+from .modules.arp.resolve import mac_resolve, resolve_discover
 from .modules.icmp import discover, redirect
 from .modules.irdp import advertise, solicit as solicit2
 from .modules.nic import __main__ as iface
@@ -23,7 +24,9 @@ MAP = {
 		"LISTEN": listen.main,
 		"SOLICIT": solicit.main,
 		"DISCOVER": arp_discover.main,
-		"MITM": mitm.main
+		"MITM": mitm.main,
+		"RESOLVE": mac_resolve,
+		"RDISCOVER": resolve_discover
 	},
 	"ICMP": {
 		"DISCOVER": discover.main,

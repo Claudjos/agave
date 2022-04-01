@@ -134,7 +134,7 @@ class ARP(Frame):
 		arp_frame = cls.build(
 			OPERATION_REQUEST,
 			sender_mac, sender_ipv4.packed,
-			broadcast_mac, target_ipv4.packed
+			b'\x00\x00\x00\x00\x00\x00', target_ipv4.packed
 		)
 		buf = Buffer.from_bytes()
 		eth_frame.write_to_buffer(buf)

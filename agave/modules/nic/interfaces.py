@@ -154,7 +154,7 @@ class NetworkInterface:
         return interfaces
 
     @classmethod
-    def get_by_host(cls, host: IPAddress) -> "NetworkInterface":
+    def get_by_host(cls, host: Union[str, IPAddress]) -> "NetworkInterface":
         """Finds a network interface directly connected to a network
         including a given host address.
 
@@ -168,6 +168,8 @@ class NetworkInterface:
             NetworkInterfaceNotFound: If such interface is not found.
 
         """
+        if type(host) == str:
+            host = ip_address(host)
         for interface in cls.list():
             if interface.network is not None and host in interface.network:
                 return interface

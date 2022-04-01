@@ -1,7 +1,6 @@
 from agave.modules.arp.resolve import resolve, discover as rdiscover
 from agave.modules.arp.discover import discover
 from agave.modules.nic.interfaces import NetworkInterface, NetworkInterfaceNotFound
-from ipaddress import IPv4Address
 from .listen import Network
 
 
@@ -33,5 +32,5 @@ def resolve_mac(argv):
 	if len(argv) < 1:
 		print("Too few parameters")
 	else:
-		mac = resolve(NetworkInterface.get_by_host(IPv4Address(argv[0])), argv[0])
+		mac = resolve(NetworkInterface.get_by_host(argv[0]), argv[0])
 		print("Host not found" if mac is None else str(mac))

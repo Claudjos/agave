@@ -4,29 +4,6 @@ from agave.frames import ethernet, arp
 from agave.frames.ethernet import MACAddress
 from agave.modules.nic.interfaces import NetworkInterface
 from .utils import ARPReaderLoop, HOST
-from .resolve import resolve
-from ipaddress import IPv4Address
-
-
-def main(argv):
-	try:
-		interface = NetworkInterface.get_by_name(argv[0])
-		alice_ip = IPv4Address(argv[1])
-		alice_mac = resolve(interface, alice_ip)
-		print("Resolved {} to {}".format(alice_ip, alice_mac))
-		assert alice_mac is not None
-		bob_ip = IPv4Address(argv[2])
-		bob_mac = resolve(interface, bob_ip)
-		assert bob_mac is not None
-		print("Resolved {} to {}".format(bob_ip, bob_mac))
-		print("Running ...")
-		MITM(
-			interface,
-			(alice_mac, alice_ip),
-			(bob_mac, bob_ip)
-		).run()
-	except KeyboardInterrupt as e:
-		pass
 
 
 class MITM(ARPReaderLoop):

@@ -65,7 +65,6 @@ class ARPReaderLoop:
 				data, address = self._sock.recvfrom(SOCKET_MAX_READ)
 				if address[1] != ethernet.ETHER_TYPE_ARP:
 					continue
-				print(len(data))
 				eth_frame, arp_frame = _parse(data)
 				self.process(address, eth_frame, arp_frame)
 			self.after()

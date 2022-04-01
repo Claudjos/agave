@@ -1,9 +1,8 @@
 import sys
-from .modules.arp import mitm
 from .modules.icmp import discover, redirect
 from .modules.irdp import advertise, solicit as solicit2
-from .examples.arp import resolve_mac, resolve_discover, arp_discover, arp_listen
-from .examples.nic import main as iface
+from .examples import arp
+from .examples import nic
 
 
 if len(sys.argv) < 2:
@@ -18,14 +17,14 @@ argv = sys.argv[3:]
 
 MAP = {
 	"NIC": {
-		"INFO": iface
+		"INFO": nic.main
 	},
 	"ARP": {
-		"LISTEN": arp_listen,
-		"DISCOVER": arp_discover,
-		"MITM": mitm.main,
-		"RESOLVE": resolve_mac,
-		"RDISCOVER": resolve_discover
+		"LISTEN": arp.arp_listen,
+		"DISCOVER": arp.arp_discover,
+		"MITM": arp.arp_man_in_the_middle,
+		"RESOLVE": arp.resolve_mac,
+		"RDISCOVER": arp.resolve_discover
 	},
 	"ICMP": {
 		"DISCOVER": discover.main,

@@ -1,41 +1,13 @@
+"""This module provides primitives to resolve an IPv4 address into a MAC
+address.
+"""
 import socket, select, time
-from typing import Union, Iterator, Tuple
+from typing import Union
+from .utils import _create_socket, _parse
 from agave.frames.ethernet import MACAddress
 from agave.frames import ethernet, arp
-from agave.frames.core import Buffer
-from ipaddress import IPv4Address, IPv4Network, ip_network
-from agave.modules.nic.interfaces import NetworkInterface, NetworkInterfaceNotFound
-
-
-def _create_socket():
-	"""Creates a socket.
-
-    Returns:
-        A raw socket with protocol ARP.
-
-    """
-	return socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(ethernet.ETHER_TYPE_ARP))
-
-
-def discover(
-	interface: Union[str, NetworkInterface],
-	subnet: Union[str, IPv4Network] = None,
-	sock: "socket.socket" = None,
-	max_wait: float = 0.1,
-	retry: int = 3
-) -> Iterator[Tuple[MACAddress, IPv4Address]]:
-	sock = _create_socket()
-	if type(interface) == str:
-		interface = NetworkInterface.get_by_name(interface)
-	if type(subnet) == str:
-		subnet = ip_network(subnet)
-	if subnet is None:
-		subnet = interface.network
-	for address in subnet.hosts():
-		mac = resolve(interface, address, sock, max_wait, retry)
-		if mac is not None:
-			yield (mac, address)
-	return
+from agave.modules.nic.interfaces import NetworkInterface
+from ipaddress import IPv4Address
 
 
 def resolve(
@@ -105,9 +77,7 @@ def _resolve(
 	while True:
 		rl, wl, xl = select.select([sock], [], [], timeout)
 		if rl != []:
-			buf = Buffer.from_bytes(sock.recv(65535))
-			eth_frame = ethernet.Ethernet.read_from_buffer(buf)
-			arp_frame = arp.ARP.read_from_buffer(buf)
+			eth_frame, arp_frame = _parse(sock.recv(65535))
 			if ( 
 				arp_frame.operation == arp.OPERATION_REPLY and
 				arp_frame.sender_protocol_address == address.packed

@@ -1,30 +1,24 @@
-from agave.modules.arp.resolve import resolve, discover as rdiscover
-from agave.modules.arp.discover import discover
+from agave.modules.arp.resolve import resolve
+from agave.modules.arp.discover import discover, r_discover
 from agave.modules.nic.interfaces import NetworkInterface, NetworkInterfaceNotFound
 from .listen import Network
 
 
 def arp_discover(argv):
-	if len(argv) < 1:
-		print("Too few parameters")
-	else:
-		print("Looking for hosts...")
-		subnet = argv[1] if len(argv) > 1 else None
-		for op, ip, mac in discover(argv[0], subnet=subnet):
-			print("[{}] {}\t{}".format(
-				Network.OP[op],
-				ip,
-				mac
-			))
+	_discover(argv, discover)
 
 
 def resolve_discover(argv):
+	_discover(argv, r_discover)
+
+
+def _discover(argv, call):
 	if len(argv) < 1:
 		print("Too few parameters")
 	else:
 		print("Looking for hosts...")
 		subnet = argv[1] if len(argv) > 1 else None
-		for mac, ip in rdiscover(argv[0], subnet=subnet):
+		for mac, ip in call(argv[0], subnet=subnet):
 			print("{}\t{}".format(ip, str(mac)))
 
 

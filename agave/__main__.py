@@ -1,9 +1,9 @@
 import sys
 from .modules.arp import listen, mitm
-from .examples.arp import resolve_mac, resolve_discover, arp_discover
 from .modules.icmp import discover, redirect
 from .modules.irdp import advertise, solicit as solicit2
-from .modules.nic import __main__ as iface
+from .examples.arp import resolve_mac, resolve_discover, arp_discover
+from .examples.nic import main as iface
 
 
 if len(sys.argv) < 2:
@@ -17,8 +17,8 @@ argv = sys.argv[3:]
 
 
 MAP = {
-	"INFO": {
-		"INTERFACES": iface.main
+	"NIC": {
+		"INFO": iface
 	},
 	"ARP": {
 		"LISTEN": listen.main,

@@ -1,5 +1,5 @@
 import sys
-from .interfaces import NetworkInterface, NetworkInterfaceNotFound
+from agave.modules.nic.interfaces import NetworkInterface, NetworkInterfaceNotFound
 
 
 def main(args):

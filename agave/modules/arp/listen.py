@@ -1,15 +1,15 @@
-import socket, select, time
+import socket, time
 from typing import Tuple
 from agave.frames import ethernet, arp
 from agave.frames.ethernet import MACAddress
 from ipaddress import ip_address, ip_network, IPv4Address
-from .utils import _create_socket, _parse, SOCKET_MAX_READ 
+from .utils import _create_socket, _parse, SOCKET_MAX_READ, ARPReaderLoop
 
 
 HOST = Tuple[MACAddress, IPv4Address]
 
 
-class Listener:
+class Listener(ARPReaderLoop):
 	"""This is a framework for a service collecting information about the hosts
 	in a network, and how they interact with each other, by listening ARP messages. 
 	It builds a sort of graph where the nodes correspond to the hosts, and the links
@@ -43,18 +43,14 @@ class Listener:
 	def __init__(
 		self,
 		sock: "socket.socket" = None,
-		selector_timeout: float = 1,
 		fresh_threshold: float = 0.5
 	):
 		if sock is None:
-			#sock = _create_socket()
 			sock = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(3))
+		super().__init__(sock=sock)
 		# used for storage
 		self._nodes : dict = {}
 		self._links : dict = {}
-		# loop
-		self.sock : "socket.socket" = sock
-		self.timeout : float = selector_timeout
 		# parameters
 		self.fresh_threshold : float = fresh_threshold
 
@@ -155,28 +151,17 @@ class Listener:
 		else:
 			self._update_node(sender)
 
-	def stop(self):
-		"""Stops the running loop within Listener.timeout seconds."""
-		self.running = False
-
-	def run(self):
-		self.running = True
-		while self.running:
-			rl, wl, xl = select.select([self.sock], [], [], self.timeout)
-			if rl != []:
-				data, addr = self.sock.recvfrom(SOCKET_MAX_READ)
-				if addr[1] != 2054:
-					continue
-				_, frame = _parse(data)
-				sender = (
-					MACAddress(frame.sender_hardware_address),
-					IPv4Address(frame.sender_protocol_address)
-				)
-				target = (
-					MACAddress(frame.target_hardware_address),
-					IPv4Address(frame.target_protocol_address)
-				)
-				if frame.operation == arp.OPERATION_REPLY:
-					self.process_reply(sender, target)
-				if frame.operation == arp.OPERATION_REQUEST:
-					self.process_request(sender, target)
+	def process(self, address: Tuple, eth: ethernet.Ethernet, frame: arp.ARP):
+		"""Process incoming/outgoing ARP frames."""
+		sender = (
+			MACAddress(frame.sender_hardware_address),
+			IPv4Address(frame.sender_protocol_address)
+		)
+		target = (
+			MACAddress(frame.target_hardware_address),
+			IPv4Address(frame.target_protocol_address)
+		)
+		if frame.operation == arp.OPERATION_REPLY:
+			self.process_reply(sender, target)
+		if frame.operation == arp.OPERATION_REQUEST:
+			self.process_request(sender, target)

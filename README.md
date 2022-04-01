@@ -41,10 +41,8 @@ python3 -m agave arp solicit wlp3s0 192.168.1.0/24 192.168.1.100 aa:bb:cc:11:22:
 #### Man in the middle
 Sends ARP messages in order to achieve a man in the middle attack.
 ```
-# Assuming we want to intercept Bob and Alice
-python3 -m agave arp mitm {interface} {your_ip} {alice_mac} {alice_ip} {bob_mac} {bob_ip}
-# Example with arguments
-python3 -m agave arp mitm wlp3s0 aa:bb:cc:11:22:33 aa:bb:cc:44:55:66 192.168.1.10 aa:bb:cc:77:88:99 192.168.1.1
+python3 -m agave arp mitm {interface} {alice IP} {bob IP}
+python3 -m agave arp mitm eth0 192.168.1.1 192.168.1.10
 ```
 If working, you'll be able to sniff the traffic exchanged by the victims. In order to allow the victims to keep communicate with each other, you need to enable IP forwarding. Disable forwarding might be used to prevent communications.
 ```

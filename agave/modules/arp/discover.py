@@ -1,7 +1,10 @@
-import socket, select, time
+"""Modules including utilities to discover hosts in a subnet
+through ARP.
+"""
+import select, time
 from typing import Iterator, Tuple, Union
 from .solicit import all_packet
-from .utils import _create_socket, _parse
+from .utils import _create_socket, _parse, SOCKET_MAX_READ, SOCKET_PROTO
 from .resolve import resolve
 from agave.frames import ethernet, arp
 from agave.frames.ethernet import MACAddress
@@ -78,10 +81,12 @@ def discover(
 		sock = _create_socket()
 	# Initialize vars
 	cache = set()
-	sender_mac = interface.mac.address
-	sender_ipv4 = interface.ip
-	broadcast = b'\xff\xff\xff\xff\xff\xff'
-	request_iterator = all_packet(subnet, sender_mac, sender_ipv4, broadcast, repeat=repeat_solicit)
+	request_iterator = request_all_network(
+		subnet,
+		interface.mac.address,
+		interface.ip,
+		repeat=repeat_solicit
+	)
 	flag_loop = True
 	flag_sending = True
 	select_timeout = send_interval
@@ -91,7 +96,7 @@ def discover(
 		rl, wl, xl = select.select([sock], [], [], select_timeout)
 		# Parses ARP replies and yields
 		if rl != []:
-			_, frame = _parse(sock.recv(65535))
+			_, frame = _parse(sock.recv(SOCKET_MAX_READ))
 			if frame.operation == arp.OPERATION_REPLY:
 				sender = (
 					frame.sender_hardware_address,
@@ -110,8 +115,30 @@ def discover(
 					next_send = time.time() + final_wait
 					select_timeout = final_wait
 				else:
-					sock.sendto(request, (interface.name, 1))
+					sock.sendto(request, (interface.name, SOCKET_PROTO))
 					next_send = time.time() + send_interval
 			else:
 				flag_loop = False
+	return
+
+
+def request_all_network(subnet: IPv4Network, sender_mac: bytes, sender_ipv4: bytes,
+	broadcast: bytes = b'\xff\xff\xff\xff\xff\xff', repeat: int = 1
+) -> Iterator[bytes]:
+	"""Creates ARP request for each host in subnet.
+
+	Args:
+		subnet: subnet to explore.
+		sender_mac: sender MAC address.
+		sender_ipv4: sender IPv4 address.
+		broadcast: broadcast MAC address.
+		repeat: number of requests to generate for each host.
+
+	Yields:
+		A frame including Ethernet and ARP layer.
+
+	"""
+	for _ in range(0, repeat):
+		for address in subnet.hosts():
+			yield arp.ARP.who_has(sender_mac, sender_ipv4, broadcast, address)
 	return

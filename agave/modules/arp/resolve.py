@@ -1,9 +1,9 @@
 """This module provides primitives to resolve an IPv4 address into a MAC
 address.
 """
-import socket, select, time
+import select, time
 from typing import Union
-from .utils import _create_socket, _parse
+from .utils import _create_socket, _parse, SOCKET_PROTO, SOCKET_MAX_READ
 from agave.frames.ethernet import MACAddress
 from agave.frames import ethernet, arp
 from agave.modules.nic.interfaces import NetworkInterface
@@ -72,12 +72,12 @@ def _resolve(
 		b'\xff\xff\xff\xff\xff\xff',
 		address
 	)
-	sock.sendto(request, (interface.name, socket.htons(ethernet.ETHER_TYPE_ARP)))
+	sock.sendto(request, (interface.name, SOCKET_PROTO))
 	# Waits for reply until the deadline
 	while True:
 		rl, wl, xl = select.select([sock], [], [], timeout)
 		if rl != []:
-			eth_frame, arp_frame = _parse(sock.recv(65535))
+			eth_frame, arp_frame = _parse(sock.recv(SOCKET_MAX_READ))
 			if ( 
 				arp_frame.operation == arp.OPERATION_REPLY and
 				arp_frame.sender_protocol_address == address.packed

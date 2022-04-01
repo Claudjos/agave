@@ -4,6 +4,10 @@ from agave.frames import ethernet, arp
 from agave.frames.core import Buffer
 
 
+SOCKET_MAX_READ = 65535
+SOCKET_PROTO = socket.htons(ethernet.ETHER_TYPE_ARP)
+
+
 def _create_socket():
 	"""Creates a socket.
 
@@ -11,7 +15,7 @@ def _create_socket():
         A raw socket with protocol ARP.
 
     """
-	return socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(ethernet.ETHER_TYPE_ARP))
+	return socket.socket(socket.AF_PACKET, socket.SOCK_RAW, SOCKET_PROTO)
 
 
 def _parse(data: bytes) -> Tuple[ethernet.Ethernet, arp.ARP]:

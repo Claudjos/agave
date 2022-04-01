@@ -1,49 +1,46 @@
 # Agave
 
-## About
-Collection of scripts working with raw socket. Written for self education on common network protocols.
+Agave aims to provide "primitives" to speed up the development of "proof of work" and "capture the flag" security related scripts concerning networking. Efficiency and best practice are not the main goal, ease of reuse is.
+It started as a collection of scripts shared to show some knowledge of networking to potential recruiters. Now is migrating towards a library to build customizable tools, to combine to enact more complex scenarios. Yet general purpose scripts are still included as they are both an "how to" guide of the library, and "primitives" themselves.
+The main motivation behind the development of the project comes from the curiosity to learn more about network protocols and vulnerabilities. Agave is a byproduct of learning-by-doing.
 
-Efficiency and best practices are out of the scope of this repository. These are "learn by doing" scripts gathered together.
+## Examples
+You can check the [examples](agave/examples) to see how the simple CLI scripts included in the projects are developed using Agave.
 
-## Requirements
-- Linux, for these scripts use raw socket.
-- SUDO privileges, for the very same reason.
+## Usage of the CLI scripts
+These scripts use raw socket, thus Linux and SUDO privileges are required to run them.
 
-## Usage
-
-### General Info
-
-#### Network interfaces
-Lists information for all network interfaces, or a single one identified by name.
+### NIC
 ```
-python3 -m agave info interfaces [name]
+# List all network interfaces.
+python3 -m agave nic info
+
+# Print info for a network interface.
+python3 -m agave nic info <interface>
+python3 -m agave nic info wlan0
 ```
 
 ### ARP
-
-#### Passive hosts discovery
-Listen for ARP messages, collecting data on the host in the network.
 ```
+# Resolve a MAC.
+python3 -m agave arp resolve <IP>
+python3 -m agave arp resolve 192.168.1.1
+
+# Hosts discovery.
+python3 -m agave arp discover <interface> [subnet]
+python3 -m agave arp rdiscover <interface> [subnet]	# Slower version
+python3 -m agave arp discover wlan0					# Search all the subnet
+python3 -m agave arp discover wlan0 192.168.1.0/24	# Different subnet, or portion of it
+
+# Listen incoming messages to discover hosts, and interaction between them.
 python3 -m agave arp listen
+
+# Man in the middle.
+python3 -m agave arp mitm <interface> <alice> <bob>
+python3 -m agave arp mitm eth0 192.168.1.1 192.168.1.5
 ```
 
-#### Active hosts discovery
-Sends ARP requests to all the IP addresses in a given subnet to solicit replies in order to discover hosts.
-```
-# Start listening for messages
-python3 -m agave arp listen
-# Change terminal
-python3 -m agave arp solicit {interface} {subnet} {your_ip} {your_mac}
-# Example with arguments
-python3 -m agave arp solicit wlp3s0 192.168.1.0/24 192.168.1.100 aa:bb:cc:11:22:33
-```
-
-#### Man in the middle
-Sends ARP messages in order to achieve a man in the middle attack.
-```
-python3 -m agave arp mitm {interface} {alice IP} {bob IP}
-python3 -m agave arp mitm eth0 192.168.1.1 192.168.1.10
-```
+##### Note on the Man in the middle
 If working, you'll be able to sniff the traffic exchanged by the victims. In order to allow the victims to keep communicate with each other, you need to enable IP forwarding. Disable forwarding might be used to prevent communications.
 ```
 # Set to 0 to stop forwarding

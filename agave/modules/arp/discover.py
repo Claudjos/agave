@@ -3,7 +3,6 @@ through ARP.
 """
 import select, time
 from typing import Iterator, Tuple, Union
-from .solicit import all_packet
 from .utils import _create_socket, _parse, SOCKET_MAX_READ, SOCKET_PROTO
 from .resolve import resolve
 from agave.frames import ethernet, arp

@@ -1,7 +1,6 @@
 from agave.modules.arp.resolve import resolve
 from agave.modules.arp.discover import discover, r_discover
 from agave.modules.nic.interfaces import NetworkInterface, NetworkInterfaceNotFound
-from .listen import Network
 
 
 def arp_discover(argv):

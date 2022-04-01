@@ -28,6 +28,9 @@ class MACAddress:
 	def __str__(self):
 		return self.mac_to_str(self.address)
 
+	def __eq__(self, a) -> bool:
+		return a.address == self.address
+
 
 def mac_to_str(address: bytes) -> str:
 	return MACAddress.mac_to_str(address)

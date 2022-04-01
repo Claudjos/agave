@@ -1,74 +1,182 @@
+import socket, select, time
+from typing import Tuple
 from agave.frames import ethernet, arp
-from agave.frames.core import Buffer
+from agave.frames.ethernet import MACAddress
 from ipaddress import ip_address, ip_network, IPv4Address
-from typing import Iterator, Tuple
-import socket
-import select
+from .utils import _create_socket, _parse, SOCKET_MAX_READ 
 
 
-class Network:
-
-	OP_PASS = 0
-	OP_INSERT = 1
-	OP_UPDATE = 2
-
-	OP = ["PASS", "INSERT", "UPDATE"]
-
-	def __init__(self):
-		self._network = {}
-
-	def process(self, ip: str, mac: str) -> int:
-		if ip not in self._network:
-			self._network[ip] = mac
-			return self.OP_INSERT
-		else:
-			if self._network[ip] != mac:
-				return self.OP_UPDATE
-			else:
-				return self.OP_PASS
-
-	def parse(self, buf: Buffer) -> Iterator[Tuple[str, str, str]]:
-		"""
-		Collects data from ARP messages. Target address are collected just
-		for replies.
-		"""
-		eth_frame = ethernet.Ethernet.read_from_buffer(buf)
-		if eth_frame.next_header == ethernet.ETHER_TYPE_ARP:
-			arp_frame = arp.ARP.read_from_buffer(buf)
-			if arp_frame.operation == arp.OPERATION_REPLY:
-				ip = str(ip_address(arp_frame.target_protocol_address))
-				eth = ethernet.mac_to_str(arp_frame.target_hardware_address)
-				status = self.process(ip, eth)
-				if status is not self.OP_PASS:
-					yield status, ip, eth
-			ip = str(ip_address(arp_frame.sender_protocol_address))
-			eth = ethernet.mac_to_str(arp_frame.sender_hardware_address)
-			status = self.process(ip, eth)
-			if status is not self.OP_PASS:
-				yield status, ip, eth
-		return
+HOST = Tuple[MACAddress, IPv4Address]
 
 
-def listen(timeout = 1) -> Iterator[Tuple[str, str, str]]:
-	net = Network()
-	rawsocket = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(3))
-	while True:
-		rl, wl, xl = select.select([rawsocket], [], [], timeout)
-		if rl != []:
-			for item in net.parse(Buffer.from_bytes(rawsocket.recv(65535))):
-				yield item
-	return
+class Listener:
+	"""This is a framework for a service collecting information about the hosts
+	in a network, and how they interact with each other, by listening ARP messages. 
+	It builds a sort of graph where the nodes correspond to the hosts, and the links
+	represent a communication attempt (ARP request) between two hosts. Links are
+	directed, from the sender to the target, and they can be hanging (the target
+	node might not exists).
+	Special events such as the discovery of new hosts or links, hardware address
+	conflicts, or gratuitous ARP reply, trigger the invocation of callbacks, that
+	are methods of this class whose implementation is delegated to sub classes.
+	"""
 
-
-def main(argv):
-	try:
-		print("Listening for ARP messages...")
-		while True:
-			for op, ip, mac in listen():
-				print("[{}] {}\t{}".format(
-					Network.OP[op],
-					ip,
-					mac
-				))
-	except KeyboardInterrupt as e:
+	def on_node_discovery(self, host: HOST):
+		"""This method is invoked when a new host is discovered."""
 		pass
+
+	def on_link_discovery(self, sender: HOST, target: HOST):
+		"""This method is invoked when a host tries to resolve another host
+		address for the first time."""
+		pass
+
+	def on_mac_change(self, ip: IPv4Address, old_mac: MACAddress, new_mac: MACAddress):
+		"""This method is invoked when the hardware address associated to certain
+		IP address changes."""
+		pass
+
+	def on_gratuitous_reply(self, sender: HOST, target: HOST):
+		"""This method is invoked when a reply is received without being
+		preceded by a request."""
+		pass
+
+	def __init__(
+		self,
+		sock: "socket.socket" = None,
+		selector_timeout: float = 1,
+		fresh_threshold: float = 0.5
+	):
+		if sock is None:
+			#sock = _create_socket()
+			sock = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(3))
+		# used for storage
+		self._nodes : dict = {}
+		self._links : dict = {}
+		# loop
+		self.sock : "socket.socket" = sock
+		self.timeout : float = selector_timeout
+		# parameters
+		self.fresh_threshold : float = fresh_threshold
+
+	def _hash_link(self, sender: HOST, target: HOST) -> str:
+		return str(sender[1]) + str(target[1])
+
+	def _create_link(self, sender: HOST, target: HOST):
+		_hash = self._hash_link(sender, target)
+		self._links[_hash] = {"sender": sender, "target": target, "ts": time.time()}
+		# callback
+		self.on_link_discovery(sender, target)
+
+	def _update_link(self, sender: HOST, target: HOST):
+		_hash = self._hash_link(sender, target)
+		self._links[_hash]["ts"] = time.time()
+
+	def _search_link(self, sender: HOST, target: HOST) -> bool:
+		_hash = self._hash_link(sender, target)
+		return _hash in self._links
+
+	def _hash_node(self, node: HOST) -> str:
+		return str(node[1])
+
+	def _create_node(self, node: HOST):
+		_hash = self._hash_node(node)
+		self._nodes[_hash] = {"ip": node[1], "mac": node[0], "ts": time.time()}
+		# callback
+		self.on_node_discovery(node)
+
+	def _update_node(self, node: HOST):
+		_hash = self._hash_node(node)
+		if self._nodes[_hash]["mac"] != node[0]:
+			old = self._nodes[_hash]["mac"]
+			self._nodes[_hash]["mac"] = node[0]
+			self._nodes[_hash]["ts"] = time.time()
+			# callback
+			self.on_mac_change(node[1], old, node[0])
+
+	def _search_node(self, node: HOST) -> bool:
+		_hash = self._hash_node(node)
+		return _hash in self._nodes
+
+	def process_request(self, sender: HOST, target: HOST):
+		"""Saves a ARP request information.
+
+		Note:
+			The information saved are the sender addresses,
+			and the attempt to communicate with the target.
+
+		Args:
+			sender: the sender hardware and protocol address.
+			target: the target hardware and protocol address.
+
+		"""
+		# Creates/Update sender info
+		if not self._search_node(sender):
+			self._create_node(sender)
+		else:
+			self._update_node(sender)
+		# Register the new [attempted] communication
+		if not self._search_link(sender, target):
+			self._create_link(sender, target)
+		else:
+			self._update_link(sender, target)
+
+	def process_reply(self, sender: HOST, target: HOST):
+		"""Saves a ARP reply information. Unrequested reply are discarded.
+		
+		Note:
+			Only sender infos are saved, as the target infos, and the communication
+			info, get saved by process_request (always called in case of valid
+			replies).
+
+		Args:
+			sender: the sender hardware and protocol address.
+			target: the target hardware and protocol address.
+
+		"""
+		legit = True
+		# Check if legit
+		try:
+			"""If a reply is legit, it must be preceded by a request,
+			thus a "fresh" link should exists.
+			"""
+			_hash = self._hash_link(target, sender)
+			last_request_ts = self._links[_hash]["ts"]
+			if (time.time() - last_request_ts) > self.fresh_threshold:
+				legit = False
+		except KeyError:
+			legit = False
+		# Exit if not legit
+		if not legit:
+			self.on_gratuitous_reply(sender, target)
+			return
+		# Creates/Update sender info
+		if not self._search_node(sender):
+			self._create_node(sender)
+		else:
+			self._update_node(sender)
+
+	def stop(self):
+		"""Stops the running loop within Listener.timeout seconds."""
+		self.running = False
+
+	def run(self):
+		self.running = True
+		while self.running:
+			rl, wl, xl = select.select([self.sock], [], [], self.timeout)
+			if rl != []:
+				data, addr = self.sock.recvfrom(SOCKET_MAX_READ)
+				if addr[1] != 2054:
+					continue
+				_, frame = _parse(data)
+				sender = (
+					MACAddress(frame.sender_hardware_address),
+					IPv4Address(frame.sender_protocol_address)
+				)
+				target = (
+					MACAddress(frame.target_hardware_address),
+					IPv4Address(frame.target_protocol_address)
+				)
+				if frame.operation == arp.OPERATION_REPLY:
+					self.process_reply(sender, target)
+				if frame.operation == arp.OPERATION_REQUEST:
+					self.process_request(sender, target)

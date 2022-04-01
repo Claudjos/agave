@@ -7,24 +7,6 @@ from ipaddress import IPv4Address, IPv4Network, ip_network
 from agave.modules.nic.interfaces import NetworkInterface, NetworkInterfaceNotFound
 
 
-def resolve_discover(argv):
-	if len(argv) < 1:
-		print("Too few parameters")
-	else:
-		print("Looking for hosts...")
-		subnet = argv[1] if len(argv) > 1 else None
-		for mac, ip in discover(argv[0], subnet=subnet):
-			print("{}\t{}".format(ip, str(mac)))
-
-
-def mac_resolve(argv):
-	if len(argv) < 1:
-		print("Too few parameters")
-	else:
-		mac = resolve(NetworkInterface.get_by_host(IPv4Address(argv[0])), argv[0])
-		print("Host not found" if mac is None else str(mac))
-		
-
 def _create_socket():
 	"""Creates a socket.
 

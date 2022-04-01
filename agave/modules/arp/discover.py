@@ -10,20 +10,6 @@ from agave.modules.nic.interfaces import NetworkInterface, NetworkInterfaceNotFo
 from typing import Union
 
 
-def main(argv):
-	if len(argv) < 1:
-		print("Too few parameters")
-	else:
-		print("Looking for hosts...")
-		subnet = argv[1] if len(argv) > 1 else None
-		for op, ip, mac in discover(argv[0], subnet=subnet):
-			print("[{}] {}\t{}".format(
-				Network.OP[op],
-				ip,
-				mac
-			))
-
-
 def discover(
 	interface: Union[str, NetworkInterface],
 	subnet: Union[str, IPv4Network] = None,

@@ -14,7 +14,7 @@ def resolve(
 	interface: Union[str, NetworkInterface],
 	address: Union[str, IPv4Address],
 	sock: "socket.socket" = None,
-	max_wait: float = 0.1,
+	max_wait: float = 0.5,
 	retry: int = 3
 ):
 	"""Resolve the MAC address for a given IP.

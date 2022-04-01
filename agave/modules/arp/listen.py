@@ -3,10 +3,7 @@ from typing import Tuple
 from agave.frames import ethernet, arp
 from agave.frames.ethernet import MACAddress
 from ipaddress import ip_address, ip_network, IPv4Address
-from .utils import _create_socket, _parse, SOCKET_MAX_READ, ARPReaderLoop
-
-
-HOST = Tuple[MACAddress, IPv4Address]
+from .utils import _create_socket, _parse, SOCKET_MAX_READ, ARPReaderLoop, HOST
 
 
 class Listener(ARPReaderLoop):

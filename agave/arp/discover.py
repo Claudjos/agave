@@ -4,7 +4,7 @@ from .utils import _create_socket, _parse, SOCKET_MAX_READ, SOCKET_PROTO
 from .resolve import resolve
 from agave.frames import ethernet, arp
 from agave.frames.ethernet import MACAddress
-from agave.modules.nic.interfaces import NetworkInterface
+from agave.nic.interfaces import NetworkInterface
 from ipaddress import IPv4Address, IPv4Network, ip_network, ip_address
 
 

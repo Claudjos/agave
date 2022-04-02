@@ -1,7 +1,6 @@
 import sys
 from .modules.icmp import discover, redirect
 from .modules.irdp import advertise, solicit as solicit2
-from .examples import nic
 
 
 if len(sys.argv) < 2:
@@ -15,9 +14,6 @@ argv = sys.argv[3:]
 
 
 MAP = {
-	"NIC": {
-		"INFO": nic.main
-	},
 	"ICMP": {
 		"DISCOVER": discover.main,
 		"REDIRECT": redirect.main

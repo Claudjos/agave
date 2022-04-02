@@ -12,11 +12,11 @@ These scripts use raw socket, thus Linux and SUDO privileges are required to run
 ### NIC
 ```
 # List all network interfaces.
-python3 -m agave nic info
+python3 -m agave.nic.interfaces
 
 # Print info for a network interface.
-python3 -m agave nic info <interface>
-python3 -m agave nic info wlan0
+python3 -m agave.nic.interfaces <interface>
+python3 -m agave.nic.interfaces wlan0
 ```
 
 ### ARP

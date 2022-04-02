@@ -2,7 +2,7 @@ import time
 from typing import Tuple
 from agave.frames import ethernet, arp
 from agave.frames.ethernet import MACAddress
-from agave.modules.nic.interfaces import NetworkInterface
+from agave.nic.interfaces import NetworkInterface
 from .utils import ARPReaderLoop, HOST
 
 
@@ -71,7 +71,7 @@ if __name__ == "__main__":
 	"""
 	import sys
 	from ipaddress import IPv4Address
-	from agave.modules.nic.interfaces import NetworkInterfaceNotFound
+	from agave.nic.interfaces import NetworkInterfaceNotFound
 	from agave.arp.resolve import resolve
 
 	

@@ -2,7 +2,7 @@ from typing import Iterator, Tuple, Union
 from .utils import _create_socket
 from .resolve import resolve
 from agave.frames.ethernet import MACAddress
-from agave.modules.nic.interfaces import NetworkInterface
+from agave.nic.interfaces import NetworkInterface
 from ipaddress import IPv4Address, IPv4Network, ip_network
 
 

@@ -1,7 +1,8 @@
 """
 ICMP definition @ RFC 792
 """
-from .core import FrameWithChecksum, Buffer
+from .frame import FrameWithChecksum
+from .buffer import Buffer
 
 
 TYPE_ECHO_REPLY = 0

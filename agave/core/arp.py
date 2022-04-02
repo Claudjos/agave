@@ -1,4 +1,7 @@
-from .core import Frame
+from . import ethernet
+from .frame import Frame
+from .buffer import Buffer
+from ipaddress import IPv4Address
 
 
 HARDWARE_TYPE_ETHERNET = 0x0001
@@ -74,3 +77,67 @@ class ARP(Frame):
 			sender_hardware_address, sender_protocol_address,
 			target_hardware_address, target_protocol_address
 		)
+
+	def reply(self, hardware: bytes) -> bytes:
+		"""Builds an ARP reply.
+
+		Args:
+			hardware: the hardware address to add to the response.
+
+		Returns:
+			A reply message (Ethernet and ARP headers).
+
+		Raises:
+			ValueError: if the instance is not a request message.
+
+		"""
+		if self.operation != OPERATION_REQUEST:
+			raise ValueError("ARP.reply can be called only on request message")
+		eth_frame = ethernet.Ethernet(
+			self.sender_hardware_address,
+			hardware,
+			ethernet.ETHER_TYPE_ARP
+		)
+		arp_frame = self.build(
+			OPERATION_REPLY,
+			hardware, self.target_protocol_address,
+			self.sender_hardware_address, self.sender_protocol_address
+		)
+		buf = Buffer.from_bytes()
+		eth_frame.write_to_buffer(buf)
+		arp_frame.write_to_buffer(buf)
+		return bytes(buf)
+
+	@classmethod
+	def is_at(
+		cls,
+		sender_mac: bytes, sender_ipv4: IPv4Address,
+		target_mac: bytes, target_ipv4: IPv4Address
+	) -> bytes:
+		eth_frame = ethernet.Ethernet(target_mac, sender_mac, ethernet.ETHER_TYPE_ARP)
+		arp_frame = cls.build(
+			OPERATION_REPLY,
+			sender_mac, sender_ipv4.packed,
+			target_mac, target_ipv4.packed
+		)
+		buf = Buffer.from_bytes()
+		eth_frame.write_to_buffer(buf)
+		arp_frame.write_to_buffer(buf)
+		return bytes(buf)
+
+	@classmethod
+	def who_has( 
+		cls,
+		sender_mac: bytes, sender_ipv4: IPv4Address,
+		broadcast_mac: bytes, target_ipv4: IPv4Address
+	):
+		eth_frame = ethernet.Ethernet(broadcast_mac, sender_mac, ethernet.ETHER_TYPE_ARP)
+		arp_frame = cls.build(
+			OPERATION_REQUEST,
+			sender_mac, sender_ipv4.packed,
+			b'\x00\x00\x00\x00\x00\x00', target_ipv4.packed
+		)
+		buf = Buffer.from_bytes()
+		eth_frame.write_to_buffer(buf)
+		arp_frame.write_to_buffer(buf)
+		return bytes(buf)

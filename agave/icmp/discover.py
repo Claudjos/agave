@@ -1,5 +1,20 @@
-from agave.frames import ethernet, ip, icmp
-from agave.frames.core import Buffer
+"""ICMP host discover utilities.
+
+Todo:
+	* clean up this mess.
+
+The module provides a script to discover host in a network
+by using Echo ICMP messages.
+
+Usage:
+	python3 -m agave.icmp.discover <subnet>
+
+Example:
+	python3 -m agave.icmp.discover 192.168.1.0/24
+
+"""
+from agave.core import ethernet, ip, icmp
+from agave.core.buffer import Buffer
 from ipaddress import ip_address, ip_network
 import socket, select, time
 from typing import List
@@ -125,11 +140,15 @@ class NetScanner:
 		return None, None
 
 
-def main(argv):
-	if len(argv) < 1:
+if __name__ == "__main__":
+
+	import sys
+
+
+	if len(sys.argv) < 2:
 		print("Too few parameters")
 	else:
-		report = NetworkReport(argv[0])
+		report = NetworkReport(sys.argv[1])
 		scanner = NetScanner(
 			socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(3)),
 			socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP),
@@ -144,3 +163,4 @@ def main(argv):
 		print("Hosts for which a destination unreachable message wasn't received:")
 		for i in report.get_missing_host():
 			print(i)
+

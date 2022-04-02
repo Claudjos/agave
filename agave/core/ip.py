@@ -1,5 +1,6 @@
-from .core import FrameWithChecksum, Buffer
-from ipaddress import ip_address
+from .frame import FrameWithChecksum
+from .buffer import Buffer
+from ipaddress import ip_address, IPv4Address
 
 
 PROTO_ICMP = 0x01
@@ -92,3 +93,32 @@ class IPv4(FrameWithChecksum):
 			str(ip_address(self.source)),
 			str(ip_address(self.destination))
 		)
+
+	@classmethod
+	def create_message(
+		cls,
+		destination: IPv4Address,
+		source: IPv4Address,
+		payload: bytes,
+		proto: int
+	) -> bytes:
+		buf = Buffer.from_bytes()
+		ip_frame = cls(
+			ihl=5, 
+			dscp=0,
+			ecn=0,
+			total_length=(20 + len(payload)),
+			identification=0,
+			flags=2, 								# don't fragment
+			fragment_offset=0,
+			ttl=64,
+			protocol=proto,
+			checksum=0,
+			source=source.packed,
+			destination=destination.packed,
+			options=b''
+		)
+		ip_frame.set_checksum()
+		ip_frame.write_to_buffer(buf)
+		buf.write(payload)
+		return bytes(buf)

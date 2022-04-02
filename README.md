@@ -42,7 +42,7 @@ Discover hosts in a subnet by sending ARP requests. Note that some host/switch m
 ```
 python3 -m agave.arp.discover <interface> [subnet]
 python3 -m agave.arp.rdiscover <interface> [subnet]	# Slower version
-python3 -m agave.arp.discover wlan0				# Search all the subnet
+python3 -m agave.arp.discover wlan0	                # Search all the subnet
 python3 -m agave.arp.discover wlan0 192.168.1.0/24	# Different subnet, or portion of it
 ```
 Listening for incoming messages to discover hosts and interaction between them.

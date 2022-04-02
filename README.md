@@ -54,7 +54,7 @@ Man in the middle using unsolicited spoofed ARP replies.
 python3 -m agave.arp.mitm <interface> <alice> <bob>
 python3 -m agave.arp.mitm eth0 192.168.1.1 192.168.1.5
 ```
-Pretend to have assigned a certain IP address by replying ARP requests with spoofed replies.
+Pretend to have assigned a certain IP address by replying to ARP requests with spoofed messages.
 ```
 python3 -m agave.arp.pretend <to_have_ip> [for_subnet] [interface]
 python3 -m agave.arp.pretend 192.168.1.10 192.168.1.5/32 eth0

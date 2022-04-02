@@ -1,7 +1,6 @@
 import sys
 from .modules.icmp import discover, redirect
 from .modules.irdp import advertise, solicit as solicit2
-from .examples import arp
 from .examples import nic
 
 
@@ -18,13 +17,6 @@ argv = sys.argv[3:]
 MAP = {
 	"NIC": {
 		"INFO": nic.main
-	},
-	"ARP": {
-		"LISTEN": arp.arp_listen,
-		"DISCOVER": arp.arp_discover,
-		"MITM": arp.arp_man_in_the_middle,
-		"RESOLVE": arp.resolve_mac,
-		"RDISCOVER": arp.resolve_discover
 	},
 	"ICMP": {
 		"DISCOVER": discover.main,

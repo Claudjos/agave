@@ -1,11 +1,10 @@
 # Agave
 
 Agave aims to provide "primitives" to speed up the development of "proof of work" and "capture the flag" security related scripts concerning networking. Efficiency and best practice are not the main goal, ease of reuse is.
-It started as a collection of scripts shared to show some knowledge of networking to potential recruiters. Now is migrating towards a library to build customizable tools, to combine to enact more complex scenarios. Yet general purpose scripts are still included as they are both an "how to" guide of the library, and "primitives" themselves.
-The main motivation behind the development of the project comes from the curiosity to learn more about network protocols and vulnerabilities. Agave is a byproduct of learning-by-doing.
 
-## Examples
-You can check the [examples](agave/examples) to see how the simple CLI scripts included in the projects are developed using Agave.
+It started as a collection of scripts shared to show some knowledge of networking to potential recruiters. Now is migrating towards a library to build customizable tools to combine together to enact more complex scenarios. Yet general purpose scripts are still included as they are both an "how to" guide of the library, and "primitives" themselves.
+
+The main motivation behind the development of the project comes from the curiosity to learn more about network protocols and vulnerabilities. Agave is a byproduct of learning-by-doing.
 
 ## Usage of the CLI scripts
 These scripts use raw socket, thus Linux and SUDO privileges are required to run them.
@@ -23,21 +22,21 @@ python3 -m agave nic info wlan0
 ### ARP
 ```
 # Resolve a MAC.
-python3 -m agave arp resolve <IP>
-python3 -m agave arp resolve 192.168.1.1
+python3 -m agave.arp.resolve <IP>
+python3 -m agave.arp.resolve 192.168.1.1
 
 # Hosts discovery.
-python3 -m agave arp discover <interface> [subnet]
-python3 -m agave arp rdiscover <interface> [subnet]	# Slower version
-python3 -m agave arp discover wlan0					# Search all the subnet
-python3 -m agave arp discover wlan0 192.168.1.0/24	# Different subnet, or portion of it
+python3 -m agave.arp.discover <interface> [subnet]
+python3 -m agave.arp.rdiscover <interface> [subnet]	# Slower version
+python3 -m agave.arp.discover wlan0					# Search all the subnet
+python3 -m agave.arp.discover wlan0 192.168.1.0/24	# Different subnet, or portion of it
 
 # Listen incoming messages to discover hosts, and interaction between them.
-python3 -m agave arp listen
+python3 -m agave.arp.listen
 
 # Man in the middle.
-python3 -m agave arp mitm <interface> <alice> <bob>
-python3 -m agave arp mitm eth0 192.168.1.1 192.168.1.5
+python3 -m agave.arp.mitm <interface> <alice> <bob>
+python3 -m agave.arp.mitm eth0 192.168.1.1 192.168.1.5
 ```
 
 ##### Note on the Man in the middle

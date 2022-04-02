@@ -85,3 +85,24 @@ def _resolve(
 				return MACAddress(arp_frame.sender_hardware_address)
 		if time.time() >= deadline:
 			return None
+
+
+if __name__ == "__main__":
+	"""
+	Given an IPv4, retrieves the MAC address.
+
+	Usage:
+		python3 -m agave.arp.resolve <IPv4>
+
+	Example:
+		python3 -m agave.arp.resolve 192.168.1.1
+
+	"""
+	import sys
+
+
+	if len(sys.argv) < 1:
+		print("Too few parameters")
+	else:
+		mac = resolve(NetworkInterface.get_by_host(sys.argv[1]), sys.argv[1])
+		print("Host not found" if mac is None else str(mac))

@@ -162,3 +162,41 @@ class Listener(ARPReaderLoop):
 			self.process_reply(sender, target)
 		if frame.operation == arp.OPERATION_REQUEST:
 			self.process_request(sender, target)
+
+
+if __name__ == "__main__":
+	"""
+	Sniffs ARP messages to collect information about the network.
+
+	Usage:
+		python3 -m agave.arp.listen
+
+	Example:
+		python3 -m agave.arp.listen
+
+	"""
+	class MyListener(Listener):
+
+		def on_node_discovery(self, host: HOST):
+			print("New host discovered {} {}".format(host[0], host[1]), flush=True)
+
+		def on_link_discovery(self, sender: HOST, target: HOST):
+			print("New communication discovered {} {}".format(sender[1], target[1]), flush=True)
+
+		def on_mac_change(self, ip: IPv4Address, old_mac: MACAddress, new_mac: MACAddress):
+			print("MAC addressed associated to {} changed from {} to {}".format(
+				ip, old_mac, new_mac
+			), flush=True)
+
+		def on_gratuitous_reply(self, sender: HOST, target: HOST):
+			print("A reply {} {} came without {} requesting it".format(
+				sender[0], sender[1], target[1]
+			), flush=True)
+
+
+	try:
+		print("Listening...")
+		MyListener().run()
+	except KeyboardInterrupt:
+		pass
+

@@ -9,13 +9,13 @@ Example:
 	python3 -m agave.irdp.advertise 100 192.168.1.2 40 192.168.1.5
 
 """
-import socket, sys
-from agave.core import irdp
-from agave.core.buffer import Buffer
-from ipaddress import ip_address
-
-
 if __name__ == "__main__":
+
+	import socket, sys
+	from agave.core import irdp
+	from agave.core.buffer import Buffer
+	from ipaddress import ip_address
+
 	
 	if len(sys.argv) < 3:
 		print("Too few arguments")

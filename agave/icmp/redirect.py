@@ -1,6 +1,8 @@
 """ICMP Redirect utilities.
 
-Usage of the script:
+The module provides a script to perform an ICMP redirect attack.
+
+Usage:
 	python3 -m agave.icmp.redirect <target> <attacker> <victim> <gateway> [delta] 
 		[trigger]
 

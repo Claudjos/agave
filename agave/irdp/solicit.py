@@ -8,12 +8,11 @@ Example:
 	python3 -m agave.irdp.solicit
 
 """
-from agave.core import irdp
-from agave.core.buffer import Buffer
-import socket, sys
-
-
 if __name__ == "__main__":
+
+	from agave.core import irdp
+	from agave.core.buffer import Buffer
+	import socket, sys
 
 	# creates socket and enable broadcast messages
 	rawsocket = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP)

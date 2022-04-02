@@ -1,3 +1,18 @@
+"""ICMP host discover utilities.
+
+Todo:
+	* clean up this mess.
+
+The module provides a script to discover host in a network
+by using Echo ICMP messages.
+
+Usage:
+	python3 -m agave.icmp.discover <subnet>
+
+Example:
+	python3 -m agave.icmp.discover 192.168.1.0/24
+
+"""
 from agave.core import ethernet, ip, icmp
 from agave.core.buffer import Buffer
 from ipaddress import ip_address, ip_network
@@ -126,17 +141,7 @@ class NetScanner:
 
 
 if __name__ == "__main__":
-	"""
-	Discovers host in a network by using Echo ICMP messages.
 
-	Usage:
-		python3 -m agave.icmp.discover <subnet>
-
-	Example:
-		python3 -m agave.icmp.discover 192.168.1.0/24
-
-
-	"""
 	import sys
 
 

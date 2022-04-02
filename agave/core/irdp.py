@@ -2,7 +2,7 @@
 RFC 1256
 """
 from .icmp import ICMP, TYPE_ROUTER_ADVERTISMENT_MESSAGE, TYPE_ROUTER_SOLICITATION_MESSAGE
-from .core import Buffer
+from .buffer import Buffer
 from typing import List
 
 

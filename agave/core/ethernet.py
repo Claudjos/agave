@@ -1,5 +1,5 @@
 from typing import Union
-from . core import Frame
+from .frame import Frame
 
 
 ETHER_TYPE_ARP = 0x0806

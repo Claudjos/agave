@@ -11,8 +11,8 @@ Example:
 
 """
 import socket, time, sys
-from agave.frames import ip, icmp
-from agave.frames.core import Buffer
+from agave.core import ip, icmp
+from agave.core.buffer import Buffer
 from ipaddress import IPv4Address
 
 

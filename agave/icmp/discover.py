@@ -1,5 +1,5 @@
-from agave.frames import ethernet, ip, icmp
-from agave.frames.core import Buffer
+from agave.core import ethernet, ip, icmp
+from agave.core.buffer import Buffer
 from ipaddress import ip_address, ip_network
 import socket, select, time
 from typing import List

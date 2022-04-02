@@ -10,8 +10,8 @@ Example:
 
 """
 import socket, sys
-from agave.frames import irdp
-from agave.frames.core import Buffer
+from agave.core import irdp
+from agave.core.buffer import Buffer
 from ipaddress import ip_address
 
 

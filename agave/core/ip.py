@@ -1,4 +1,5 @@
-from .core import FrameWithChecksum, Buffer
+from .frame import FrameWithChecksum
+from .buffer import Buffer
 from ipaddress import ip_address, IPv4Address
 
 

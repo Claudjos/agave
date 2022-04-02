@@ -2,8 +2,8 @@ import select, time
 from typing import Iterator, Tuple, Union
 from .utils import _create_socket, _parse, SOCKET_MAX_READ, SOCKET_PROTO
 from .resolve import resolve
-from agave.frames import ethernet, arp
-from agave.frames.ethernet import MACAddress
+from agave.core import ethernet, arp
+from agave.core.ethernet import MACAddress
 from agave.nic.interfaces import NetworkInterface
 from ipaddress import IPv4Address, IPv4Network, ip_network, ip_address
 

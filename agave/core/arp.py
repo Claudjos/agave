@@ -1,5 +1,6 @@
-from .core import Frame, Buffer
 from . import ethernet
+from .frame import Frame
+from .buffer import Buffer
 from ipaddress import IPv4Address
 
 

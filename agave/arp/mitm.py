@@ -1,7 +1,7 @@
 import time
 from typing import Tuple
-from agave.frames import ethernet, arp
-from agave.frames.ethernet import MACAddress
+from agave.core import ethernet, arp
+from agave.core.ethernet import MACAddress
 from agave.nic.interfaces import NetworkInterface
 from .utils import ARPReaderLoop, HOST
 

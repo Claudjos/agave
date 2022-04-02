@@ -11,7 +11,7 @@ import socket, fcntl, struct
 from typing import List, Union
 from ipaddress import ip_address, ip_network
 from ipaddress import IPv4Address, IPv6Address, IPv4Network, IPv6Network
-from agave.frames.ethernet import MACAddress
+from agave.core.ethernet import MACAddress
 
 
 IPAddress = Union[IPv4Address, IPv6Address]

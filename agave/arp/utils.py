@@ -1,7 +1,7 @@
 import socket, select
 from typing import Tuple
-from agave.frames import ethernet, arp
-from agave.frames.core import Buffer
+from agave.core import ethernet, arp
+from agave.core.buffer import Buffer
 from ipaddress import IPv4Address
 
 

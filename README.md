@@ -8,9 +8,19 @@ The main motivation behind the development of the project comes from the curiosi
 
 ## Usage of the CLI scripts
 
-##### Raw socket requirements:
+##### Requirements
+
+To use raw socket:
 - Linux (POSIX?)
 - CAP_NET_RAW capability or SUDO privileges
+
+Preferred system configuration:
+```
+# Enable IPv4 forwarding
+echo 1 | sudo tee /proc/sys/net/ipv4/conf/*/forwarding
+# Prevents ICMPv4 redirect messages
+echo 0 | sudo tee /proc/sys/net/ipv4/conf/*/send_redirects
+```
 
 ### NIC
 
@@ -44,11 +54,6 @@ Man in the middle using unsolicited spoofed ARP replies.
 python3 -m agave.arp.mitm <interface> <alice> <bob>
 python3 -m agave.arp.mitm eth0 192.168.1.1 192.168.1.5
 ```
-If working, you'll be able to sniff the traffic exchanged by the victims. In order to allow the victims to keep communicate with each other, you need to enable IP forwarding. Disable forwarding might be used to prevent communications.
-```
-# Set to 0 to stop forwarding
-sudo sysctl net.ipv4.ip_forward=1
-```
 
 ### ICMPv4
 
@@ -64,11 +69,6 @@ python3 -m agave.icmp.redirect <target> <attacker> <victim> <gateway> [delta] [t
 Example:
 *victim* reaches a *target* host (Google DNS) through the router *gateway*. With an ICMP redirect message is possible to redirect the traffic to use another router (the *attacker*) instead.
 ```
-# Enable forwarding
-echo 1 | sudo tee /proc/sys/net/ipv4/conf/*/forwarding
-# Prevent your system from redirecting the victim back to the right router
-echo 0 | sudo tee /proc/sys/net/ipv4/conf/*/send_redirects
-# Send ICMP redirect
 python3 -m agave.icmp.redirect 8.8.8.8 192.168.0.2 192.168.0.3 192.168.0.1
 ```
 

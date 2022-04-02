@@ -80,7 +80,7 @@ python3 -m agave.irdp.solicit
 ```
 Advertise a list of routers
 ```
-python3 -m agave.irdp.advertise {preference} {router_1_ip} ... {router_n_ip}
+python3 -m agave.irdp.advertise <preference> <router> [...[<preference> <router>]]
 python3 -m agave.irdp.advertise 100 192.168.1.10
-python3 -m agave.irdp.advertise 100 192.168.1.10 192.168.1.20
+python3 -m agave.irdp.advertise 100 192.168.1.10 50 192.168.1.20
 ```

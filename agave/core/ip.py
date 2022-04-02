@@ -1,11 +1,25 @@
-from .frame import FrameWithChecksum
+from .frame import Frame, FrameWithChecksum
 from .buffer import Buffer
-from ipaddress import ip_address, IPv4Address
+from ipaddress import ip_address, IPv4Address, IPv6Address
 
 
 PROTO_ICMP = 0x01
 PROTO_TCP = 0x06
 PROTO_UDP = 0x11
+PROTO_ICMPv6 = 0x3A
+
+PROTO_IPv6_HOPOPT = 0x00
+PROTO_IPv6_ROUTE = 0x2B
+PROTO_IPv6_FRAG = 0x2C
+PROTO_IPv6_NoNXT = 0x3B
+PROTO_IPv6_OPTS = 0x3C
+
+IPv6_EXTENSION = [
+	PROTO_IPv6_ROUTE,
+	PROTO_IPv6_FRAG,
+	PROTO_IPv6_NoNXT,
+	PROTO_IPv6_OPTS
+]
 
 
 class IPv4(FrameWithChecksum):
@@ -122,3 +136,81 @@ class IPv4(FrameWithChecksum):
 		ip_frame.write_to_buffer(buf)
 		buf.write(payload)
 		return bytes(buf)
+
+
+class IPv6(Frame):
+
+	def __init__(
+		self,
+		traffic_class: int,
+		flow_label: int,
+		payload_length: int,
+		next_header: int,
+		hop_limit: int,
+		source: IPv6Address,
+		destination: IPv6Address,
+		extensions = None
+	):
+		self.version = 6
+		self.traffic_class = traffic_class
+		self.flow_label = flow_label
+		self.payload_length = payload_length
+		self.next_header = next_header
+		self.hop_limit = hop_limit
+		self.source = source
+		self.destination = destination
+		self.extensions = b''
+
+	@classmethod
+	def read_from_buffer(cls, buf: Buffer) -> "IPv6":
+		"""Parses an IPv6 header from a buffer.
+
+		Args:
+			buf: buffer to parse from.
+
+		Returns:
+			IPv6 header data.
+
+		Todo:
+			* parse extension headers
+
+		"""
+		temp = buf.read_int()
+		traffic_class = (temp & 0x0ff00000) >> 20
+		flow_label = temp & 0x000fffff
+		payload_length = buf.read_short()
+		next_header = buf.read_byte()
+		hop_limit = buf.read_byte()
+		source = IPv6Address(buf.read(16))
+		destination = IPv6Address(buf.read(16))
+		return cls(
+			traffic_class,
+			flow_label,
+			payload_length,
+			next_header,
+			hop_limit,
+			source,
+			destination
+		)
+
+	def write_to_buffer(self, buf: Buffer):
+		"""Writes the IPv6 header on a buffer.
+
+		Args:
+			buf: the buffer.
+
+		"""
+		buf.write_int(0x60000000 | (self.traffic_class << 20) | self.flow_label)
+		buf.write_short(self.payload_length)
+		buf.write_byte(self.next_header)
+		buf.write_byte(self.hop_limit)
+		buf.write(self.source.packed)
+		buf.write(self.destination.packed)
+		buf.write(self.extensions)
+
+	def __str__(self):
+		return "({}) {} -> {}".format(
+			self.next_header,
+			self.source,
+			self.destination
+		)

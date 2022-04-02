@@ -42,7 +42,7 @@ Discover hosts in a subnet by sending ARP requests. Note that some host/switch m
 ```
 python3 -m agave.arp.discover <interface> [subnet]
 python3 -m agave.arp.rdiscover <interface> [subnet]	# Slower version
-python3 -m agave.arp.discover wlan0					# Search all the subnet
+python3 -m agave.arp.discover wlan0	                # Search all the subnet
 python3 -m agave.arp.discover wlan0 192.168.1.0/24	# Different subnet, or portion of it
 ```
 Listening for incoming messages to discover hosts and interaction between them.
@@ -53,6 +53,11 @@ Man in the middle using unsolicited spoofed ARP replies.
 ```
 python3 -m agave.arp.mitm <interface> <alice> <bob>
 python3 -m agave.arp.mitm eth0 192.168.1.1 192.168.1.5
+```
+Pretend to have assigned a certain IP address by replying ARP requests with spoofed replies.
+```
+python3 -m agave.arp.pretend <to_have_ip> [for_subnet] [interface]
+python3 -m agave.arp.pretend 192.168.1.10 192.168.1.5/32 eth0
 ```
 
 ### ICMPv4
@@ -78,7 +83,7 @@ Solicit routers advertise messages.
 ```
 python3 -m agave.irdp.solicit
 ```
-Advertise a list of routers
+Advertise a list of routers.
 ```
 python3 -m agave.irdp.advertise <preference> <router> [...[<preference> <router>]]
 python3 -m agave.irdp.advertise 100 192.168.1.10

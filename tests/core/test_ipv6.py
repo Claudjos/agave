@@ -29,7 +29,3 @@ class TestIPv6(unittest.TestCase):
 		packet.write_to_buffer(buf)
 		self.assertEqual(bytes(buf), self.IPv6_packet)
 
-
-if __name__ == '__main__':
-	unittest.main()
-

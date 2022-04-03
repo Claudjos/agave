@@ -139,12 +139,28 @@ class IPv4(FrameWithChecksum):
 
 
 class IPv6(Frame):
-	"""IPv6 RFC 8200
+	"""IPv6 message, RFC 8200.
+
+	Attributes:
+		version: IPv6 version
+		traffic_class: IPv6 traffic class.
+		flow_label: IPv6 flow label.
+		payload_length: IPv6 payload length.
+		next_header: IPv6 next header.
+		hop_limit: IPv6 hop limit.
+		source: IPv6 source.
+		destination: IPv6 destination.
+		extensions: unparsed extension.
 	
 	Todo:
 		* handle extension headers.
 
 	"""
+	__slots__ = (
+		"traffic_class", "flow_label", "payload_length", "next_header",
+		"hop_limit", "source", "destination", "extensions", "version"
+	)
+
 	def __init__(
 		self,
 		traffic_class: int,
@@ -154,27 +170,27 @@ class IPv6(Frame):
 		hop_limit: int,
 		source: IPv6Address,
 		destination: IPv6Address,
-		extensions = None
+		extensions: bytes = None
 	):
-		self.version = 6
-		self.traffic_class = traffic_class
-		self.flow_label = flow_label
-		self.payload_length = payload_length
-		self.next_header = next_header
-		self.hop_limit = hop_limit
-		self.source = source
-		self.destination = destination
-		self.extensions = b''
+		self.version: int = 6
+		self.traffic_class: int = traffic_class
+		self.flow_label: int = flow_label
+		self.payload_length: int = payload_length
+		self.next_header: int = next_header
+		self.hop_limit: int = hop_limit
+		self.source: IPv6Address = source
+		self.destination: IPv6Address = destination
+		self.extensions: bytes = b''
 
 	@classmethod
 	def read_from_buffer(cls, buf: Buffer) -> "IPv6":
 		"""Parses an IPv6 header from a buffer.
 
 		Args:
-			buf: buffer to parse from.
+			buf: the buffer.
 
 		Returns:
-			IPv6 header data.
+			An instance of this class.
 
 		Todo:
 			* parse extension headers
@@ -199,7 +215,7 @@ class IPv6(Frame):
 		)
 
 	def write_to_buffer(self, buf: Buffer):
-		"""Writes the IPv6 header on a buffer.
+		"""Writes this message headers on a buffer.
 
 		Args:
 			buf: the buffer.
@@ -221,12 +237,17 @@ class IPv6(Frame):
 		)
 
 	def get_pseudo_header(self) -> bytes:
-		"""
+		"""Builds the pseudo header for this IPv6 message.
+
+		Returns:
+			The pseudo header.
+
 		Todo:
-			* next_header refers to the upper protocol, thus
-				this is gonna break with extensions.
-			* payload_length refers to the upper protocol, thus
-				this is gonna break with extensions.
+			* replace next_header with upper layer protocol, or
+				this will break with extensions.
+			* replace payload_length with upper protocol packet
+				size, or this will break with extensions.
+
 		"""
 		return self.build_pseudo_header(
 			self.source,
@@ -239,9 +260,19 @@ class IPv6(Frame):
 		self,
 		source: IPv6Address,
 		destination: IPv6Address,
-		payload_length: int,
+		packet_length: int,
 		next_header: int
 	) -> bytes:
+		"""Builds the pseudo header necessary to upper protocols
+		for checksum calculation.
+
+		Args:
+			source: source address.
+			destination: destination address.
+			packet_length: upper layer header and data size.
+			next_header: upper layer protocol.
+
+		"""
 		return (
 			source.packed + 
 			destination.packed + 

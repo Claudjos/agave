@@ -139,7 +139,12 @@ class IPv4(FrameWithChecksum):
 
 
 class IPv6(Frame):
+	"""IPv6 RFC 8200
+	
+	Todo:
+		* handle extension headers.
 
+	"""
 	def __init__(
 		self,
 		traffic_class: int,
@@ -214,3 +219,34 @@ class IPv6(Frame):
 			self.source,
 			self.destination
 		)
+
+	def get_pseudo_header(self) -> bytes:
+		"""
+		Todo:
+			* next_header refers to the upper protocol, thus
+				this is gonna break with extensions.
+			* payload_length refers to the upper protocol, thus
+				this is gonna break with extensions.
+		"""
+		return self.build_pseudo_header(
+			self.source,
+			self.destination,
+			self.payload_length,
+			self.next_header
+		)
+
+	def build_pseudo_header(
+		self,
+		source: IPv6Address,
+		destination: IPv6Address,
+		payload_length: int,
+		next_header: int
+	) -> bytes:
+		return (
+			source.packed + 
+			destination.packed + 
+			payload_length.to_bytes(4, byteorder="big") +
+			b'\x00\x00\x00' +
+			next_header.to_bytes(1, byteorder="big")
+		)
+

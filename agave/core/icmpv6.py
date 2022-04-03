@@ -1,5 +1,5 @@
-"""Defines the ICMPv6 protocol as for RFC 4443."""
-from .frame import FrameWithChecksum, compute_checksum_from_buffer
+"""ICMPv6 protocol."""
+from .frame import FrameWithChecksum
 from .buffer import Buffer
 
 
@@ -18,7 +18,7 @@ class ICMPv6(FrameWithChecksum):
 	"""ICMPv6 message, RFC 4443.
 
 	Attributes:
-		_type: ICMP message type
+		type: ICMP message type
 		code: ICMP message code
 		checksum: ICMP message checksum
 		body: ICMP message
@@ -26,7 +26,7 @@ class ICMPv6(FrameWithChecksum):
 		_pseudo_header: IPv6 pseudo header for checksum computation.
 
 	"""
-	__slots__ = ("_type", "code", "checksum", "body", "payload", "_pseudo_header")
+	__slots__ = ("type", "code", "checksum", "body", "payload", "_pseudo_header")
 
 	def __init__(
 		self,
@@ -103,5 +103,5 @@ class ICMPv6(FrameWithChecksum):
 			words +=1
 		buf.rewind()
 		# Compute
-		t = compute_checksum_from_buffer(buf, words)
+		t = self.compute_checksum_from_buffer(buf, words)
 		return t

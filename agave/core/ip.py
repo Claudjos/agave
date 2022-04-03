@@ -276,7 +276,7 @@ class IPv6(Frame):
 		return (
 			source.packed + 
 			destination.packed + 
-			payload_length.to_bytes(4, byteorder="big") +
+			packet_length.to_bytes(4, byteorder="big") +
 			b'\x00\x00\x00' +
 			next_header.to_bytes(1, byteorder="big")
 		)

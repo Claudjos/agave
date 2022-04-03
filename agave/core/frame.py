@@ -21,19 +21,7 @@ class FrameWithChecksum(Frame):
 		self.checksum = self.compute_checksum()
 
 	def compute_checksum_from_buffer(self, buf: Buffer, words: int):
-		"""
-		PARAMS
-			buf: the data required by the protocol to compute it's checksum.
-			words: the number of 16 bits words that need to be read from the buffer.
-		"""
-		csum = 0
-		for i in range(0, words):
-			csum += buf.read_short()
-		while (csum & 0xff0000) != 0:
-			carry = ( csum & 0xff0000 ) >> 16
-			csum = csum & 0x00ffff
-			csum += carry
-		return 0xffff - csum
+		return compute_checksum_from_buffer(buf, words)
 
 	def is_checksum_valid(self):
 		return self.compute_checksum() == 0

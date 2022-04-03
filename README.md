@@ -1,6 +1,6 @@
 # Agave
 
-Agave aims to provide "primitives" to speed up the development of "proof of work" and "capture the flag" security related scripts concerning networking. Efficiency and best practice are not the main goal, ease of reuse is.
+Agave aims to provide "primitives" to speed up the development of "proof of concept" and "capture the flag" security related scripts concerning networking. Efficiency and best practice are not the main goal, ease of reuse is.
 
 It started as a collection of scripts shared to show some knowledge of networking to potential recruiters. Now is migrating towards a library to build customizable tools to combine together to enact more complex scenarios. Yet general purpose scripts are still included as they are both an "how to" guide of the library, and "primitives" themselves.
 

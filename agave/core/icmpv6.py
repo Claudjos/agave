@@ -1,5 +1,5 @@
-"""Defines the ICMPv6 protocol as for RFC 4443."""
-from .frame import FrameWithChecksum, compute_checksum_from_buffer
+"""ICMPv6 protocol."""
+from .frame import FrameWithChecksum
 from .buffer import Buffer
 
 
@@ -103,5 +103,5 @@ class ICMPv6(FrameWithChecksum):
 			words +=1
 		buf.rewind()
 		# Compute
-		t = compute_checksum_from_buffer(buf, words)
+		t = self.compute_checksum_from_buffer(buf, words)
 		return t

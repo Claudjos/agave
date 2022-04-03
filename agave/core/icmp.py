@@ -1,6 +1,4 @@
-"""
-ICMP definition @ RFC 792
-"""
+"""ICMPv4 protocol."""
 from .frame import FrameWithChecksum
 from .buffer import Buffer
 
@@ -20,20 +18,38 @@ REDIRECT_CODE_SERVICE_AND_HOST = 3
 
 
 class ICMP(FrameWithChecksum):
+	"""ICMPv4 message, RFC 792.
 
+	Attributes:
+		type: ICMP message type
+		code: ICMP message code
+		checksum: ICMP message checksum
+		rest_of_header: ICMP rest of header
+		data: data of the message
+
+	"""
 	__slots__ = ("type", "code", "checksum", "rest_of_the_header", "data")
 
-	def __init__(self, _type: int, code: int, checksum: int, rest_of_the_header: int,
-			data: bytes):
-		self.type = _type
-		self.code = code
-		self.checksum = checksum
-		self.rest_of_the_header = rest_of_the_header
-		self.data = data
+	def __init__(self, _type: int, code: int, checksum: int,
+		rest_of_the_header: int, data: bytes):
+		self.type: int = _type
+		self.code: int = code
+		self.checksum: int = checksum
+		self.rest_of_the_header: int = rest_of_the_header
+		self.data: bytes = data
 
 	@classmethod
-	def read_from_buffer(self, buf):
-		return ICMP(
+	def read_from_buffer(cls, buf: Buffer) -> "ICMPv4":
+		"""Parses an ICMPv4 header from a buffer.
+
+		Args:
+			buf: the buffer.
+
+		Returns:
+			An instance of this class.
+
+		"""
+		return cls(
 			buf.read_byte(),
 			buf.read_byte(),
 			buf.read_short(),
@@ -41,7 +57,13 @@ class ICMP(FrameWithChecksum):
 			buf.read_remaining()
 		)
 
-	def write_to_buffer(self, buf):
+	def write_to_buffer(self, buf: Buffer):
+		"""Writes this message to a buffer.
+
+		Args:
+			buf: the buffer.
+
+		"""
 		buf.write_byte(self.type)
 		buf.write_byte(self.code)
 		buf.write_short(self.checksum)
@@ -49,7 +71,9 @@ class ICMP(FrameWithChecksum):
 		buf.write(self.data)
 
 	@classmethod
-	def echo(cls, data = b'', identifier = 0, sequence_number = 0):
+	def echo(cls, data: bytes = b'', identifier: int = 0,
+		sequence_number: int = 0
+	) -> "ICMPv4":
 		return cls(
 			TYPE_ECHO_MESSAGE,
 			0,
@@ -59,7 +83,9 @@ class ICMP(FrameWithChecksum):
 		)
 
 	@classmethod
-	def reply(cls, data = b'', identifier = 0, sequence_number = 0):
+	def reply(cls, data: bytes = b'', identifier = 0, 
+		sequence_number = 0
+	) -> "ICMPv4":
 		return cls(
 			TYPE_ECHO_REPLY,
 			0,
@@ -69,12 +95,17 @@ class ICMP(FrameWithChecksum):
 		)
 	
 	@classmethod
-	def redirect(cls, code: int, gway: bytes, data: bytes):
-		"""
-		PARAMS
+	def redirect(cls, code: int, gway: bytes, data: bytes) -> "ICMPv4":
+		"""Builds a redirect message.
+
+		Args:
 			code: code.
 			gway: the router to use instead.
 			data: original message.
+
+		Returns:
+			An instance of this class
+
 		"""
 		return cls(
 			TYPE_REDIRECT_MESSAGE,
@@ -84,7 +115,13 @@ class ICMP(FrameWithChecksum):
 			data
 		)
 
-	def compute_checksum(self):
+	def compute_checksum(self) -> int:
+		"""Compute the checksum for this message.
+
+		Returns:
+			The checksum for this message.
+
+		"""
 		# Writes header to buffer
 		buf = Buffer.from_bytes()
 		self.write_to_buffer(buf)

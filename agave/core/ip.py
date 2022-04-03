@@ -1,3 +1,4 @@
+"""IP protocol."""
 from .frame import Frame, FrameWithChecksum
 from .buffer import Buffer
 from ipaddress import ip_address, IPv4Address, IPv6Address
@@ -23,69 +24,89 @@ IPv6_EXTENSION = [
 
 
 class IPv4(FrameWithChecksum):
+	"""IPv4 header.
 
+	Attributes:
+		version: IPv4 version
+		ihl: IPv4 Intern Header Length
+		dscp: IPv4 Differentiated Service Code Point (originally ToS)
+		ecn: IPv4 Explicit Congestion Notification
+		total_length: IPv4 total length
+		identification: IPv4 identification
+		flags: IPv4 flags
+		fragment_offset: IPv4 fragment offset
+		ttl: IPv4 Time To Live
+		protocol: IPv4 protocol
+		checksum: IPv4 checksum
+		source: IPv4 source address
+		destination: IPv4 destination address
+		options: IPv4 options
+
+	"""
 	__slots__ = (
 		"version", "ihl", "dscp", "ecn", "total_length", "identification",
 		"flags", "fragment_offset", "ttl", "protocol", "checksum", "source",
 		"destination", "options"
 	)
 
-	def __init__(self, ihl, dscp, ecn, total_length, identification, flags,
-			fragment_offset, ttl, protocol, checksum, source, destination, options):
-		self.version = 4
-		self.ihl = ihl
-		self.dscp = dscp
-		self.ecn = ecn
-		self.total_length = total_length
-		self.identification = identification
-		self.flags = flags
-		self.fragment_offset = fragment_offset
-		self.ttl = ttl
-		self.protocol = protocol
-		self.checksum = checksum
-		self.source = source
-		self.destination = destination
-		self.options = options
+	def __init__(self, ihl: int, dscp: int, ecn: int, total_length: int,
+		identification: int, flags: int, fragment_offset: int, ttl: int,
+		protocol: int, checksum: int, source: int, destination: int,
+		options: bytes
+	):
+		self.version: int = 4
+		self.ihl: int = ihl
+		self.dscp: int = dscp
+		self.ecn: int = ecn
+		self.total_length: int = total_length
+		self.identification: int = identification
+		self.flags: int = flags
+		self.fragment_offset: int = fragment_offset
+		self.ttl: int = ttl
+		self.protocol: int = protocol
+		self.checksum: int = checksum
+		self.source: int = source
+		self.destination: int = destination
+		self.options: bytes = options
 
 	@classmethod
-	def read_from_buffer(cls, buf):
-		
+	def read_from_buffer(cls, buf: Buffer) -> "IPv4":
+		"""Parses an IPv4 header from a buffer.
+
+		Args:
+			buf: the buffer.
+
+		Returns:
+			An instance of this class.
+
+		"""
 		v_ihl = buf.read_byte()
-		# protocol version
 		version = v_ihl >> 4
-		# Internet header length (number of 32 bits words in the header)
 		ihl = v_ihl & 0x0F
-
 		dscp_ecn = buf.read_byte()
-		# Differentiated service code point (originally ToS)
 		dscp = dscp_ecn >> 2
-		# Explicit congestion notification
 		ecn = dscp_ecn & 0x03
-
 		total_length = buf.read_short()
 		identification = buf.read_short()
-
 		flags_f_offset = buf.read_short()
 		flags = flags_f_offset >> 13
 		fragment_offset = flags_f_offset & 0x1FFF
-	
-		# Time To Live - hop limit in IPv6
 		ttl = buf.read_byte()
-		# Protocol - next header in IPv6
 		protocol = buf.read_byte()
-
 		checksum = buf.read_short()
-
-		# addresses
 		source = buf.read(4)
 		destination = buf.read(4)
-
 		options = buf.read(ihl * 4 - 20)
-
 		return cls(ihl, dscp, ecn, total_length, identification, flags,
 			fragment_offset, ttl, protocol, checksum, source, destination, options)
 
-	def write_to_buffer(self, buf):
+	def write_to_buffer(self, buf: Buffer):
+		"""Writes this message headers on a buffer.
+
+		Args:
+			buf: the buffer.
+
+		"""
 		buf.write_byte((self.version << 4) + self.ihl)
 		buf.write_byte((self.dscp << 2) + self.ecn)
 		buf.write_short(self.total_length)
@@ -98,7 +119,13 @@ class IPv4(FrameWithChecksum):
 		buf.write(self.destination)
 		buf.write(self.options)
 
-	def compute_checksum(self):
+	def compute_checksum(self) -> int:
+		"""Compute the checksum for this message.
+
+		Returns:
+			The checksum for this message.
+
+		"""
 		# Writes header to buffer
 		buf = Buffer.from_bytes()
 		self.write_to_buffer(buf)
@@ -145,7 +172,7 @@ class IPv4(FrameWithChecksum):
 
 
 class IPv6(Frame):
-	"""IPv6 message, RFC 8200.
+	"""IPv6 header, RFC 8200.
 
 	Attributes:
 		version: IPv6 version

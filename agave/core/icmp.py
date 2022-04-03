@@ -97,3 +97,8 @@ class ICMP(FrameWithChecksum):
 
 	def __str__(self):
 		return "ICMP {} {}".format(self.type, self.code)
+
+
+class ICMPv4(ICMP):
+	pass
+

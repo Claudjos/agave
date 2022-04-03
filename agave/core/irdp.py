@@ -1,5 +1,5 @@
 """IRDP protocol RFC 1256."""
-from .icmp import (
+from .icmpv4 import (
 	ICMPv4, TYPE_ROUTER_ADVERTISMENT_MESSAGE, 
 	TYPE_ROUTER_SOLICITATION_MESSAGE
 )

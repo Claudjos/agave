@@ -17,14 +17,14 @@ REDIRECT_CODE_SERVICE_AND_NETWORK = 2
 REDIRECT_CODE_SERVICE_AND_HOST = 3
 
 
-class ICMP(FrameWithChecksum):
+class ICMPv4(FrameWithChecksum):
 	"""ICMPv4 message, RFC 792.
 
 	Attributes:
-		type: ICMP message type
-		code: ICMP message code
-		checksum: ICMP message checksum
-		rest_of_header: ICMP rest of header
+		type: ICMPv4 message type
+		code: ICMPv4 message code
+		checksum: ICMPv4 message checksum
+		rest_of_header: ICMPv4 rest of header
 		data: data of the message
 
 	"""
@@ -136,8 +136,4 @@ class ICMP(FrameWithChecksum):
 
 	def __str__(self):
 		return "ICMP {} {}".format(self.type, self.code)
-
-
-class ICMPv4(ICMP):
-	pass
 

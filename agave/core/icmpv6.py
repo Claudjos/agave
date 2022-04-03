@@ -18,7 +18,7 @@ class ICMPv6(FrameWithChecksum):
 	"""ICMPv6 message, RFC 4443.
 
 	Attributes:
-		_type: ICMP message type
+		type: ICMP message type
 		code: ICMP message code
 		checksum: ICMP message checksum
 		body: ICMP message
@@ -26,7 +26,7 @@ class ICMPv6(FrameWithChecksum):
 		_pseudo_header: IPv6 pseudo header for checksum computation.
 
 	"""
-	__slots__ = ("_type", "code", "checksum", "body", "payload", "_pseudo_header")
+	__slots__ = ("type", "code", "checksum", "body", "payload", "_pseudo_header")
 
 	def __init__(
 		self,

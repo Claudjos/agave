@@ -41,6 +41,7 @@ class Ethernet(Frame):
 	"""
 	Ethernet II
 	"""
+	__slots__ = ("source", "destination", "next_header")
 
 	def __init__(self, destination: bytes, source: bytes, next_header: int):
 		self.source = source

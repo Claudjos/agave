@@ -7,6 +7,8 @@ from typing import List
 
 
 class IRDP(ICMP):
+
+	__slots__ = ()
 	
 	@property
 	def num_address(self):

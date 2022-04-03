@@ -3,6 +3,8 @@ from .buffer import Buffer
 
 class Frame:
 
+	__slots__ = ()
+
 	@classmethod
 	def read_from_buffer(cls, buf: Buffer):
 		raise NotImplementedError()
@@ -12,6 +14,8 @@ class Frame:
 
 
 class FrameWithChecksum(Frame):
+
+	__slots__ = ()
 
 	def compute_checksum(self):
 		raise NotImplementedError()

@@ -7,6 +7,8 @@ class EndOfBufferError(Exception):
 
 class Buffer:
 
+	__slots__ = ("_buf")
+
 	@classmethod
 	def from_bytes(cls, data: bytes = b''):
 		return cls(BytesIO(data))

@@ -16,6 +16,14 @@ OPERATION_REPLY = 2
 
 class ARP(Frame):
 
+	__slots__ = (
+		"hardware_type", "protocol_type", 
+		"hardware_addr_len", "protocol_addr_len",
+		"operation",
+		"sender_hardware_address", "sender_protocol_address",
+		"target_hardware_address", "target_protocol_address"
+	)
+
 	def __init__(
 		self,
 		hardware_type: int, protocol_type: int,

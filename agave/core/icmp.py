@@ -21,6 +21,8 @@ REDIRECT_CODE_SERVICE_AND_HOST = 3
 
 class ICMP(FrameWithChecksum):
 
+	__slots__ = ("type", "code", "checksum", "rest_of_the_header", "data")
+
 	def __init__(self, _type: int, code: int, checksum: int, rest_of_the_header: int,
 			data: bytes):
 		self.type = _type

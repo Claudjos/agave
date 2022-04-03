@@ -24,6 +24,12 @@ IPv6_EXTENSION = [
 
 class IPv4(FrameWithChecksum):
 
+	__slots__ = (
+		"version", "ihl", "dscp", "ecn", "total_length", "identification",
+		"flags", "fragment_offset", "ttl", "protocol", "checksum", "source",
+		"destination", "options"
+	)
+
 	def __init__(self, ihl, dscp, ecn, total_length, identification, flags,
 			fragment_offset, ttl, protocol, checksum, source, destination, options):
 		self.version = 4

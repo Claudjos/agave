@@ -5,7 +5,15 @@ from .frame import FrameWithChecksum, compute_checksum_from_buffer
 from .buffer import Buffer
 
 
+TYPE_ECHO_REQUEST = 128
+TYPE_ECHO_REPLY = 129
+
+# NDP
 TYPE_ROUTER_SOLICITATION = 133
+TYPE_ROUTER_ADVERTISEMENT = 134
+TYPE_NEIGHBOR_SOLICITATION = 135
+TYPE_NEIGHBOR_ADVERTISEMENT = 136
+TYPE_REDIRECT_MESSAGE = 137
 
 
 class ICMPv6(FrameWithChecksum):
@@ -65,5 +73,4 @@ class ICMPv6(FrameWithChecksum):
 		buf.rewind()
 		# Compute
 		t = compute_checksum_from_buffer(buf, words)
-		print(hex(t), words)
 		return t

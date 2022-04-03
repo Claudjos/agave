@@ -7,6 +7,9 @@ from ipaddress import IPv4Address
 HARDWARE_TYPE_ETHERNET = 0x0001
 PROTOCOL_TYPE_IP = 0x0800
 
+ADDRESS_LEN_ETHERNET = 6
+ADDRESS_LEN_IP = 4
+
 OPERATION_REQUEST = 1
 OPERATION_REPLY = 2
 
@@ -72,7 +75,8 @@ class ARP(Frame):
 		Build a frame assuming hardware and protocol to be Ethernet and IPv4.
 		"""
 		return cls(
-			HARDWARE_TYPE_ETHERNET, PROTOCOL_TYPE_IP, 6, 4,
+			HARDWARE_TYPE_ETHERNET, PROTOCOL_TYPE_IP,
+			ADDRESS_LEN_ETHERNET, ADDRESS_LEN_IP,
 			operation,
 			sender_hardware_address, sender_protocol_address,
 			target_hardware_address, target_protocol_address

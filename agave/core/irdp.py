@@ -1,13 +1,19 @@
-"""
-RFC 1256
-"""
-from .icmp import ICMP, TYPE_ROUTER_ADVERTISMENT_MESSAGE, TYPE_ROUTER_SOLICITATION_MESSAGE
+"""IRDP protocol RFC 1256."""
+from .icmp import (
+	ICMPv4, TYPE_ROUTER_ADVERTISMENT_MESSAGE, 
+	TYPE_ROUTER_SOLICITATION_MESSAGE
+)
 from .buffer import Buffer
 from typing import List
 
 
-class IRDP(ICMP):
+ROUTER_ADVERTISMENT_MULTICAST_ADDRESS = "224.0.0.1"		# all hosts
+ROUTER_SOLICITATION_MULTICAST_ADDRESS = "224.0.0.2"		# all routers
 
+
+
+class IRDP(ICMPv4):
+	"""IRDP message."""
 	__slots__ = ()
 	
 	@property

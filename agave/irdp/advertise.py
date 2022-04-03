@@ -12,7 +12,7 @@ Example:
 if __name__ == "__main__":
 
 	import socket, sys
-	from agave.core import irdp
+	from agave.core.irdp import IRDP, ROUTER_ADVERTISMENT_MULTICAST_ADDRESS
 	from agave.core.buffer import Buffer
 	from ipaddress import ip_address
 
@@ -32,10 +32,10 @@ if __name__ == "__main__":
 			preferences.append(int(sys.argv[i]))
 			addresses.append(ip_address(sys.argv[i+1]).packed)
 		# builds packet
-		irdp_frame = irdp.IRDP.advertise(addresses, preferences)
+		irdp_frame = IRDP.advertise(addresses, preferences)
 		buf = Buffer.from_bytes()
 		irdp_frame.write_to_buffer(buf)
 		# send
-		rawsocket.sendto(bytes(buf), ('255.255.255.255', 0))
+		rawsocket.sendto(bytes(buf), (ROUTER_ADVERTISMENT_MULTICAST_ADDRESS, 0))
 		print("Advertise sent.")
 

@@ -80,5 +80,4 @@ if __name__ == "__main__":
 	except BaseException as e:
 		print(__doc__)
 		print(f"[ERROR] {e}")
-		raise e
 

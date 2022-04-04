@@ -33,33 +33,32 @@ python3 -m agave.nic.interfaces wlan0
 
 ### ARP
 
-Retrieve link layer address.
+Retrieves link layer address(es). This allows host discovery as well by resolving addresses for subnets. Note that some host/switch might leak informations about other networks they are connected to. An interface name must me specified when no interface on the system is in the same network of the subnet being scanned.
 ```
-python3 -m agave.arp.resolve <IP>
-python3 -m agave.arp.resolve 192.168.1.1
+python3 -m agave.arp.resolve <IP|subnet> [interface]
+python3 -m agave.arp.resolve 192.168.0.1
+python3 -m agave.arp.resolve 192.168.1.0/4
+python3 -m agave.arp.resolve 192.168.2.1/32	eth0
+python3 -m agave.arp.resolve 192.168.3.0/24	wlan0
 ```
-Discover hosts in a subnet by sending ARP requests. Note that some host/switch might leak information about other subnets they are connected to.
-```
-python3 -m agave.arp.discover <interface> [subnet]
-python3 -m agave.arp.rdiscover <interface> [subnet]	# Slower version
-python3 -m agave.arp.discover wlan0	                # Search all the subnet
-python3 -m agave.arp.discover wlan0 192.168.1.0/24	# Different subnet, or portion of it
-```
+
 Listening for incoming messages to discover hosts and interaction between them.
 ```
 python3 -m agave.arp.listen
 ```
-Man in the middle using unsolicited spoofed ARP replies.
-```
-python3 -m agave.arp.mitm <interface> <alice> <bob>
-python3 -m agave.arp.mitm eth0 192.168.1.1 192.168.1.5
-```
+
 ARP Spoofing. The script replies to ARP requests with spoofed messages in order to redirect traffic for the target subnet to your host. The optional victim argument restricts spoofing to some hosts. With the option -f gratuitous spoofed replies are sent periodically to the victim.
 ```
 python3 -m agave.arp.spoof <target> [victim] [-f]
 python3 -m agave.arp.spoof 192.168.1.4
 python3 -m agave.arp.spoof 192.168.1.4/2 192.168.1.1/32
 python3 -m agave.arp.spoof 192.168.1.10/32 192.168.1.0/24 -f
+```
+
+Man in the middle using unsolicited spoofed ARP replies.
+```
+python3 -m agave.arp.mitm <interface> <alice> <bob>
+python3 -m agave.arp.mitm eth0 192.168.1.1 192.168.1.5
 ```
 
 ### ICMPv4

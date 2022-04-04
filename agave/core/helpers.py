@@ -76,3 +76,71 @@ def execute(
 			break
 	return
 
+
+class BaseService:
+
+	__slots__ = ()
+
+	def process(self, data: bytes, address: SocketAddress) -> Any:
+		raise NotImplementedError()
+
+	def loop(self) -> bool:
+		raise NotImplementedError()
+
+	def set_finished(self):
+		raise NotImplementedError()
+
+	def stop(self):
+		raise NotImplementedError()
+
+	def run(self):
+		raise NotImplementedError()
+
+
+class Service(BaseService):
+
+	__slots__ = ("wait", "interval", "max_read", "_repeat", "running", "sock")
+
+	def __init__(self, wait: float = 1, interval: float = 1, max_read: int = None):
+		self.wait = wait
+		self.interval = interval
+		self.max_read = max_read if max_read is not None else SOCKET_MAX_READ
+		self._repeat = True
+
+	def set_finished(self):
+		self.running = False
+
+	def stop(self):
+		self.running = False
+
+	def run(self):
+		# Initialize
+		self.running = True
+		next_execution = time.time() + self.interval
+		timeout = self.interval
+		deadline = False
+		# Run
+		while self.running:
+			# Waits for data
+			rl, wl, xl = select.select([self.sock], [], [], timeout)
+			# Process
+			if rl != []:
+				message = self.sock.recvfrom(self.max_read)
+				result = self.process(*message)
+				if result is not None:
+					yield result
+			# Loop
+			if self._repeat and time.time() >= next_execution:
+				if not self.loop():
+					self._repeat = False
+					deadline = time.time() + self.wait
+					timeout = self.wait
+				else:
+					next_execution = time.time() + self.interval
+			# Deadline
+			if deadline is not False and time.time() >= deadline:
+				self.running = False
+		# StopIteration
+		return
+
+	

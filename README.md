@@ -33,7 +33,7 @@ python3 -m agave.nic.interfaces wlan0
 
 ### ARP
 
-Retrieves link layer address(es). This allows host discovery as well by resolving addresses for subnets. Note that some host/switch might leak informations about other networks they are connected to. An interface name must me specified when no interface on the system is in the same network of the subnet being scanned.
+Retrieving link layer address(es). This allows host discovery as well by resolving addresses for subnets. Note that some host/switch might leak informations about other networks they are connected to. An interface name must me specified when no interface on the system is in the same network of the subnet being scanned.
 ```
 python3 -m agave.arp.resolve <IP|subnet> [interface]
 python3 -m agave.arp.resolve 192.168.0.1

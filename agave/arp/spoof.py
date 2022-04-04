@@ -11,7 +11,7 @@ from agave.core.arp import ARP, OPERATION_REQUEST
 from agave.core.ethernet import Ethernet, ETHER_TYPE_ARP, MACAddress
 from agave.nic.interfaces import NetworkInterface
 from .utils import create_filter, _parse
-from .resolve import resolve
+from .resolve import resolve_mac
 from ipaddress import IPv4Address, IPv4Network
 from typing import Callable
 
@@ -61,7 +61,7 @@ if __name__ == "__main__":
 			messages = []
 			for sender in a.hosts():
 				for target in b.hosts():
-					t_mac = resolve(interface, target, sock=sock)
+					t_mac = resolve_mac(target, interface, sock=sock)
 					if t_mac is None:
 						print(
 							"[WARNING] Couldn't resolve MAC for {}. This host "

@@ -1,108 +1,156 @@
-"""This module provides primitives to resolve an IPv4 address into a MAC
-address.
+"""Primitives to resolve IPv4 addresses into MAC addresses.
+
+Note:
+	This module also provides a script to retrieve the MAC
+	address(es) given an IPv4 or subnet.
+
+Usage:
+	python3 -m agave.arp.resolve <IPv4|subnet> [interface]
+
+Example:
+	python3 -m agave.arp.resolve 192.168.0.1
+	python3 -m agave.arp.resolve 192.168.0.0/24
+	python3 -m agave.arp.resolve 192.168.1.0/24 wlan0
+
 """
 import select, time
-from typing import Union
-from .utils import _create_socket, _parse, SOCKET_PROTO, SOCKET_MAX_READ
-from agave.core.ethernet import MACAddress
-from agave.core import ethernet, arp
+from typing import Union, Iterator
+from .utils import _create_socket, _parse as parse_arp, SOCKET_PROTO
+from .utils import Host, create_filter
+from agave.core.ethernet import MACAddress, Ethernet
+from agave.core.arp import ARP, OPERATION_REPLY
+from agave.core.helpers import SocketAddress, Service
 from agave.nic.interfaces import NetworkInterface
-from ipaddress import IPv4Address
+from ipaddress import IPv4Address, IPv4Network
 
 
-def resolve(
-	interface: Union[str, NetworkInterface],
+class MACAddressNotFoundError(Exception):
+	pass
+
+
+class Resolver(Service):
+
+	__slots__ = ("_cache", "_count", "interface", "repeat", "subnet", "filter", "address", "_request_to_send")
+
+	def __init__(self, sock, interface, subnet, repeat, **args):
+		super().__init__(**args)
+		self.sock = sock
+		self.interface = interface
+		self.subnet = subnet
+		self.address = (self.interface.name, SOCKET_PROTO)
+		self.repeat = repeat
+		self._cache = set()
+		self._count = self.subnet.num_addresses
+		self.filter = create_filter(OPERATION_REPLY, sender=subnet)
+		self._request_to_send = self.generate_packets()
+
+	def process(self, data: bytes, address: SocketAddress) -> Union[Host, None]:
+		_, rep = parse_arp(data)
+		if self.filter(rep):
+			if rep.sender_protocol_address not in self._cache:
+				self._count -= 1
+				if self._count < 1:
+					self.set_finished()
+				self._cache.add(rep.sender_protocol_address)
+				return (MACAddress(rep.sender_hardware_address), IPv4Address(rep.sender_protocol_address))
+
+	def loop(self) -> bool:
+		for packet in self._request_to_send:
+			self.sock.sendto(packet, self.address)
+			return True
+		return False
+
+	def generate_packets(self) -> Iterator[bytes]:
+		for _ in range(0, self.repeat):
+			for host in self.subnet.hosts():
+				if host.packed not in self._cache:
+					yield ARP.who_has(
+						self.interface.mac.address,
+						self.interface.ip, 
+						b'\xff\xff\xff\xff\xff\xff',
+						host
+					)
+		return
+
+
+def resolve_mac(
 	address: Union[str, IPv4Address],
+	interface: Union[str, NetworkInterface] = None,
 	sock: "socket.socket" = None,
-	max_wait: float = 0.5,
-	retry: int = 3
-):
-	"""Resolve the MAC address for a given IP.
-	
-	Args:
-		interface: the interface to use.
-		address: the IP address to resolve.
-		sock: a socket to use.
-		max_wait: max amount of seconds before to give up.
-		retry: number of request to send before to give up.
-
-	Returns:
-		The MAC address for the given IP address or None.
-
-	"""
-	mac = None
-	while retry > 0 and mac is None:
-		retry -= 1
-		mac = _resolve(interface, address, sock, max_wait)
-	return mac
-
-
-def _resolve(
-	interface: Union[str, NetworkInterface],
-	address: Union[str, IPv4Address],
-	sock: "socket.socket" = None,
-	max_wait: float = 0.1
+	raise_on_miss: bool = False
 ) -> Union[MACAddress, None]:
-	"""Send a ARP Request and wait for the reply.
-	
+	"""Resolve the MAC address for a given IP.
+		
 	Args:
-		interface: the interface to use.
-		address: the IP address to resolve.
-		sock: a socket to use.
-		max_wait: max amount of seconds before to give up.
+		address: IPv4 to resolve to MAC.
+		interface: interface to use.
+		sock: socket to use.
+		raise_on_miss: raise exception if MAC is not found.
 
 	Returns:
-		The MAC address for the given IP address or None.
+		The MAC Address or None.
+
+	Raises:
+		MACAddressNotFoundError.
 
 	"""
-	# Initialize vars
-	deadline = time.time() + max_wait
-	timeout = max_wait / 10
-	# Initialize arguments
-	if sock is None:
-		sock = _create_socket()
-	if type(address) == str:
-		address = IPv4Address(address)
-	if type(interface) == str:
-		interface = NetworkInterface.get_by_name(interface)
-	# Creates and send ARP request
-	request = arp.ARP.who_has(
-		interface.mac.address,
-		interface.ip, 
-		b'\xff\xff\xff\xff\xff\xff',
-		address
-	)
-	sock.sendto(request, (interface.name, SOCKET_PROTO))
-	# Waits for reply until the deadline
-	while True:
-		rl, wl, xl = select.select([sock], [], [], timeout)
-		if rl != []:
-			eth_frame, arp_frame = _parse(sock.recv(SOCKET_MAX_READ))
-			if ( 
-				arp_frame.operation == arp.OPERATION_REPLY and
-				arp_frame.sender_protocol_address == address.packed
-			):
-				return MACAddress(arp_frame.sender_hardware_address)
-		if time.time() >= deadline:
+	a = list(resolve(address, interface, sock, repeat=3, wait=0.5, interval=0.1))
+	if len(a) > 0:
+		return a[0][0]
+	else:
+		if raise_on_miss:
+			raise MACAddressNotFoundError("No MAC address found for host {}".format(address))
+		else:
 			return None
 
 
+def resolve(
+	subnet: Union[str, IPv4Address, IPv4Network],
+	interface: Union[str, NetworkInterface] = None,
+	sock: "socket.socket" = None,
+	repeat: int = 2,
+	wait: float = 1,
+	interval: int = 0.003
+) -> Iterator[Host]:
+	"""Resolve the MAC addresses for a given subnet.
+		
+	Args:
+		subnet: the IPv4 subnet.
+		interface: interface to use.
+		sock: socket to use.
+		repeat: number of request to send before to give up.
+		wait: max amount of seconds before to give up.
+		interval: delta time between requests.
+
+	Returns:
+		An Iterator with the tuple MAC, IPv4 addresses.
+
+	"""
+	if type(interface) == str:
+		interface = NetworkInterface.get_by_name(interface)
+	if type(subnet) == str or type(subnet) == IPv4Address:
+		subnet = IPv4Network(subnet)
+	if interface is None:
+		interface = NetworkInterface.get_by_host(subnet.network_address)
+	if sock is None:
+		sock = _create_socket()
+	return Resolver(sock, interface, subnet, repeat, wait=wait, interval=interval).run()
+
+
 if __name__ == "__main__":
-	"""
-	Given an IPv4, retrieves the MAC address.
 
-	Usage:
-		python3 -m agave.arp.resolve <IPv4>
-
-	Example:
-		python3 -m agave.arp.resolve 192.168.1.1
-
-	"""
 	import sys
 
 
 	if len(sys.argv) < 1:
 		print("Too few parameters")
 	else:
-		mac = resolve(NetworkInterface.get_by_host(sys.argv[1]), sys.argv[1])
-		print("Host not found" if mac is None else str(mac))
+		subnet = IPv4Network(sys.argv[1])
+		interface = sys.argv[2] if len(sys.argv) > 2 else None
+		if subnet.num_addresses > 1:
+			for mac, ip in resolve(subnet, interface=interface):
+				print(f"{ip}\t{mac}")
+		else:
+			mac = resolve_mac(subnet, interface=interface)
+			print("Host not found" if mac is None else "{}\t{}".format(subnet.network_address, mac))
+

@@ -6,7 +6,7 @@ from agave.core.ethernet import Ethernet, ETHER_TYPE_ARP, MACAddress
 from ipaddress import IPv4Address, IPv4Network
 
 
-HOST = Tuple[MACAddress, IPv4Address]
+HOST = Host = Tuple[MACAddress, IPv4Address]
 SOCKET_MAX_READ = 65535
 SOCKET_PROTO = socket.htons(ETHER_TYPE_ARP)
 

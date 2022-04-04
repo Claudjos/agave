@@ -15,9 +15,12 @@ def stream(sock: "socket.socket", max_read: int = None) -> Iterator[MessageRaw]:
 		yield sock.recvfrom(max_read)
 
 
-def flood(sock: "socket.socket", messages: List[MessageRaw]):
-	for data, addr in messages:
-		sock.sendto(data, addr)
+def flood(sock: "socket.socket", messages: List[MessageRaw]) -> Callable:
+	def fn():
+		for data, addr in messages:
+			sock.sendto(data, addr)
+		return True
+	return fn
 
 
 def execute(

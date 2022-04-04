@@ -1,13 +1,14 @@
 import socket, select
-from typing import Tuple
-from agave.core import ethernet, arp
+from typing import Tuple, Union,Callable
 from agave.core.buffer import Buffer
-from ipaddress import IPv4Address
+from agave.core.arp import ARP, OPERATION_REQUEST
+from agave.core.ethernet import Ethernet, ETHER_TYPE_ARP, MACAddress
+from ipaddress import IPv4Address, IPv4Network
 
 
-HOST = Tuple[ethernet.MACAddress, IPv4Address]
+HOST = Tuple[MACAddress, IPv4Address]
 SOCKET_MAX_READ = 65535
-SOCKET_PROTO = socket.htons(ethernet.ETHER_TYPE_ARP)
+SOCKET_PROTO = socket.htons(ETHER_TYPE_ARP)
 
 
 def _create_socket():
@@ -20,7 +21,7 @@ def _create_socket():
 	return socket.socket(socket.AF_PACKET, socket.SOCK_RAW, SOCKET_PROTO)
 
 
-def _parse(data: bytes) -> Tuple[ethernet.Ethernet, arp.ARP]:
+def _parse(data: bytes) -> Tuple[Ethernet, ARP]:
 	"""Parses Ethernet and ARP frames.
 		
 	Args:
@@ -32,8 +33,8 @@ def _parse(data: bytes) -> Tuple[ethernet.Ethernet, arp.ARP]:
 	"""
 	buf = Buffer.from_bytes(data)
 	return (
-		ethernet.Ethernet.read_from_buffer(buf),
-		arp.ARP.read_from_buffer(buf)
+		Ethernet.read_from_buffer(buf),
+		ARP.read_from_buffer(buf)
 	)
 
 
@@ -63,16 +64,52 @@ class ARPReaderLoop:
 			rl, wl, xl = select.select([self._sock], [], [], self._timeout)
 			if rl != []:
 				data, address = self._sock.recvfrom(SOCKET_MAX_READ)
-				if address[1] != ethernet.ETHER_TYPE_ARP:
+				if address[1] != ETHER_TYPE_ARP:
 					continue
 				eth_frame, arp_frame = _parse(data)
 				self.process(address, eth_frame, arp_frame)
 			self.after()
 
-	def process(self, address: Tuple, eth: ethernet.Ethernet, frame: arp.ARP):
+	def process(self, address: Tuple, eth: Ethernet, frame: ARP):
 		"""This method is called for each ARP message received."""
 		pass
 
 	def after(self):
 		"""This method is called after the read operation is completed."""
 		pass
+
+
+def create_filter(
+	operation: int,
+	sender: Union[IPv4Address, IPv4Network] = None,
+	target: Union[IPv4Address, IPv4Network] = None
+) -> Callable[[ARP], bool]:
+	"""Creates a filter for ARP messages.
+
+	Args:
+		operation: operation to filter (request/reply).
+		sender: sender protocol address or a subnet.
+		target: target protocol address or a subnet.
+	
+	Returns:
+		A function that return True if all the condition
+		are matched.
+
+	"""
+	if type(sender) == IPv4Address:
+		sender = IPv4Network(sender, 32)
+	if type(target) == IPv4Address:
+		target = IPv4Network(target, 32)
+	if sender is None:
+		sender = IPv4Network("0.0.0.0/0")
+	if target is None:
+		target = IPv4Network("0.0.0.0/0")
+
+	def fn(frame: ARP) -> bool:
+		return ( 
+			frame.operation == operation and
+			IPv4Address(frame.target_protocol_address) in target and
+			IPv4Address(frame.sender_protocol_address) in sender
+		)
+
+	return fn

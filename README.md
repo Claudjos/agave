@@ -54,10 +54,12 @@ Man in the middle using unsolicited spoofed ARP replies.
 python3 -m agave.arp.mitm <interface> <alice> <bob>
 python3 -m agave.arp.mitm eth0 192.168.1.1 192.168.1.5
 ```
-Pretend to have assigned a certain IP address by replying to ARP requests with spoofed messages.
+ARP Spoofing. The script replies to ARP requests with spoofed messages in order to redirect traffic for the target subnet to your host. The optional victim argument restricts spoofing to some hosts. With the option -f gratuitous spoofed replies are sent periodically to the victim.
 ```
-python3 -m agave.arp.pretend <to_have_ip> [for_subnet] [interface]
-python3 -m agave.arp.pretend 192.168.1.10 192.168.1.5/32 eth0
+python3 -m agave.arp.spoof <target> [victim] [-f]
+python3 -m agave.arp.spoof 192.168.1.4
+python3 -m agave.arp.spoof 192.168.1.4/2 192.168.1.1/32
+python3 -m agave.arp.spoof 192.168.1.10/32 192.168.1.0/24 -f
 ```
 
 ### ICMPv4

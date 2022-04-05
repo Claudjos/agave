@@ -55,10 +55,11 @@ python3 -m agave.arp.spoof 192.168.1.4/2 192.168.1.1/32
 python3 -m agave.arp.spoof 192.168.1.10/32 192.168.1.0/24 -f
 ```
 
-Man in the middle using unsolicited spoofed ARP replies.
+MITM. Man in the middle using ARP spoofing. With the option -f gratuitous spoofed replies are sent periodically to the victim.
 ```
-python3 -m agave.arp.mitm <interface> <alice> <bob>
-python3 -m agave.arp.mitm eth0 192.168.1.1 192.168.1.5
+python3 -m agave.arp.mitm <alice> <bob> [-f]
+python3 -m agave.arp.mitm 192.168.1.1 192.168.1.5
+python3 -m agave.arp.mitm 192.168.1.1 192.168.1.5 -f
 ```
 
 ### ICMPv4

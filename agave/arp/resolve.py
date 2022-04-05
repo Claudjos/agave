@@ -19,7 +19,7 @@ from .utils import _create_socket, _parse as parse_arp, SOCKET_PROTO
 from .utils import Host, create_filter
 from agave.core.ethernet import MACAddress, Ethernet
 from agave.core.arp import ARP, OPERATION_REPLY
-from agave.core.helpers import SocketAddress, Service
+from agave.core.helpers import SocketAddress, Job
 from agave.nic.interfaces import NetworkInterface
 from ipaddress import IPv4Address, IPv4Network
 
@@ -28,7 +28,7 @@ class MACAddressNotFoundError(Exception):
 	pass
 
 
-class Resolver(Service):
+class Resolver(Job):
 
 	__slots__ = ("_cache", "_count", "interface", "repeat", "subnet", "filter", "address", "_request_to_send")
 

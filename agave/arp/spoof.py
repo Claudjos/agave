@@ -5,7 +5,7 @@ Usage:
 	python3 -m agave.arp.spoof <target: subnet|ip> [<victim: subnet|ip>] [-f]
 
 """
-from agave.core.helpers import Service, SocketAddress
+from agave.core.helpers import Job, SocketAddress
 from agave.core.arp import ARP, OPERATION_REQUEST
 from agave.core.ethernet import ETHER_TYPE_ARP, MACAddress
 from agave.nic.interfaces import NetworkInterface
@@ -15,7 +15,7 @@ from ipaddress import IPv4Address, IPv4Network
 from typing import Callable, Tuple
 
 
-class Spoofer(Service):
+class Spoofer(Job):
 
 	__slots__ = ("filter", "messages_to_flood", "mac")
 

@@ -9,13 +9,13 @@ ETHER_TYPE_IPV6 = 0x86dd
 
 class MACAddress:
 
-	__slots__ = ["address"]
+	__slots__ = ("packed")
 
 	def __init__(self, address: Union[bytes, str]):
 		if type(address) == str:
-			self.address = self.str_to_mac(address)
+			self.packed = self.str_to_mac(address)
 		else:
-			self.address = address
+			self.packed = address
 
 	@classmethod
 	def str_to_mac(cls, address: str):
@@ -26,15 +26,10 @@ class MACAddress:
 		return ':'.join('%02x'%i for i in address)
 
 	def __str__(self):
-		return self.mac_to_str(self.address)
+		return self.mac_to_str(self.packed)
 
 	def __eq__(self, a) -> bool:
-		return a.address == self.address
-
-
-# Retro compatibility
-mac_to_str = MACAddress.mac_to_str
-str_to_mac = MACAddress.str_to_mac
+		return a.packed == self.packed
 
 
 class Ethernet(Frame):

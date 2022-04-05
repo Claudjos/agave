@@ -3,7 +3,7 @@ from agave.core.arp import *
 from agave.core.buffer import Buffer
 
 
-class TestEthernet(unittest.TestCase):
+class TestARP(unittest.TestCase):
 
 	arp_header = (
 		b'\x00\x01\x08\x00\x06\x04\x00\x02\x00\x1c\xf2\xbe\x4d\x14'

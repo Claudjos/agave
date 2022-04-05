@@ -84,8 +84,8 @@ if __name__ == "__main__":
 						),
 						addr
 					))
-		# Builds service		
-		service = Spoofer(
+		# Builds job		
+		job = Spoofer(
 			sock,
 			interface.mac,
 			create_filter(OPERATION_REQUEST, sender=victim_subnet, target=target_subnet),
@@ -95,7 +95,7 @@ if __name__ == "__main__":
 		)
 		# Running
 		print("[INFO] Running...")
-		service.run()
+		job.run()
 
 	except KeyboardInterrupt:
 		pass

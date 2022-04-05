@@ -48,8 +48,8 @@ if __name__ == "__main__":
 			)
 			addr = (interface.name, ETHER_TYPE_ARP)
 			messages = [(message_for_bob, addr), (message_for_alice, addr)]
-		# Build service
-		service = Spoofer(
+		# Build job
+		job = Spoofer(
 			sock,
 			interface.mac,
 			lambda x: filter_alice(x) or filter_bob(x),
@@ -59,7 +59,7 @@ if __name__ == "__main__":
 		)
 		# Running
 		print("[INFO] Running...")
-		service.run()
+		job.run()
 
 	except KeyboardInterrupt:
 		pass

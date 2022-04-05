@@ -38,47 +38,6 @@ def _parse(data: bytes) -> Tuple[Ethernet, ARP]:
 	)
 
 
-class ARPReaderLoop:
-	"""This is a framework for a process processing ARP messages."""
-	
-	__slots__ = ["sock", "timeout", "flag"]
-
-	def __init__(
-		self,
-		sock: "socket.socket" = None,
-		selector_timeout: float = 1
-	):
-		if sock is None:
-			sock = _create_socket()
-		self._sock : "socket.socket" = sock
-		self._timeout : float = selector_timeout
-
-	def stop(self):
-		"""Stops the running loop within Listener.timeout seconds."""
-		self._flag = False
-
-	def run(self):
-		"""Main loop."""
-		self._flag = True
-		while self._flag:
-			rl, wl, xl = select.select([self._sock], [], [], self._timeout)
-			if rl != []:
-				data, address = self._sock.recvfrom(SOCKET_MAX_READ)
-				if address[1] != ETHER_TYPE_ARP:
-					continue
-				eth_frame, arp_frame = _parse(data)
-				self.process(address, eth_frame, arp_frame)
-			self.after()
-
-	def process(self, address: Tuple, eth: Ethernet, frame: ARP):
-		"""This method is called for each ARP message received."""
-		pass
-
-	def after(self):
-		"""This method is called after the read operation is completed."""
-		pass
-
-
 def create_filter(
 	operation: int,
 	sender: Union[IPv4Address, IPv4Network] = None,

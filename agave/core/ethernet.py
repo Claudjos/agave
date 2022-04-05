@@ -36,11 +36,6 @@ class MACAddress:
 		return a.packed == self.packed
 
 
-# Retro compatibility
-mac_to_str = MACAddress.mac_to_str
-str_to_mac = MACAddress.str_to_mac
-
-
 class Ethernet(Frame):
 	"""
 	Ethernet II

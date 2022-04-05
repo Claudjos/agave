@@ -1,5 +1,5 @@
 import unittest
-from agave.core.ethernet import Ethernet, ETHER_TYPE_IPV4, str_to_mac, mac_to_str
+from agave.core.ethernet import Ethernet, ETHER_TYPE_IPV4, MACAddress
 from agave.core.buffer import Buffer
 
 
@@ -24,10 +24,10 @@ class TestEthernet(unittest.TestCase):
 	def test_conversion(self):
 		self.assertEqual(
 			b'\xff\xee\xdd\x00\x02\x04',
-			str_to_mac("ff:ee:dd:00:02:04")
+			MACAddress.str_to_mac("ff:ee:dd:00:02:04")
 		)
 		self.assertEqual(
 			"ff:ee:dd:00:02:04",
-			mac_to_str(str_to_mac("ff:ee:dd:00:02:04"))
+			MACAddress.mac_to_str(MACAddress.str_to_mac("ff:ee:dd:00:02:04"))
 		)
 

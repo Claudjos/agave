@@ -157,19 +157,20 @@ class Listener(Job):
 
 	def process(self, data: bytes, address: SocketAddress):
 		"""Process incoming/outgoing ARP frames."""
-		eth, frame = _parse(data)
-		sender = (
-			MACAddress(frame.sender_hardware_address),
-			IPv4Address(frame.sender_protocol_address)
-		)
-		target = (
-			MACAddress(frame.target_hardware_address),
-			IPv4Address(frame.target_protocol_address)
-		)
-		if frame.operation == arp.OPERATION_REPLY:
-			self.process_reply(sender, target)
-		if frame.operation == arp.OPERATION_REQUEST:
-			self.process_request(sender, target)
+		if address[1] == 0x0806 or address[1] == 0x0608:
+			eth, frame = _parse(data)
+			sender = (
+				MACAddress(frame.sender_hardware_address),
+				IPv4Address(frame.sender_protocol_address)
+			)
+			target = (
+				MACAddress(frame.target_hardware_address),
+				IPv4Address(frame.target_protocol_address)
+			)
+			if frame.operation == arp.OPERATION_REPLY:
+				self.process_reply(sender, target)
+			if frame.operation == arp.OPERATION_REQUEST:
+				self.process_request(sender, target)
 
 
 if __name__ == "__main__":
@@ -204,7 +205,8 @@ if __name__ == "__main__":
 
 	try:
 		print("Listening...")
-		job = MyListener(_create_socket())
+		sock = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(3))
+		job = MyListener(sock)
 		job.run()
 	except KeyboardInterrupt:
 		pass

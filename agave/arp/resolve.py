@@ -64,9 +64,9 @@ class Resolver(Job):
 			for host in self.subnet.hosts():
 				if host.packed not in self._cache:
 					yield ARP.who_has(
-						self.interface.mac.address,
+						host,
+						self.interface.mac,
 						self.interface.ip,
-						host
 					)
 		return
 

@@ -1,6 +1,7 @@
 from . import ethernet
 from .frame import Frame
 from .buffer import Buffer
+from .ethernet import MACAddress
 from ipaddress import IPv4Address
 
 
@@ -138,15 +139,15 @@ class ARP(Frame):
 		return bytes(buf)
 
 	@classmethod
-	def who_has(cls, sender_mac: bytes, sender_ipv4: IPv4Address, target_ipv4: IPv4Address):
+	def who_has(cls, target_ipv4: IPv4Address, sender_mac: MACAddress, sender_ipv4: IPv4Address):
 		eth_frame = ethernet.Ethernet(
 			b'\xff\xff\xff\xff\xff\xff',
-			sender_mac,
+			sender_mac.address,
 			ethernet.ETHER_TYPE_ARP
 		)
 		arp_frame = cls.build(
 			OPERATION_REQUEST,
-			sender_mac, sender_ipv4.packed,
+			sender_mac.packed, sender_ipv4.packed,
 			b'\x00\x00\x00\x00\x00\x00', target_ipv4.packed
 		)
 		buf = Buffer.from_bytes()

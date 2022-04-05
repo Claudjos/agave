@@ -81,8 +81,10 @@ if __name__ == "__main__":
 		print_missing = False
 		wait = 0.5
 	# Create Job
+	sock = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP)
+	sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 	job = Pinger(
-		socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP),
+		sock,
 		ip_network(sys.argv[1]),
 		interval=0.05,
 		wait=wait

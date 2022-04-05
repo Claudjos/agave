@@ -17,11 +17,12 @@ from typing import Callable, Tuple
 
 class Spoofer(Service):
 
-	__slots__ = ("filter", "messages_to_flood")
+	__slots__ = ("filter", "messages_to_flood", "mac")
 
 	def __init__(
 		self,
 		sock: "socket.socket",
+		mac: MACAddress,
 		request_filter: Callable[[ARP], bool],
 		messages_to_flood: Tuple[bytes, SocketAddress],
 		**kwargs
@@ -29,6 +30,7 @@ class Spoofer(Service):
 		super().__init__(sock, **kwargs)
 		if messages_to_flood is None or messages_to_flood == []:
 			self.disable_loop()
+		self.mac = mac
 		self.filter = request_filter
 		self.messages_to_flood = messages_to_flood
 
@@ -86,6 +88,7 @@ if __name__ == "__main__":
 		# Builds service		
 		service = Spoofer(
 			sock,
+			interface.mac,
 			create_filter(OPERATION_REQUEST, sender=victim_subnet, target=target_subnet),
 			messages,
 			interval=(1 if gratuitous else 3600),

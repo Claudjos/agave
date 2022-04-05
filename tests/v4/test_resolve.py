@@ -9,14 +9,10 @@ from ipaddress import IPv4Network, IPv4Address
 
 class TestARP(unittest.TestCase):
 
-	ETH_1 = (
-		b'\x3c\xaa\x67\x22\x02\x22\x00\x1c\xf2\xbe\x4d\x14\x08\x06'
+	REPLY = ARP.is_at(
+		MACAddress("00:1c:f2:be:4d:14").packed, IPv4Address("192.168.0.1"),
+		MACAddress("22:11:33:be:4d:14").packed, IPv4Address("192.168.0.2")
 	)
-	ARP_1 = (
-		b'\x00\x01\x08\x00\x06\x04\x00\x02\x00\x1c\xf2\xbe\x4d\x14'
-		b'\xc0\xa8\x00\x01\x3c\xaa\x67\x22\x02\x22\xc0\xa8\x00\x69'
-	)
-	REPLY = ETH_1 + ARP_1
 
 	def test_resolve(self):
 		"""Process should return result for given IP only once."""

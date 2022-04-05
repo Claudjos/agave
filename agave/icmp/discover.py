@@ -15,6 +15,8 @@ Example:
 """
 from agave.core.helpers import Job, SocketAddress
 from agave.core import ethernet, ip, icmpv4 as icmp
+from agave.core.icmpv4 import ICMPv4, TYPE_ECHO_REPLY, TYPE_DESTINATION_UNREACHABLE
+from agave.core.ip import IPv4
 from agave.core.buffer import Buffer
 from ipaddress import ip_address, ip_network
 import socket
@@ -52,19 +54,6 @@ class NetworkReport:
 		index = self.get_index(ip)
 		if index != None:
 			self.hosts_status[index] = (self.STATUS_REACHED, ttl)
-
-	def process_frame(self, ip_frame: ip.IPv4, icmp_frame: icmp.ICMPv4):
-		if icmp_frame.type == icmp.TYPE_ECHO_REPLY:
-			# print("ECHO REPLY", icmp_frame, icmp_frame.data, flush=True)
-			self.set_reached(ip_frame.source, ip_frame.ttl)
-		elif icmp_frame.type == icmp.TYPE_DESTINATION_UNREACHABLE:
-			# print("DESTINATION UNREACHABLE", icmp_frame, flush=True)
-			original_ip_frame = ip.IPv4.read_from_buffer(Buffer.from_bytes(icmp_frame.data))
-			if original_ip_frame.is_checksum_valid():
-				self.set_unreachable(original_ip_frame.destination)
-		else:
-			# print(icmp_frame, flush=True)
-			pass
 
 	def build_echo_requests(self, repeat: int = 2):
 		for _ in range(0, repeat):
@@ -107,7 +96,13 @@ class Pinger(Job):
 		return False
 
 	def process(self, data: bytes, address: SocketAddress) -> None:
-		self.report.process_frame(*icmp.ICMPv4.parse(data))
+		ip_h, icmp_h = icmp.ICMPv4.parse(data)
+		if icmp_h.type == TYPE_ECHO_REPLY:
+			self.report.set_reached(ip_h.source, ip_h.ttl)
+		if icmp_h.type == TYPE_DESTINATION_UNREACHABLE:
+			original_ip_frame = IPv4.read_from_buffer(Buffer.from_bytes(icmp_h.data))
+			if original_ip_frame.is_checksum_valid():
+				self.report.set_unreachable(original_ip_frame.destination)
 
 
 if __name__ == "__main__":

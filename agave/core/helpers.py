@@ -98,36 +98,70 @@ class BaseService:
 
 
 class Service(BaseService):
+	"""A BaseService subclass to satisfy the needs of almost any script in
+	agave packages. 
 
-	__slots__ = ("wait", "interval", "max_read", "_loop_enabled", "running", "sock")
+	Almost any script in agave package has the same behavior:
+	(1) execute code following the reception of packet (e.g, replying back,
+		storing information);
+	(2) execute code in a loop with constant timeout (e.g., requesting data,
+		sending spoofed packets).
+
+	This class takes care of receiving data and timeouts in a single thread
+	The subclasses only need to implement the abstract methods 'process' (1),
+	and 'loop' (2), thus reducing the amount of code to write and test.
+
+	Attributes:
+		sock: the socket to use for I/O.
+		max_read: maximum number of bytes to receive from the socket at
+			once. Default to SOCKET_MAX_READ.
+		interval: timeout between 'loop' executions.
+		wait: additional time to wait for data after 'loop' ends.
+
+	Note:
+		The execution of 'loop' might delay, or be skipped, if 'process', 'loop',
+		or the code using 'stream', perform long blocking operations.
+
+	"""
+	__slots__ = ("wait", "interval", "max_read", "_loop_enabled", "_running", "sock")
 
 	def __init__(self, sock: "socket.socket", wait: float = 1, interval: float = 1, max_read: int = None):
-		self.sock = sock
-		self.wait = wait
-		self.interval = interval
-		self.max_read = max_read if max_read is not None else SOCKET_MAX_READ
+		self.sock: "socket.socket" = sock
+		self.wait: float = wait
+		self.interval: float = interval
+		self.max_read: int = max_read if max_read is not None else SOCKET_MAX_READ
 		self.enable_loop()
 
 	def disable_loop(self):
+		"""Disables the execution of 'loop'. Service will run until finished."""
 		self._loop_enabled = False
 
 	def enable_loop(self):
+		"""Enables the execution of 'loop'."""
 		self._loop_enabled = True
 
 	def set_finished(self):
-		self.running = False
+		"""Stops the execution of the service. Meant to be used by subclasses."""
+		self._running = False
 
 	def stop(self):
-		self.running = False
+		"""Stops the execution of the service."""
+		self._running = False
 
 	def stream(self) -> Iterator[Any]:
+		"""Run the service (invoke 'process' and 'loop') streaming the results.
+
+		Yields:
+			Any non None value returned by 'process'.
+
+		"""
 		# Initialize
-		self.running = True
+		self._running = True
 		next_execution = time.time() + self.interval
 		timeout = self.interval
 		deadline = False
 		# Run
-		while self.running:
+		while self._running:
 			# Waits for data
 			rl, wl, xl = select.select([self.sock], [], [], timeout)
 			# Process
@@ -139,17 +173,19 @@ class Service(BaseService):
 			# Loop
 			if self._loop_enabled and time.time() >= next_execution:
 				if not self.loop():
-					self._loop_enabled = False
+					self.disable_loop()
 					deadline = time.time() + self.wait
 					timeout = self.wait
 				else:
 					next_execution = time.time() + self.interval
 			# Deadline
 			if deadline is not False and time.time() >= deadline:
-				self.running = False
+				self._running = False
 		# StopIteration
 		return
 
 	def run(self):
+		"""Run the service but do not return any value."""
 		for _ in self.stream():
 			pass
+

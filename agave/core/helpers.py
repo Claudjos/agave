@@ -99,13 +99,20 @@ class BaseService:
 
 class Service(BaseService):
 
-	__slots__ = ("wait", "interval", "max_read", "_repeat", "running", "sock")
+	__slots__ = ("wait", "interval", "max_read", "_loop_enabled", "running", "sock")
 
-	def __init__(self, wait: float = 1, interval: float = 1, max_read: int = None):
+	def __init__(self, sock: "socket.socket", wait: float = 1, interval: float = 1, max_read: int = None):
+		self.sock = sock
 		self.wait = wait
 		self.interval = interval
 		self.max_read = max_read if max_read is not None else SOCKET_MAX_READ
-		self._repeat = True
+		self.enable_loop()
+
+	def disable_loop(self):
+		self._loop_enabled = False
+
+	def enable_loop(self):
+		self._loop_enabled = True
 
 	def set_finished(self):
 		self.running = False
@@ -130,9 +137,9 @@ class Service(BaseService):
 				if result is not None:
 					yield result
 			# Loop
-			if self._repeat and time.time() >= next_execution:
+			if self._loop_enabled and time.time() >= next_execution:
 				if not self.loop():
-					self._repeat = False
+					self._loop_enabled = False
 					deadline = time.time() + self.wait
 					timeout = self.wait
 				else:

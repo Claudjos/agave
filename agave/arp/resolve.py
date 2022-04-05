@@ -33,8 +33,7 @@ class Resolver(Service):
 	__slots__ = ("_cache", "_count", "interface", "repeat", "subnet", "filter", "address", "_request_to_send")
 
 	def __init__(self, sock, interface, subnet, repeat, **args):
-		super().__init__(**args)
-		self.sock = sock
+		super().__init__(sock, **args)
 		self.interface = interface
 		self.subnet = subnet
 		self.address = (self.interface.name, SOCKET_PROTO)

@@ -47,7 +47,7 @@ class Spoofer(Job):
 		_, arp = _parse(data)
 		if self.filter(arp):
 			self.sock.sendto(
-				arp.reply(self.mac.address),
+				arp.reply(self.mac.packed),
 				(address[0], address[1])
 			)
 

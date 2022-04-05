@@ -143,7 +143,7 @@ class ARP(Frame):
 	def who_has(cls, target_ipv4: IPv4Address, sender_mac: MACAddress, sender_ipv4: IPv4Address):
 		eth_frame = ethernet.Ethernet(
 			b'\xff\xff\xff\xff\xff\xff',
-			sender_mac.address,
+			sender_mac.packed,
 			ethernet.ETHER_TYPE_ARP
 		)
 		arp_frame = cls.build(

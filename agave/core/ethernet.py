@@ -17,10 +17,6 @@ class MACAddress:
 		else:
 			self.packed = address
 
-	@property
-	def address(self):
-		return self.packed
-
 	@classmethod
 	def str_to_mac(cls, address: str):
 		return bytes(map(lambda x: int(x, 16), address.split(":")))

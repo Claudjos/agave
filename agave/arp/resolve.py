@@ -65,8 +65,7 @@ class Resolver(Job):
 				if host.packed not in self._cache:
 					yield ARP.who_has(
 						self.interface.mac.address,
-						self.interface.ip, 
-						b'\xff\xff\xff\xff\xff\xff',
+						self.interface.ip,
 						host
 					)
 		return

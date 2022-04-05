@@ -138,12 +138,12 @@ class ARP(Frame):
 		return bytes(buf)
 
 	@classmethod
-	def who_has( 
-		cls,
-		sender_mac: bytes, sender_ipv4: IPv4Address,
-		broadcast_mac: bytes, target_ipv4: IPv4Address
-	):
-		eth_frame = ethernet.Ethernet(broadcast_mac, sender_mac, ethernet.ETHER_TYPE_ARP)
+	def who_has(cls, sender_mac: bytes, sender_ipv4: IPv4Address, target_ipv4: IPv4Address):
+		eth_frame = ethernet.Ethernet(
+			b'\xff\xff\xff\xff\xff\xff',
+			sender_mac,
+			ethernet.ETHER_TYPE_ARP
+		)
 		arp_frame = cls.build(
 			OPERATION_REQUEST,
 			sender_mac, sender_ipv4.packed,

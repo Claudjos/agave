@@ -3,16 +3,7 @@ from typing import Tuple, Iterator, List, Callable, Any
 
 
 SocketAddress = Tuple
-MessageRaw = Tuple[bytes, SocketAddress]
-
-
 SOCKET_MAX_READ = 0xffff
-
-
-def stream(sock: "socket.socket", max_read: int = None) -> Iterator[MessageRaw]:
-	max_read = max_read if max_read is not None else SOCKET_MAX_READ
-	while True:
-		yield sock.recvfrom(max_read)
 
 
 class BaseJob:

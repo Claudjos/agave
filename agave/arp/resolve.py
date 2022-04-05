@@ -133,7 +133,7 @@ def resolve(
 		interface = NetworkInterface.get_by_host(subnet.network_address)
 	if sock is None:
 		sock = _create_socket()
-	return Resolver(sock, interface, subnet, repeat, wait=wait, interval=interval).run()
+	return Resolver(sock, interface, subnet, repeat, wait=wait, interval=interval).stream()
 
 
 if __name__ == "__main__":

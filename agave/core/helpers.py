@@ -120,7 +120,7 @@ class Service(BaseService):
 	def stop(self):
 		self.running = False
 
-	def run(self):
+	def stream(self) -> Iterator[Any]:
 		# Initialize
 		self.running = True
 		next_execution = time.time() + self.interval
@@ -150,4 +150,6 @@ class Service(BaseService):
 		# StopIteration
 		return
 
-	
+	def run(self):
+		for _ in self.stream():
+			pass

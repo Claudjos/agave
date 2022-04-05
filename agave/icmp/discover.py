@@ -13,10 +13,11 @@ Example:
 	python3 -m agave.icmp.discover 192.168.1.0/24
 
 """
+from agave.core.helpers import Job, SocketAddress
 from agave.core import ethernet, ip, icmpv4 as icmp
 from agave.core.buffer import Buffer
 from ipaddress import ip_address, ip_network
-import socket, select, time
+import socket
 from typing import List
 
 
@@ -72,7 +73,7 @@ class NetworkReport:
 				t = icmp.ICMPv4.echo(b"abcdefghijklmonpqrstuvwxyz")
 				t.set_checksum()
 				t.write_to_buffer(buf)
-				yield str(ip_address(address)), bytes(buf)
+				yield bytes(buf), (str(ip_address(address)), 0)
 		return
 
 	def get_confirmed_host(self):
@@ -92,47 +93,24 @@ class NetworkReport:
 		return out
 
 
-class NetScanner:
+class Pinger(Job):
 
-	def __init__(self, sock, report: NetworkReport, timeout: float):
-		self.timeout = timeout
+	def __init__(self, sock: "socket.socket", report: NetworkReport, **kwargs):
+		super().__init__(sock, wait=0.5, **kwargs)
 		self.report = report
-		self.sock = sock
-		self.last_send = 0
 		self.packets_to_send = report.build_echo_requests()
 
-	def time_to_send(self) -> bool:
-		return (time.time() - self.last_send)  > self.timeout
+	def loop(self) -> bool:
+		for message in self.packets_to_send:
+			self.sock.sendto(*message)
+			return True
+		return False
 
-	def send(self, destination: str, data: bytes):
-		self.sock.sendto(data, (destination, 0))
-		self.last_send = time.time()
-
-	def run(self):
-		"""
-		TODO
-			- handling incomplete send (Is it necessary?)
-			- wait some time before exiting after sending phase is completed
-		"""
-		flag = True
-		while flag:
-			rl, wl, xl = select.select([self.sock], [], [], self.timeout)
-			if rl != []:
-				ip_frame, icmp_frame = self.read_icmp(
-					Buffer.from_bytes(self.sock.recv(65535))
-				)
-				if icmp_frame is not None:
-					self.report.process_frame(ip_frame, icmp_frame)
-			if self.time_to_send():
-				try:
-					self.send(*next(self.packets_to_send))
-				except StopIteration:
-					flag = False
-
-	def read_icmp(self, buf: Buffer):
+	def process(self, data: bytes, address: SocketAddress) -> None:
+		buf = Buffer.from_bytes(data)
 		ip_frame = ip.IPv4.read_from_buffer(buf)
 		icmp_frame = icmp.ICMPv4.read_from_buffer(buf)
-		return ip_frame, icmp_frame
+		self.report.process_frame(ip_frame, icmp_frame)
 
 
 if __name__ == "__main__":
@@ -144,10 +122,10 @@ if __name__ == "__main__":
 		print("Too few parameters")
 	else:
 		report = NetworkReport(sys.argv[1])
-		scanner = NetScanner(
+		scanner = Pinger(
 			socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP),
 			report,
-			0.1
+			interval=0.1
 		)
 		print("Scanning..")
 		scanner.run()

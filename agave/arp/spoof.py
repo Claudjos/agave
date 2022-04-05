@@ -1,7 +1,11 @@
 """ARP Spoofing.
 
-Usage:
+Note:
+	The module provides a script to poisons the ARP cache of the victims
+	(default to anyone) for the target subnet. Additionally, gratuitous
+	reply can be sent to the victims with the option -f. 
 
+Usage:
 	python3 -m agave.arp.spoof <target: subnet|ip> [<victim: subnet|ip>] [-f]
 
 """
@@ -57,19 +61,14 @@ if __name__ == "__main__":
 		# Parses arguments
 		target_subnet = IPv4Network(sys.argv[1])
 		victim_subnet = None
-		gratuitous = False
 		interface = NetworkInterface.get_by_host(target_subnet.network_address)
 		if len(sys.argv) > 2:
 			victim_subnet = IPv4Network(sys.argv[2])
-		if len(sys.argv) > 3 and sys.argv[3] == "-f":
-			if victim_subnet.num_addresses > 0xff:
-				print("[WARNING] Subnet is too large to send gratuitous replies.")
-			else:
-				print("[INFO] Flood gratuitous is enabled.")
-				gratuitous = True
-		# Builds gratuitous replies
+		gratuitous = True if len(sys.argv) > 3 and sys.argv[3] == "-f" else False
+		# Initialize
 		sock = _create_socket()
 		messages = []
+		# Builds gratuitous replies
 		if gratuitous is True:
 			addr = (interface.name, ETHER_TYPE_ARP)
 			print("[INFO] Discovering hosts in the subnet...")

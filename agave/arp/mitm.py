@@ -39,12 +39,12 @@ if __name__ == "__main__":
 			bob_mac = resolve_mac(bob, interface, sock, raise_on_miss=True)
 			# Build messages
 			message_for_alice = ARP.is_at(
-				interface.mac.address, bob,
-				alice_mac.address, alice
+				interface.mac, bob,
+				alice_mac, alice
 			)
 			message_for_bob = ARP.is_at(
-				interface.mac.address, alice,
-				bob_mac.address, bob
+				interface.mac, alice,
+				bob_mac, bob
 			)
 			addr = (interface.name, ETHER_TYPE_ARP)
 			messages = [(message_for_bob, addr), (message_for_alice, addr)]

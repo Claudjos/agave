@@ -10,8 +10,8 @@ from ipaddress import IPv4Network, IPv4Address
 class TestARP(unittest.TestCase):
 
 	REPLY = ARP.is_at(
-		MACAddress("00:1c:f2:be:4d:14").packed, IPv4Address("192.168.0.1"),
-		MACAddress("22:11:33:be:4d:14").packed, IPv4Address("192.168.0.2")
+		MACAddress("00:1c:f2:be:4d:14"), IPv4Address("192.168.0.1"),
+		MACAddress("22:11:33:be:4d:14"), IPv4Address("192.168.0.2")
 	)
 
 	def test_resolve(self):

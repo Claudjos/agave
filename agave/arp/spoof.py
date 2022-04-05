@@ -79,8 +79,8 @@ if __name__ == "__main__":
 				for victim_mac, victim_ip in victims:
 					messages.append((
 						ARP.is_at(
-							interface.mac.address, sender,
-							victim_mac.address,victim_ip
+							interface.mac, sender,
+							victim_mac,victim_ip
 						),
 						addr
 					))

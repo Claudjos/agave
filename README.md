@@ -64,10 +64,11 @@ python3 -m agave.arp.mitm 192.168.1.1 192.168.1.5 -f
 
 ### ICMPv4
 
-Hosts discovery by sending echo requests.
+Ping sweep. Discovers hosts in a subnet by sending echo requests. Using the option -m is possible to obtain a list of host for which neither a reply or destination unreachable message was received.
 ```
-python3 -m agave.icmp.discover <subnet>
-python3 -m agave.icmp.discover 192.168.1.0/24
+python3 -m agave.icmp.ping <subnet> [-m]
+python3 -m agave.icmp.ping 192.168.1.0/24
+python3 -m agave.icmp.ping 192.168.1.1/24 -m
 ```
 Redirecting traffic. Check the [source code](agave/icmp/redirect.py) for more details.
 ```

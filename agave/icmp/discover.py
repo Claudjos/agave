@@ -58,11 +58,9 @@ class NetworkReport:
 	def build_echo_requests(self, repeat: int = 2):
 		for _ in range(0, repeat):
 			for address in self.all_hosts:
-				buf = Buffer.from_bytes()
 				t = icmp.ICMPv4.echo(b"abcdefghijklmonpqrstuvwxyz")
 				t.set_checksum()
-				t.write_to_buffer(buf)
-				yield bytes(buf), (str(ip_address(address)), 0)
+				yield bytes(t), (str(ip_address(address)), 0)
 		return
 
 	def get_confirmed_host(self):
@@ -100,7 +98,7 @@ class Pinger(Job):
 		if icmp_h.type == TYPE_ECHO_REPLY:
 			self.report.set_reached(ip_h.source, ip_h.ttl)
 		if icmp_h.type == TYPE_DESTINATION_UNREACHABLE:
-			original_ip_frame = IPv4.read_from_buffer(Buffer.from_bytes(icmp_h.data))
+			original_ip_frame = IPv4.from_bytes(icmp_h.data)
 			if original_ip_frame.is_checksum_valid():
 				self.report.set_unreachable(original_ip_frame.destination)
 

@@ -94,11 +94,10 @@ class NetworkReport:
 
 class NetScanner:
 
-	def __init__(self, recv_socket, send_socket, report: NetworkReport, timeout: float):
+	def __init__(self, sock, report: NetworkReport, timeout: float):
 		self.timeout = timeout
 		self.report = report
-		self.recv_socket = recv_socket
-		self.send_socket = send_socket
+		self.sock = sock
 		self.last_send = 0
 		self.packets_to_send = report.build_echo_requests()
 
@@ -106,7 +105,7 @@ class NetScanner:
 		return (time.time() - self.last_send)  > self.timeout
 
 	def send(self, destination: str, data: bytes):
-		self.send_socket.sendto(data, (destination, 0))
+		self.sock.sendto(data, (destination, 0))
 		self.last_send = time.time()
 
 	def run(self):
@@ -117,10 +116,10 @@ class NetScanner:
 		"""
 		flag = True
 		while flag:
-			rl, wl, xl = select.select([self.recv_socket], [], [], self.timeout)
+			rl, wl, xl = select.select([self.sock], [], [], self.timeout)
 			if rl != []:
 				ip_frame, icmp_frame = self.read_icmp(
-					Buffer.from_bytes(self.recv_socket.recv(65535))
+					Buffer.from_bytes(self.sock.recv(65535))
 				)
 				if icmp_frame is not None:
 					self.report.process_frame(ip_frame, icmp_frame)
@@ -131,13 +130,9 @@ class NetScanner:
 					flag = False
 
 	def read_icmp(self, buf: Buffer):
-		eth_frame = ethernet.Ethernet.read_from_buffer(buf)
-		if eth_frame.next_header == ethernet.ETHER_TYPE_IPV4:
-			ip_frame = ip.IPv4.read_from_buffer(buf)
-			if ip_frame.protocol == ip.PROTO_ICMP:
-				icmp_frame = icmp.ICMPv4.read_from_buffer(buf)
-				return ip_frame, icmp_frame
-		return None, None
+		ip_frame = ip.IPv4.read_from_buffer(buf)
+		icmp_frame = icmp.ICMPv4.read_from_buffer(buf)
+		return ip_frame, icmp_frame
 
 
 if __name__ == "__main__":
@@ -150,7 +145,6 @@ if __name__ == "__main__":
 	else:
 		report = NetworkReport(sys.argv[1])
 		scanner = NetScanner(
-			socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(3)),
 			socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP),
 			report,
 			0.1

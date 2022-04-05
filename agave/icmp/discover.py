@@ -107,10 +107,7 @@ class Pinger(Job):
 		return False
 
 	def process(self, data: bytes, address: SocketAddress) -> None:
-		buf = Buffer.from_bytes(data)
-		ip_frame = ip.IPv4.read_from_buffer(buf)
-		icmp_frame = icmp.ICMPv4.read_from_buffer(buf)
-		self.report.process_frame(ip_frame, icmp_frame)
+		self.report.process_frame(*icmp.ICMPv4.parse(data))
 
 
 if __name__ == "__main__":

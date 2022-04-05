@@ -1,6 +1,9 @@
 """ICMPv4 protocol."""
-from .frame import FrameWithChecksum
+from .frame import FrameWithChecksum, Frame
 from .buffer import Buffer
+from .ethernet import Ethernet
+from .ip import IPv4
+from typing import List
 
 
 TYPE_ECHO_REPLY = 0
@@ -137,3 +140,24 @@ class ICMPv4(FrameWithChecksum):
 	def __str__(self):
 		return "ICMP {} {}".format(self.type, self.code)
 
+	@classmethod
+	def parse(cls, data: bytes, network: bool = True, data_link: bool = False) -> List[Frame]:
+		"""Parses ICMPv4 message, including sub layers, from bytes.
+
+		Args:
+			data: bytes received.
+			network: True if data includes IPv4 header.
+			data_link: True if data includes EthernetII header.
+		
+		Returns:
+			A list with all the frames parsed.
+
+		"""
+		frames = []
+		buf = Buffer.from_bytes(data)
+		if data_link:
+			frames.append(Ethernet.read_from_buffer(buf))
+		if network:
+			frames.append(IPv4.read_from_buffer(buf))
+		frames.append(cls.read_from_buffer(buf))
+		return frames

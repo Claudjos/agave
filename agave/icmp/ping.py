@@ -6,11 +6,11 @@ the host for which neither a reply or a destination unreachable
 message was received.
 
 Usage:
-	python3 -m agave.icmp.discover <subnet> [-m]
+	python3 -m agave.icmp.ping <subnet> [-m]
 
 Example:
-	python3 -m agave.icmp.discover 192.168.1.0/24
-	python3 -m agave.icmp.discover 192.168.1.0/24 -m
+	python3 -m agave.icmp.ping 192.168.1.0/24
+	python3 -m agave.icmp.ping 192.168.1.0/24 -m
 
 """
 import socket

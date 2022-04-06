@@ -1,7 +1,10 @@
 """Neighbor Discovery for IP version 6 (IPv6), RFC 4861."""
 from typing import Tuple, List
 from .ethernet import MACAddress
-from .icmpv6 import ICMPv6, TYPE_NEIGHBOR_ADVERTISEMENT, TYPE_NEIGHBOR_SOLICITATION
+from .icmpv6 import (
+	ICMPv6, TYPE_NEIGHBOR_ADVERTISEMENT, TYPE_NEIGHBOR_SOLICITATION,
+	TYPE_ROUTER_SOLICITATION
+)
 from .buffer import Buffer
 from ipaddress import IPv6Address
 
@@ -163,4 +166,24 @@ class NeighborAdvertisment(NeighborMessage):
 	@override_flag.setter
 	def override_flag(self, x: bool):
 		self.reserved |= 0x20000000 if x else 0
+
+
+class RouterSolicitation(NDP):
+
+	__slots__ = ("options")
+
+	def __init__(self, options: List[Option] = None):
+		self.options = options if options is not None else []
+
+	@classmethod
+	def parse(cls, frame: ICMPv6) -> "NeighborMessage":
+		options_size = len(frame.body) - 4
+		buf = Buffer.from_bytes(frame.body)
+		buf.read_int()
+		return cls(options=cls.read_options(buf, options_size))
+
+	def to_frame(self) -> ICMPv6:
+		return ICMPv6(
+			TYPE_ROUTER_SOLICITATION, 0, 0, b'\x00\x00\x00\x00' + self.options_packed(self.options)
+		)
 

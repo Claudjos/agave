@@ -24,8 +24,7 @@ class TestICMPv6(unittest.TestCase):
 		self.assertEqual(packet.type, TYPE_ROUTER_SOLICITATION)
 		self.assertEqual(packet.code, 0)
 		self.assertEqual(packet.checksum, 0x9b21)
-		self.assertEqual(packet.body, 0)
-		self.assertEqual(packet.payload, b'\x01\x01\x7c\xf9\x0e\x48\xe4\xc4')
+		self.assertEqual(packet.body, b'\x00\x00\x00\x00\x01\x01\x7c\xf9\x0e\x48\xe4\xc4')
 
 	def test_write(self):
 		buf = Buffer.from_bytes()

@@ -18,29 +18,27 @@ class ICMPv6(FrameWithChecksum):
 	"""ICMPv6 message, RFC 4443.
 
 	Attributes:
-		type: ICMP message type
-		code: ICMP message code
-		checksum: ICMP message checksum
-		body: ICMP message
-		payload: rest of ICMP message
+		type: ICMP message type,
+		code: ICMP message code,
+		checksum: ICMP message checksum,
+		body: next 4 bytes of ICMP message,
+		payload: rest of the data.
 		_pseudo_header: IPv6 pseudo header for checksum computation.
 
 	"""
-	__slots__ = ("type", "code", "checksum", "body", "payload", "_pseudo_header")
+	__slots__ = ("type", "code", "checksum", "body", "_pseudo_header")
 
 	def __init__(
 		self,
 		_type: int,
 		code: int,
 		checksum: int,
-		body: int,
-		payload: bytes = b''
+		body: bytes
 	):
 		self.type: int = _type
 		self.code: int = code
 		self.checksum: int = checksum
-		self.body: int = body
-		self.payload: bytes = payload
+		self.body: bytes = body
 		self._pseudo_header : bytes = b''
 
 	@classmethod
@@ -58,7 +56,6 @@ class ICMPv6(FrameWithChecksum):
 			buf.read_byte(),
 			buf.read_byte(),
 			buf.read_short(),
-			buf.read_int(),
 			buf.read_remaining()
 		)
 
@@ -72,8 +69,7 @@ class ICMPv6(FrameWithChecksum):
 		buf.write_byte(self.type)
 		buf.write_byte(self.code)
 		buf.write_short(self.checksum)
-		buf.write_int(self.body)
-		buf.write(self.payload)
+		buf.write(self.body)
 
 	def set_pseudo_header(self, header: bytes):
 		"""Sets the pseudo header to use when
@@ -96,12 +92,13 @@ class ICMPv6(FrameWithChecksum):
 		buf = Buffer.from_bytes()
 		buf.write(self._pseudo_header)
 		self.write_to_buffer(buf)
-		words = 4 + int(len(self.payload) / 2) + int(len(self._pseudo_header) / 2)
+		words = 2 + int(len(self.body) / 2) + int(len(self._pseudo_header) / 2)
 		# Pads (?)
-		if len(self.payload) % 2 == 1:
+		if len(self.body) % 2 == 1:
 			buf.write_byte(0)
 			words +=1
 		buf.rewind()
 		# Compute
 		t = self.compute_checksum_from_buffer(buf, words)
 		return t
+

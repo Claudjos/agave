@@ -3,6 +3,7 @@ from .frame import Frame
 
 
 ETHER_TYPE_ARP = 0x0806
+ETHER_TYPE_RARP = 0x8035
 ETHER_TYPE_IPV4 = 0x0800
 ETHER_TYPE_IPV6 = 0x86dd
 

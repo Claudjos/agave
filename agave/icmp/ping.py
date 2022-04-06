@@ -26,7 +26,7 @@ class Pinger(Job):
 	def __init__(self, sock: "socket.socket", subnet: IPv4Network, repeat: int = 2, **kwargs):
 		super().__init__(sock, **kwargs)
 		self.subnet = subnet
-		self.packets_to_send = self.generate_echo_requests(subnet, repeat)
+		self.packets_to_send = self.generate_echo_requests(repeat)
 		self._cache = set()
 		self._count = self.subnet.num_addresses
 
@@ -37,11 +37,12 @@ class Pinger(Job):
 		return False
 
 	def process(self, data: bytes, address: SocketAddress) -> Tuple[bool, IPv4Address, int]:
+		result = None
 		ip_h, icmp_h = ICMPv4.parse(data)
 		if address[0] not in self._cache and icmp_h.type == TYPE_ECHO_REPLY:
 			self._count -= 1
 			self._cache.add(address[0])
-			return True, IPv4Address(address[0]), ip_h.ttl
+			result = True, IPv4Address(address[0]), ip_h.ttl
 		if icmp_h.type == TYPE_DESTINATION_UNREACHABLE:
 			ip_frame = IPv4.from_bytes(icmp_h.data)
 			destination = IPv4Address(ip_frame.destination)
@@ -50,17 +51,18 @@ class Pinger(Job):
 				self._cache.add(str(destination))
 		if self._count < 1:
 			self.set_finished()
+		return result
 
 	def get_missing_hosts(self) -> set:
 		return set(map(lambda x: str(x), self.subnet.hosts())) - self._cache
 
-	@classmethod
-	def generate_echo_requests(cls, subnet: IPv4Network, repeat: int) -> Iterator[Tuple[bytes, SocketAddress]]:
+	def generate_echo_requests(self, repeat: int) -> Iterator[Tuple[bytes, SocketAddress]]:
 		for _ in range(0, repeat):
-			for address in subnet.hosts():
-				t = ICMPv4.echo(b"abcdefghijklmonpqrstuvwxyz")
-				t.set_checksum()
-				yield bytes(t), (str(address), 0)
+			for address in self.subnet.hosts():
+				if str(address) not in self._cache:
+					t = ICMPv4.echo(b"abcdefghijklmonpqrstuvwxyz")
+					t.set_checksum()
+					yield bytes(t), (str(address), 0)
 		return
 
 

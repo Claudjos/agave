@@ -12,6 +12,15 @@ class Frame:
 	def write_to_buffer(self, buf: Buffer):
 		raise NotImplementedError()
 
+	@classmethod
+	def from_bytes(cls, data: bytes) -> "Frame":
+		return cls.read_from_buffer(Buffer.from_bytes(data))
+
+	def __bytes__(self) -> bytes:
+		buf = Buffer.from_bytes()
+		self.write_to_buffer(buf)
+		return bytes(buf)
+
 
 class FrameWithChecksum(Frame):
 

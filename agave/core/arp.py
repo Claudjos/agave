@@ -13,6 +13,8 @@ ADDRESS_LEN_IP = 4
 
 OPERATION_REQUEST = 1
 OPERATION_REPLY = 2
+OPERATION_REQUEST_REVERSE = 3
+OPERATION_REPLY_REVERSE = 4
 
 
 class ARP(Frame):
@@ -150,6 +152,23 @@ class ARP(Frame):
 			OPERATION_REQUEST,
 			sender_mac.packed, sender_ipv4.packed,
 			b'\x00\x00\x00\x00\x00\x00', target_ipv4.packed
+		)
+		buf = Buffer.from_bytes()
+		eth_frame.write_to_buffer(buf)
+		arp_frame.write_to_buffer(buf)
+		return bytes(buf)
+
+	@classmethod
+	def request_reverse(cls, sender_mac: MACAddress, target_mac: MACAddress) -> bytes:
+		eth_frame = ethernet.Ethernet(
+			b'\xff\xff\xff\xff\xff\xff',
+			sender_mac.packed,
+			ethernet.ETHER_TYPE_ARP
+		)
+		arp_frame = cls.build(
+			OPERATION_REQUEST_REVERSE,
+			sender_mac.packed, b'\x00\x00\x00\x00',
+			target_mac.packed, b'\x00\x00\x00\x00'
 		)
 		buf = Buffer.from_bytes()
 		eth_frame.write_to_buffer(buf)

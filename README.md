@@ -47,6 +47,12 @@ Listening for incoming messages to discover hosts and interaction between them.
 python3 -m agave.arp.listen
 ```
 
+Translating MAC address into IPv4 address. Note that RARP protocol is obsolete.
+```
+python3 -m agave.arp.resolve <mac> <interface>
+python3 -m agave.arp.resolve aa:bb:cc:00:11:22 eth0
+```
+
 ARP Spoofing. The script replies to ARP requests with spoofed messages in order to redirect traffic for the target subnet to your host. The optional victim argument restricts spoofing to some hosts. With the option -f gratuitous spoofed replies are sent periodically to the victim.
 ```
 python3 -m agave.arp.spoof <target> [victim] [-f]
@@ -64,11 +70,19 @@ python3 -m agave.arp.mitm 192.168.1.1 192.168.1.5 -f
 
 ### ICMPv4
 
-Hosts discovery by sending echo requests.
+Ping sweep. Discovers hosts in a subnet by sending echo requests. Using the option -m is possible to obtain a list of host for which neither a reply or destination unreachable message was received.
 ```
-python3 -m agave.icmp.discover <subnet>
-python3 -m agave.icmp.discover 192.168.1.0/24
+python3 -m agave.icmp.ping <subnet> [-m]
+python3 -m agave.icmp.ping 192.168.1.0/24
+python3 -m agave.icmp.ping 192.168.1.1/24 -m
 ```
+
+Obtaining a network mask. Note that these ICMP messages are deprecated, and might not be supported anymore.
+```
+python3 -m agave.icmp.mask <ip>
+python3 -m agave.icmp.mask 192.168.1.1
+```
+
 Redirecting traffic. Check the [source code](agave/icmp/redirect.py) for more details.
 ```
 python3 -m agave.icmp.redirect <target> <attacker> <victim> <gateway> [delta] [trigger]

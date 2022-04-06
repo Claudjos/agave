@@ -1,6 +1,9 @@
 """ICMPv4 protocol."""
-from .frame import FrameWithChecksum
+from .frame import FrameWithChecksum, Frame
 from .buffer import Buffer
+from .ethernet import Ethernet
+from .ip import IPv4
+from typing import List
 
 
 TYPE_ECHO_REPLY = 0
@@ -10,6 +13,8 @@ TYPE_ECHO_MESSAGE = 8
 TYPE_ROUTER_ADVERTISMENT_MESSAGE = 9
 TYPE_ROUTER_SOLICITATION_MESSAGE = 10
 TYPE_TIME_EXCEEDED = 11
+TYPE_ADDRESS_MASK_REQUEST = 17
+TYPE_ADDRESS_MASK_REPLY = 18
 
 REDIRECT_CODE_NETWORK = 0
 REDIRECT_CODE_HOST = 1
@@ -46,7 +51,7 @@ class ICMPv4(FrameWithChecksum):
 			buf: the buffer.
 
 		Returns:
-			An instance of this class.
+			An instance of this class..
 
 		"""
 		return cls(
@@ -104,7 +109,7 @@ class ICMPv4(FrameWithChecksum):
 			data: original message.
 
 		Returns:
-			An instance of this class
+			An instance of this class.
 
 		"""
 		return cls(
@@ -113,6 +118,22 @@ class ICMPv4(FrameWithChecksum):
 			0,
 			gway,
 			data
+		)
+
+	@classmethod
+	def address_mask_request(cls, sequence_number: int = 0, identifier: int = 0) -> "ICMPv4":
+		"""Builds an address mask request.
+
+		Returns:
+			An instance of this class.
+
+		"""
+		return cls(
+			TYPE_ADDRESS_MASK_REQUEST,
+			0,
+			0,
+			sequence_number | (identifier << 16),
+			b'\x00\x00\x00\x00'
 		)
 
 	def compute_checksum(self) -> int:
@@ -137,3 +158,24 @@ class ICMPv4(FrameWithChecksum):
 	def __str__(self):
 		return "ICMP {} {}".format(self.type, self.code)
 
+	@classmethod
+	def parse(cls, data: bytes, network: bool = True, data_link: bool = False) -> List[Frame]:
+		"""Parses ICMPv4 message, including sub layers, from bytes.
+
+		Args:
+			data: bytes received.
+			network: True if data includes IPv4 header.
+			data_link: True if data includes EthernetII header.
+		
+		Returns:
+			A list with all the frames parsed.
+
+		"""
+		frames = []
+		buf = Buffer.from_bytes(data)
+		if data_link:
+			frames.append(Ethernet.read_from_buffer(buf))
+		if network:
+			frames.append(IPv4.read_from_buffer(buf))
+		frames.append(cls.read_from_buffer(buf))
+		return frames

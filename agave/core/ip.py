@@ -27,20 +27,20 @@ class IPv4(FrameWithChecksum):
 	"""IPv4 header.
 
 	Attributes:
-		version: IPv4 version
-		ihl: IPv4 Intern Header Length
-		dscp: IPv4 Differentiated Service Code Point (originally ToS)
-		ecn: IPv4 Explicit Congestion Notification
-		total_length: IPv4 total length
-		identification: IPv4 identification
-		flags: IPv4 flags
-		fragment_offset: IPv4 fragment offset
-		ttl: IPv4 Time To Live
-		protocol: IPv4 protocol
-		checksum: IPv4 checksum
-		source: IPv4 source address
-		destination: IPv4 destination address
-		options: IPv4 options
+		version: IPv4 version.
+		ihl: IPv4 Intern Header Length.
+		dscp: IPv4 Differentiated Service Code Point (originally ToS).
+		ecn: IPv4 Explicit Congestion Notification.
+		total_length: IPv4 total length.
+		identification: IPv4 identification.
+		flags: IPv4 flags.
+		fragment_offset: IPv4 fragment offset.
+		ttl: IPv4 Time To Live.
+		protocol: IPv4 protocol.
+		checksum: IPv4 checksum.
+		source: IPv4 source address.
+		destination: IPv4 destination address.
+		options: IPv4 options.
 
 	"""
 	__slots__ = (
@@ -51,7 +51,7 @@ class IPv4(FrameWithChecksum):
 
 	def __init__(self, ihl: int, dscp: int, ecn: int, total_length: int,
 		identification: int, flags: int, fragment_offset: int, ttl: int,
-		protocol: int, checksum: int, source: int, destination: int,
+		protocol: int, checksum: int, source: bytes, destination: bytes,
 		options: bytes
 	):
 		self.version: int = 4
@@ -65,8 +65,8 @@ class IPv4(FrameWithChecksum):
 		self.ttl: int = ttl
 		self.protocol: int = protocol
 		self.checksum: int = checksum
-		self.source: int = source
-		self.destination: int = destination
+		self.source: bytes = source
+		self.destination: bytes = destination
 		self.options: bytes = options
 
 	@classmethod

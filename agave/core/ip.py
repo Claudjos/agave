@@ -289,8 +289,9 @@ class IPv6(Frame):
 			self.next_header
 		)
 
+	@classmethod
 	def build_pseudo_header(
-		self,
+		cls,
 		source: IPv6Address,
 		destination: IPv6Address,
 		packet_length: int,

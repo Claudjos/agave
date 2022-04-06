@@ -28,21 +28,21 @@ class TestNDP(unittest.TestCase):
 		"""Decode NDP neighbor solicitation from bytes."""
 		icmp = ICMPv6.from_bytes(self.ICMP_neighbour_solicitation)
 		ndp = NeighborSolicitation.parse(icmp)
-		assert ndp.target == IPv6Address("fe80::7ef9:eff:fe48:e4c4")
+		self.assertEqual(ndp.target, IPv6Address("fe80::7ef9:eff:fe48:e4c4"))
 
 	def test_write_neighbour_solicitation(self):
 		"""Recreates the test solicitation message."""
 		ndp = NeighborSolicitation(IPv6Address("fe80::7ef9:eff:fe48:e4c4"))
 		icmp = ndp.to_frame()
 		icmp.checksum = 0x2614
-		assert bytes(icmp) == self.ICMP_neighbour_solicitation
+		self.assertEqual(bytes(icmp), self.ICMP_neighbour_solicitation)
 
 	def test_read_neighbour_advertisment(self):
 		"""Decode NDP neighbor advertisement (with link layer address option) from bytes."""
 		icmp = ICMPv6.from_bytes(self.ICMP_neighbour_advertisment)
 		ndp = NeighborAdvertisment.parse(icmp)
-		assert ndp.target == IPv6Address("fe80::7ef9:eff:fe48:e4c4")
-		assert ndp.options[0].mac == MACAddress("7c:f9:0e:48:e4:c4")
+		self.assertEqual(ndp.target, IPv6Address("fe80::7ef9:eff:fe48:e4c4"))
+		self.assertEqual(ndp.options[0].mac, MACAddress("7c:f9:0e:48:e4:c4"))
 		self.assertFalse(ndp.router_flag)
 		self.assertTrue(ndp.solicited_flag)
 		self.assertTrue(ndp.override_flag)
@@ -56,13 +56,13 @@ class TestNDP(unittest.TestCase):
 		ndp.override_flag = ndp.solicited_flag = True
 		icmp = ndp.to_frame()
 		icmp.checksum = 0x0259
-		assert bytes(icmp) == self.ICMP_neighbour_advertisment
+		self.assertEqual(bytes(icmp), self.ICMP_neighbour_advertisment)
 
 	def test_read_router_solicitation(self):
 		"""Decode NDP router solicitation (with link layer address option) from bytes."""
 		icmp = ICMPv6.from_bytes(self.ICMP_router_solicitation)
 		ndp = RouterSolicitation.parse(icmp)
-		assert ndp.options[0].mac == MACAddress("7c:f9:0e:48:e4:c4")
+		self.assertEqual(ndp.options[0].mac, MACAddress("7c:f9:0e:48:e4:c4"))
 
 	def test_write_router_solicitation(self):
 		"""Recreates the test solicitation message."""
@@ -71,5 +71,5 @@ class TestNDP(unittest.TestCase):
 		)
 		icmp = ndp.to_frame()
 		icmp.checksum = 0x9b21
-		assert bytes(icmp) == self.ICMP_router_solicitation
+		self.assertEqual(bytes(icmp), self.ICMP_router_solicitation)
 

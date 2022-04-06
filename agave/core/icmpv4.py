@@ -13,6 +13,8 @@ TYPE_ECHO_MESSAGE = 8
 TYPE_ROUTER_ADVERTISMENT_MESSAGE = 9
 TYPE_ROUTER_SOLICITATION_MESSAGE = 10
 TYPE_TIME_EXCEEDED = 11
+TYPE_ADDRESS_MASK_REQUEST = 17
+TYPE_ADDRESS_MASK_REPLY = 18
 
 REDIRECT_CODE_NETWORK = 0
 REDIRECT_CODE_HOST = 1
@@ -49,7 +51,7 @@ class ICMPv4(FrameWithChecksum):
 			buf: the buffer.
 
 		Returns:
-			An instance of this class.
+			An instance of this class..
 
 		"""
 		return cls(
@@ -107,7 +109,7 @@ class ICMPv4(FrameWithChecksum):
 			data: original message.
 
 		Returns:
-			An instance of this class
+			An instance of this class.
 
 		"""
 		return cls(
@@ -116,6 +118,22 @@ class ICMPv4(FrameWithChecksum):
 			0,
 			gway,
 			data
+		)
+
+	@classmethod
+	def address_mask_request(cls, sequence_number: int = 0, identifier: int = 0) -> "ICMPv4":
+		"""Builds an address mask request.
+
+		Returns:
+			An instance of this class.
+
+		"""
+		return cls(
+			TYPE_ADDRESS_MASK_REQUEST,
+			0,
+			0,
+			sequence_number | (identifier << 16),
+			b'\x00\x00\x00\x00'
 		)
 
 	def compute_checksum(self) -> int:

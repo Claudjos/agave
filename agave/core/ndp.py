@@ -206,5 +206,51 @@ class RouterSolicitation(NDP):
 
 
 class RouterAdvertisment(NDP):
-	pass
 
+	def __init__(self, cur_hop_limit: int = 1, reserved: int = 0, lifetime: int = 0,
+		reachable_time: int = 0, retrans_timer: int = 0, options: List[Option] = None
+	):
+		self.options: List[Option] = options if options is not None else []
+		self.cur_hop_limit: int = cur_hop_limit
+		self.reserved: int = reserved
+		self.lifetime: int = lifetime
+		self.reachable_time: int = reachable_time
+		self.retrans_timer: int = retrans_timer
+
+	@classmethod
+	def parse(cls, frame: ICMPv6) -> "RouterAdvertisment":
+		options_size = len(frame.body) - 12
+		buf = Buffer.from_bytes(frame.body)
+		cur_hop_limit = buf.read_byte()
+		reserved = buf.read_byte()
+		lifetime = buf.read_short()
+		reachable_time = buf.read_int()
+		retrans_timer = buf.read_int()
+		return cls(cur_hop_limit, reserved, lifetime, reachable_time, retrans_timer,
+			options=cls.read_options(buf, options_size))
+
+	def to_frame(self) -> ICMPv6:
+		buf = Buffer.from_bytes()
+		buf.write_byte(self.cur_hop_limit)
+		buf.write_byte(self.reserved)
+		buf.write_short(self.lifetime)
+		buf.write_int(self.reachable_time)
+		buf.write_int(self.retrans_timer)
+		return ICMPv6(TYPE_ROUTER_ADVERTISEMENT, 0, 0, bytes(buf) + 
+			self.options_packed(self.options))
+
+	@property
+	def m_flag(self) -> bool:
+		return self.reserved & 0x80 > 0
+
+	@property
+	def o_flag(self) -> bool:
+		return self.reserved & 0x40 > 0
+
+	@m_flag.setter
+	def m_flag(self, x: bool):
+		self.reserved |= 0x80 if x else 0
+
+	@o_flag.setter
+	def o_flag(self, x: bool):
+		self.reserved |= 0x40 if x else 0

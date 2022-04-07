@@ -138,6 +138,23 @@ class NeighborSolicitation(NeighborMessage):
 
 	ICMP_TYPE = TYPE_NEIGHBOR_SOLICITATION
 
+	@classmethod
+	def compute_solicited_node_multicast_address(cls, x: IPv6Address) -> IPv6Address:
+		"""Returns the solicited node multicast address as for RFC 4291.
+
+		Args:
+			x: a unicast or anycast IPv6 address.
+
+		Returns:
+			An IPv6 composed by the first 104 bit (13 bytes) of the Solicited-Node
+			Address and the last 24 bit (3 bytes) of the input address.
+
+		Note:
+			Solicited-Node Address: FF02:0:0:0:0:1:FFXX:XXXX.
+
+		"""
+		return IPv6Address(b'\xff\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\xff' + x.packed[13:])
+
 
 class NeighborAdvertisment(NeighborMessage):
 

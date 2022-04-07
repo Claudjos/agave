@@ -2,6 +2,11 @@
 from .frame import FrameWithChecksum
 from .buffer import Buffer
 
+from .frame import Frame
+from .ethernet import Ethernet
+from .ip import IPv6
+from typing import List
+
 
 TYPE_ECHO_REQUEST = 128
 TYPE_ECHO_REPLY = 129
@@ -101,4 +106,26 @@ class ICMPv6(FrameWithChecksum):
 		# Compute
 		t = self.compute_checksum_from_buffer(buf, words)
 		return t
+
+	@classmethod
+	def parse(cls, data: bytes, network: bool = False, data_link: bool = False) -> List[Frame]:
+		"""Parses ICMPv6 message, including sub layers, from bytes.
+
+		Args:
+			data: bytes received.
+			network: True if data includes IPv6 header.
+			data_link: True if data includes EthernetII header.
+		
+		Returns:
+			A list with all the frames parsed.
+
+		"""
+		frames = []
+		buf = Buffer.from_bytes(data)
+		if data_link:
+			frames.append(Ethernet.read_from_buffer(buf))
+		if network:
+			frames.append(IPv6.read_from_buffer(buf))
+		frames.append(cls.read_from_buffer(buf))
+		return frames
 

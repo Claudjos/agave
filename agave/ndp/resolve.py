@@ -7,6 +7,16 @@ Note:
 Usage:
 	python3 -m agave.ndp.resolve <IPv6|subnet> [interface]
 
+Notes:
+	When I test this module locally using AF_INET6 SOCK_RAW
+	IPPROTO_ICMPV6 two problems occur:
+	- the hop limit is set to 1, not 255 as for RFC 4861, and
+		I failed to change sock option IPV6_HOPLIMIT;
+	- the destination Ethernet multicast address used is in the
+		format 33-33-xx (as for RFC 2464) yet I don't receive
+		any reply back from other nodes.
+	This is way I added the code to work at link layer.
+
 """
 import select, time, socket
 from typing import Union, Iterator, Tuple
@@ -92,13 +102,16 @@ class LowLevelNeighborSoliciter(NeighborSoliciter):
 			# Parses back ICMPv6 message
 			icmp = ICMPv6.from_bytes(data)
 			# Creates IPv6 header
+			dest_ip = IPv6Address(addr[0])
 			ip = IPv6(0, 0, len(data), PROTO_ICMPv6, 255,
-				self.interface.ipv6, IPv6Address(addr[0]))
+				self.interface.ipv6, dest_ip)
 			# Calculates checksum for ICMPv6
 			icmp.set_pseudo_header(ip.get_pseudo_header())
 			icmp.set_checksum()
 			# Creates EthernetII header
-			eth = Ethernet(b'\xff\xff\xff\xff\xff\xff', self.interface.mac.packed, ETHER_TYPE_IPV6)
+			dest_mac = b'\x33\x33' + dest_ip.packed[12:]
+			dest_mac = b'\xff\xff\xff\xff\xff\xff'				# see module doc note.
+			eth = Ethernet(dest_mac, self.interface.mac.packed, ETHER_TYPE_IPV6)
 			# Yields
 			yield (
 				bytes(eth) + bytes(ip) + bytes(icmp),
@@ -169,7 +182,7 @@ def resolve(
 	if sock is None:
 		try:
 			sock = socket.socket(socket.AF_INET6, socket.SOCK_RAW, socket.IPPROTO_ICMPV6)
-			sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_HOPLIMIT, 255)
+			sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_HOPLIMIT, 255)					# see module doc note.
 		except:
 			sock = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(ETHER_TYPE_IPV6))
 	if sock.family == socket.AF_INET6:

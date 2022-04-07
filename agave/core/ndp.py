@@ -3,7 +3,7 @@ from typing import Tuple, List
 from .ethernet import MACAddress
 from .icmpv6 import (
 	ICMPv6, TYPE_NEIGHBOR_ADVERTISEMENT, TYPE_NEIGHBOR_SOLICITATION,
-	TYPE_ROUTER_SOLICITATION
+	TYPE_ROUTER_ADVERTISEMENT, TYPE_ROUTER_SOLICITATION
 )
 from .buffer import Buffer
 from ipaddress import IPv6Address
@@ -203,4 +203,8 @@ class RouterSolicitation(NDP):
 		return ICMPv6(
 			TYPE_ROUTER_SOLICITATION, 0, 0, b'\x00\x00\x00\x00' + self.options_packed(self.options)
 		)
+
+
+class RouterAdvertisment(NDP):
+	pass
 

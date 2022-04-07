@@ -118,7 +118,7 @@ def resolve_mac(
 	Args:
 		address: IPv6 to resolve to MAC.
 		interface: interface to use.
-		sock: socket to use (AF_INET6 SOCK_RAW IPPROTO_ICMPV6).
+		sock: socket to use.
 		raise_on_miss: raise exception if MAC is not found.
 
 	Returns:
@@ -165,12 +165,19 @@ def resolve(
 	if type(subnet) == str or type(subnet) == IPv6Address:
 		subnet = IPv6Network(subnet)
 	if interface is None:
-		interface = NetworkInterface.get_by_host(subnet.network_address) # TODO
+		interface = NetworkInterface.get_by_host(subnet.network_address)
 	if sock is None:
-		#sock = socket.socket(socket.AF_INET6, socket.SOCK_RAW, socket.IPPROTO_ICMPV6)
-		sock = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(ETHER_TYPE_IPV6))
-	interface.ipv6 = IPv6Address("") # TODO
-	return LowLevelNeighborSoliciter(sock, interface, subnet, repeat, wait=wait, interval=interval).stream()
+		try:
+			sock = socket.socket(socket.AF_INET6, socket.SOCK_RAW, socket.IPPROTO_ICMPV6)
+			sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_HOPLIMIT, 255)
+		except:
+			sock = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(ETHER_TYPE_IPV6))
+	if sock.family == socket.AF_INET6:
+		return NeighborSoliciter(sock, interface, subnet, repeat, wait=wait, interval=interval).stream()
+	if sock.family == socket.AF_PACKET:
+		return LowLevelNeighborSoliciter(sock, interface, subnet, repeat, wait=wait, interval=interval).stream()
+	else:
+		raise ValueError("Socket family must be either AF_INET6 or AF_PACKET.")
 
 
 if __name__ == "__main__":

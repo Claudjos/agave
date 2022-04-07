@@ -170,7 +170,9 @@ class NetworkInterface:
         if type(host) == str:
             host = ip_address(host)
         for interface in cls.list():
-            if interface.network is not None and host in interface.network:
+            if host.version == 4 and interface.network is not None and host in interface.network:
+                return interface
+            elif host.version == 6 and interface.netv6 is not None and host in interface.netv6:
                 return interface
         raise NetworkInterfaceNotFound(
             "No interface found connected to a network including %s" % (host)
@@ -198,10 +200,11 @@ class NetworkInterface:
         for line in lines:
             t = line.rstrip().split(" ")
             addr = t[0]
-            prefix = t[2]
+            prefix = int(t[2], 16)
             name = t[-1]
             _addr = IPv6Address(":".join([addr[i-4:i] for i in range(4,34,4)]))
-            _net = IPv6Network(_addr._ip & (mask << int(prefix, 16)))
+            _net_a = IPv6Address(_addr._ip & (mask << prefix))
+            _net = IPv6Network("{}/{}".format(_net_a, prefix))
             result[name] = (_addr, _net)
         return result
 

@@ -6,7 +6,7 @@ from .icmpv6 import (
 	TYPE_ROUTER_ADVERTISEMENT, TYPE_ROUTER_SOLICITATION
 )
 from .buffer import Buffer
-from ipaddress import IPv6Address
+from ipaddress import IPv6Address, IPv6Network
 
 
 # NDP option types
@@ -30,7 +30,7 @@ class Option:
 		return (
 			self.type.to_bytes(1, byteorder="big") +
 			self.length.to_bytes(1, byteorder="big") +
-			self.body
+			bytes(self.body)
 		)
 
 
@@ -61,6 +61,120 @@ class TargetLinkLayerAddress(LinkLayerAddress):
 	OPT_TYPE = NDP_OPTION_TYPE_TARGET_LINK_LAYER_ADDRESS
 
 
+class MTU(Option):
+
+	@property
+	def mtu(self):
+		return int.from_bytes(self.body[2:], byteorder="big")
+
+	@mtu.setter
+	def mtu(self, x: int):
+		self.body = b'\x00\x00' + x.to_bytes(4, byteorder="big")
+
+	@classmethod
+	def build(cls, mtu: int) -> "MTU":
+		t = cls(NDP_OPTION_TYPE_MTU, 1, b'')
+		t.mtu = mtu
+		return t
+
+
+class PrefixInformation(Option):
+
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+		if isinstance(self.body, bytes):
+			self.body = Buffer.from_bytes(self.body)
+
+	@property
+	def prefix_length(self) -> int:
+		self.body.seek(0)
+		return self.body.read_byte()
+
+	@property
+	def l_flag(self) -> bool:
+		self.body.seek(1)
+		return int(self.body.read_byte()) & 0x80 > 0
+
+	@property
+	def a_flag(self) -> bool:
+		self.body.seek(1)
+		return int(self.body.read_byte()) & 0x40 > 0
+
+	@property
+	def valid_lifetime(self) -> int:
+		self.body.seek(2)
+		return self.body.read_int()
+
+	@property
+	def preferred_lifetime(self) -> int:
+		self.body.seek(6)
+		return self.body.read_int()
+
+	@property
+	def reserved_2(self) -> int:
+		self.body.seek(10)
+		return self.body.read_int()
+
+	@property
+	def prefix(self) -> bytes:
+		self.body.seek(14)
+		return self.body.read(16)
+
+	@prefix_length.setter
+	def prefix_length(self, x: int):
+		self.body.seek(0)
+		self.body.write_byte(x)
+
+	@l_flag.setter
+	def l_flag(self, x: bool):
+		self.body.seek(1)
+		t = int(self.body.read_byte())
+		t |= 0x80 if x else 0
+		self.body.seek(1)
+		self.body.write_byte(t)
+
+	@a_flag.setter
+	def a_flag(self, x: bool):
+		self.body.seek(1)
+		t = int(self.body.read_byte())
+		t |= 0x40 if x else 0
+		self.body.seek(1)
+		self.body.write_byte(t)
+
+	@valid_lifetime.setter
+	def valid_lifetime(self, x: int):
+		self.body.seek(2)
+		self.body.write_int(x)
+
+	@preferred_lifetime.setter
+	def preferred_lifetime(self, x: int):
+		self.body.seek(6)
+		self.body.write_int(x)
+
+	@reserved_2.setter
+	def reserved_2(self, x: int):
+		self.body.seek(10)
+		self.body.write_int(x)
+
+	@prefix.setter
+	def prefix(self, x: bytes):
+		self.body.seek(14)
+		self.body.write(x)
+
+	@classmethod
+	def build(cls, network: IPv6Network, valid_lifetime: int, preferred_lifetime: int,
+		l: bool = False, a: bool = False) -> "PrefixInformation":
+		"""Builds an instance of the class."""
+		t = cls(NDP_OPTION_TYPE_PREFIX_INFORMATION, 4, bytes(30))
+		t.prefix_length = network.prefixlen
+		t.prefix = network.network_address.packed
+		t.valid_lifetime = valid_lifetime
+		t.preferred_lifetime = preferred_lifetime
+		t.l_flag = l
+		t.a_flag = a
+		return t
+
+
 class NDP:
 
 	__slots__ = ()
@@ -68,6 +182,8 @@ class NDP:
 	OPTION_TO_CLASS = {
 		NDP_OPTION_TYPE_SOURCE_LINK_LAYER_ADDRESS: LinkLayerAddress,
 		NDP_OPTION_TYPE_TARGET_LINK_LAYER_ADDRESS: LinkLayerAddress,
+		NDP_OPTION_TYPE_MTU: MTU,
+		NDP_OPTION_TYPE_PREFIX_INFORMATION: PrefixInformation
 	}
 
 	@classmethod
@@ -205,10 +321,11 @@ class RouterSolicitation(NDP):
 		)
 
 
-class RouterAdvertisment(NDP):
+class RouterAdvertisement(NDP):
 
 	def __init__(self, cur_hop_limit: int = 1, reserved: int = 0, lifetime: int = 0,
-		reachable_time: int = 0, retrans_timer: int = 0, options: List[Option] = None
+		reachable_time: int = 0, retrans_timer: int = 0, options: List[Option] = None,
+		m: bool = None, o: bool = None
 	):
 		self.options: List[Option] = options if options is not None else []
 		self.cur_hop_limit: int = cur_hop_limit
@@ -216,9 +333,13 @@ class RouterAdvertisment(NDP):
 		self.lifetime: int = lifetime
 		self.reachable_time: int = reachable_time
 		self.retrans_timer: int = retrans_timer
+		if m is not None:
+			self.m_flag = m
+		if o is not None:
+			self.o_flag = o
 
 	@classmethod
-	def parse(cls, frame: ICMPv6) -> "RouterAdvertisment":
+	def parse(cls, frame: ICMPv6) -> "RouterAdvertisement":
 		options_size = len(frame.body) - 12
 		buf = Buffer.from_bytes(frame.body)
 		cur_hop_limit = buf.read_byte()

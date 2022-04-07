@@ -48,11 +48,14 @@ class Buffer:
 		return self.write(number.to_bytes(4, byteorder="big"))
 
 	def __bytes__(self):
-		self._buf.seek(0) # use rewind instead (?)
-		return self._buf.read() # use read_reamaining (?)
+		self._buf.seek(0)
+		return self._buf.read()
 
 	def rewind(self):
 		self._buf.seek(0)
+
+	def seek(self, index: int):
+		self._buf.seek(index)
 
 	def read_remaining(self):
 		return self._buf.read()

@@ -26,7 +26,7 @@ from agave.arp.resolve import MACAddressNotFoundError
 from agave.core.helpers import SocketAddress, Job
 from agave.core.ndp import (
 	SourceLinkLayerAddress, NeighborSolicitation,
-	TargetLinkLayerAddress, NeighborAdvertisment,
+	TargetLinkLayerAddress, NeighborAdvertisement,
 	NDP_OPTION_TYPE_TARGET_LINK_LAYER_ADDRESS
 )
 from agave.core.ethernet import Ethernet, ETHER_TYPE_IPV6
@@ -57,7 +57,7 @@ class NeighborSoliciter(Job):
 			if source in self.subnet:
 				icmp, = ICMPv6.parse(data)
 				if icmp.type == TYPE_NEIGHBOR_ADVERTISEMENT:
-					ndp = NeighborAdvertisment.parse(icmp)
+					ndp = NeighborAdvertisement.parse(icmp)
 					for option in ndp.options:
 						if option.type == NDP_OPTION_TYPE_TARGET_LINK_LAYER_ADDRESS:
 							result = (option.mac, source)

@@ -8,7 +8,7 @@ from agave.arp.resolve import MACAddressNotFoundError
 from agave.core.helpers import SocketAddress, Job
 from agave.core.ndp import (
 	SourceLinkLayerAddress, RouterSolicitation,
-	TargetLinkLayerAddress, RouterAdvertisment,
+	TargetLinkLayerAddress, RouterAdvertisement,
 	NDP_OPTION_TYPE_TARGET_LINK_LAYER_ADDRESS
 )
 from agave.core.ethernet import Ethernet, ETHER_TYPE_IPV6
@@ -37,7 +37,7 @@ class RouterSoliciter(Job):
 		source = IPv6Address(address[0])
 		icmp, = ICMPv6.parse(data)
 		if icmp.type == TYPE_ROUTER_ADVERTISEMENT:
-			ndp = RouterAdvertisment.parse(icmp)
+			ndp = RouterAdvertisement.parse(icmp)
 			# Do something here
 		return result
 

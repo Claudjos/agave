@@ -8,6 +8,7 @@ from .ip import IPv6
 from typing import List
 
 
+TYPE_DESTINATION_UNREACHABLE = 1
 TYPE_ECHO_REQUEST = 128
 TYPE_ECHO_REPLY = 129
 
@@ -128,4 +129,11 @@ class ICMPv6(FrameWithChecksum):
 			frames.append(IPv6.read_from_buffer(buf))
 		frames.append(cls.read_from_buffer(buf))
 		return frames
+
+	@classmethod
+	def echo_request(cls, data: bytes = b'', identifier: int = 0, sequence_number: int = 0) -> "ICMPv6":
+		return cls(
+			TYPE_ECHO_REQUEST, 0, 0, 
+			(sequence_number | (identifier << 16)).to_bytes(4, byteorder="big")  + data
+		)
 

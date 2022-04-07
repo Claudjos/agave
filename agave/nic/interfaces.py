@@ -57,7 +57,7 @@ class NetworkInterface:
 
     """
 
-    __slots__ = ["name", "mac", "ip", "network", "broadcast"]
+    __slots__ = ("name", "mac", "ip", "ipv6", "network", "broadcast")
 
     def __init__(self, name: str, mac: MACAddress, ip: IPAddress, 
         network: IPNetwork, broadcast: IPAddress):

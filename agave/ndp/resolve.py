@@ -16,9 +16,13 @@ from agave.arp.resolve import MACAddressNotFoundError
 from agave.core.helpers import SocketAddress, Job
 from agave.core.ndp import (
 	SourceLinkLayerAddress, NeighborSolicitation,
-	TargetLinkLayerAddress, NeighborAdvertisment
+	TargetLinkLayerAddress, NeighborAdvertisment,
+	NDP_OPTION_TYPE_TARGET_LINK_LAYER_ADDRESS
 )
-from agave.core.icmpv6 import TYPE_NEIGHBOR_ADVERTISEMENT
+from agave.core.ethernet import Ethernet, ETHER_TYPE_IPV6
+from agave.core.ip import IPv6, PROTO_ICMPv6
+from agave.core.icmpv6 import ICMPv6, TYPE_NEIGHBOR_ADVERTISEMENT
+from agave.core.buffer import Buffer
 from agave.nic.interfaces import NetworkInterface
 from ipaddress import IPv6Address, IPv6Network
 
@@ -41,13 +45,12 @@ class NeighborSoliciter(Job):
 		if address[0] not in self._cache:
 			source = IPv6Address(address[0])
 			if source in self.subnet:
-				icmp = icmp.parse(data)
+				icmp, = ICMPv6.parse(data)
 				if icmp.type == TYPE_NEIGHBOR_ADVERTISEMENT:
 					ndp = NeighborAdvertisment.parse(icmp)
 					for option in ndp.options:
-						#if type(option) == NDP_OPTION_TYPE_TARGET_LINK_LAYER_ADDRESS:
-						if type(option) == TargetLinkLayerAddress:
-							result = (MACAddress(option.mac), source)
+						if option.type == NDP_OPTION_TYPE_TARGET_LINK_LAYER_ADDRESS:
+							result = (option.mac, source)
 							self._count -= 1
 							break
 		if self._count < 1:
@@ -72,6 +75,38 @@ class NeighborSoliciter(Job):
 		return
 
 
+class LowLevelNeighborSoliciter(NeighborSoliciter):
+
+	def process(self, data: bytes, address: SocketAddress) -> Union[Host, None]:
+		"""Removes the link and network layer from message."""
+		if address[1] == ETHER_TYPE_IPV6:
+			buf = Buffer.from_bytes(data)
+			eth = Ethernet.read_from_buffer(buf)
+			ip = IPv6.read_from_buffer(buf)
+			if ip.next_header == PROTO_ICMPv6:
+				return super().process(buf.read_remaining(), (str(ip.source), 0))
+
+	def generate_packets(self) -> Iterator[Tuple[bytes, SocketAddress]]:
+		"""Adds link and network layer to messages."""
+		for data, addr in super().generate_packets():
+			# Parses back ICMPv6 message
+			icmp = ICMPv6.from_bytes(data)
+			# Creates IPv6 header
+			ip = IPv6(0, 0, len(data), PROTO_ICMPv6, 255,
+				self.interface.ipv6, IPv6Address(addr[0]))
+			# Calculates checksum for ICMPv6
+			icmp.set_pseudo_header(ip.get_pseudo_header())
+			icmp.set_checksum()
+			# Creates EthernetII header
+			eth = Ethernet(b'\xff\xff\xff\xff\xff\xff', self.interface.mac.packed, ETHER_TYPE_IPV6)
+			# Yields
+			yield (
+				bytes(eth) + bytes(ip) + bytes(icmp),
+				(self.interface.name, ETHER_TYPE_IPV6)
+			)
+		return
+
+
 def resolve_mac(
 	address: Union[str, IPv6Address],
 	interface: Union[str, NetworkInterface] = None,
@@ -93,7 +128,7 @@ def resolve_mac(
 		MACAddressNotFoundError.
 
 	"""
-	a = list(resolve(address, interface, sock, repeat=3, wait=0.5, interval=0.1))
+	a = list(resolve(address, interface, sock, repeat=1, wait=0.5, interval=0.1))
 	if len(a) > 0:
 		return a[0][0]
 	else:
@@ -107,7 +142,7 @@ def resolve(
 	subnet: Union[str, IPv6Address, IPv6Network],
 	interface: Union[str, NetworkInterface] = None,
 	sock: "socket.socket" = None,
-	repeat: int = 2,
+	repeat: int = 3,
 	wait: float = 1,
 	interval: int = 0.003
 ) -> Iterator[Host]:
@@ -132,8 +167,10 @@ def resolve(
 	if interface is None:
 		interface = NetworkInterface.get_by_host(subnet.network_address) # TODO
 	if sock is None:
-		sock = socket.socket(socket.AF_INET6, socket.SOCK_RAW, socket.IPPROTO_ICMPV6)
-	return NeighborSoliciter(sock, interface, subnet, repeat, wait=wait, interval=interval).stream()
+		#sock = socket.socket(socket.AF_INET6, socket.SOCK_RAW, socket.IPPROTO_ICMPV6)
+		sock = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(ETHER_TYPE_IPV6))
+	interface.ipv6 = IPv6Address("") # TODO
+	return LowLevelNeighborSoliciter(sock, interface, subnet, repeat, wait=wait, interval=interval).stream()
 
 
 if __name__ == "__main__":

@@ -203,7 +203,7 @@ class IPv6(Frame):
 		hop_limit: int,
 		source: IPv6Address,
 		destination: IPv6Address,
-		extensions: bytes = None
+		extensions: bytes = b''
 	):
 		self.version: int = 6
 		self.traffic_class: int = traffic_class
@@ -213,7 +213,7 @@ class IPv6(Frame):
 		self.hop_limit: int = hop_limit
 		self.source: IPv6Address = source
 		self.destination: IPv6Address = destination
-		self.extensions: bytes = b''
+		self.extensions: bytes = extensions
 
 	@classmethod
 	def read_from_buffer(cls, buf: Buffer) -> "IPv6":
@@ -314,4 +314,3 @@ class IPv6(Frame):
 			b'\x00\x00\x00' +
 			next_header.to_bytes(1, byteorder="big")
 		)
-

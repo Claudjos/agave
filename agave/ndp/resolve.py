@@ -60,6 +60,7 @@ class NeighborSoliciter(NDPLinkLayerJob):
 						if option.type == NDP_OPTION_TYPE_TARGET_LINK_LAYER_ADDRESS:
 							result = (option.mac, source)
 							self._count -= 1
+							self._cache.add(address[0])
 							break
 		if self._count < 1:
 			self.set_finished()

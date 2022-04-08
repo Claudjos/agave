@@ -23,10 +23,7 @@ class TestNDPRouters(unittest.TestCase):
 			loop_count += 1
 		self.assertEqual(loop_count, 3)
 		# Parse the first messages
-		buf, _ = dummysocket.get_message_as_buffer(0)
-		eth = Ethernet.read_from_buffer(buf)
-		ip = IPv6.read_from_buffer(buf)
-		icmp = ICMPv6.read_from_buffer(buf)
+		eth, ip, icmp = ICMPv6.parse(dummysocket.get_message(0)[0], network=True, link=True)
 		ndp = RouterSolicitation.parse(icmp)
 		# Check data
 		self.assertEqual(eth.next_header, ETHER_TYPE_IPV6)

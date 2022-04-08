@@ -31,15 +31,14 @@ class RouterSoliciter(Job):
 		self.interface: NetworkInterface = interface
 		self.repeat: int = repeat
 		self._request_to_send: Iterator[Tuple[bytes, SocketAddress]] = self.generate_packets()
+		self._cache = set()
 
-	def process(self, data: bytes, address: SocketAddress) -> Union[Host, None]:
-		result = None
-		source = IPv6Address(address[0])
+	def process(self, data: bytes, address: SocketAddress) -> Union[Tuple[IPv6Address, RouterAdvertisement], None]:
 		icmp, = ICMPv6.parse(data)
 		if icmp.type == TYPE_ROUTER_ADVERTISEMENT:
-			ndp = RouterAdvertisement.parse(icmp)
-			# Do something here
-		return result
+			if address[0] not in self._cache:
+				self._cache.add(address[0])
+				return (IPv6Address(address[0]), RouterAdvertisement.parse(icmp))
 
 	def loop(self) -> bool:
 		for message in self._request_to_send:
@@ -99,8 +98,7 @@ def routers(
 	sock: "socket.socket" = None,
 	repeat: int = 3,
 	wait: float = 1,
-	interval: int = 0.003,
-	raise_on_miss: bool = False
+	interval: int = 0.003
 ) -> Iterator[Host]:
 	"""Returns all the routers.
 		
@@ -110,7 +108,6 @@ def routers(
 		repeat: number of request to send before to give up.
 		wait: max amount of seconds before to give up.
 		interval: delta time between requests.
-		raise_on_miss: raise if no router are returned.
 
 	Returns:
 		An Iterator with the tuple MAC, IPv6 addresses.

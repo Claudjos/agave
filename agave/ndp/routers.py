@@ -9,7 +9,7 @@ from agave.core.helpers import SocketAddress, Job
 from agave.core.ndp import (
 	SourceLinkLayerAddress, RouterSolicitation,
 	TargetLinkLayerAddress, RouterAdvertisement,
-	NDP_OPTION_TYPE_TARGET_LINK_LAYER_ADDRESS
+	NDP_OPTION_TYPE_TARGET_LINK_LAYER_ADDRESS, NDP
 )
 from agave.core.ethernet import Ethernet, ETHER_TYPE_IPV6
 from agave.core.ip import (
@@ -83,7 +83,7 @@ class LowLevelRouterSoliciter(RouterSoliciter):
 			icmp.set_pseudo_header(ip.get_pseudo_header())
 			icmp.set_checksum()
 			# Creates EthernetII header
-			dest_mac = b'\x33\x33' + dest_ip.packed[12:]
+			dest_mac = NDP.map_multicast_over_ethernet(dest_ip).packed
 			dest_mac = b'\xff\xff\xff\xff\xff\xff'				# see module doc note.
 			eth = Ethernet(dest_mac, self.interface.mac.packed, ETHER_TYPE_IPV6)
 			# Yields

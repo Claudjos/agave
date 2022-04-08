@@ -219,6 +219,19 @@ class NDP:
 			t += bytes(o)
 		return t
 
+	@classmethod
+	def map_multicast_over_ethernet(cls, ip: IPv6Address) -> MACAddress:
+		"""Maps a IPv6 multicast address to a MAC address 33-33-XX-XX-XX-XX
+		as for RFC 2464.
+
+		Args:
+			ip: a multicast IPv6 address.
+
+		Returns:
+			The MAC address.
+		"""
+		return MACAddress(b'\x33\x33' + ip.packed[12:])
+
 
 class NeighborMessage(NDP):
 

@@ -34,9 +34,7 @@ class TestNDPRouters(unittest.TestCase):
 
 	def test_process_advertisement(self):
 		"""Should return the advertisement, each address only once."""
-		dummysocket = DummySock()
-		dummyinterface = DummyInterface()
-		job = RouterSoliciter(dummysocket, dummyinterface, repeat=1)
+		job = RouterSoliciter(None, None, repeat=1)
 		ndp = RouterAdvertisement(options=[MTU.build(4092)])
 		packet = bytes(ndp.to_frame())
 		# Process Advertisement
@@ -50,11 +48,8 @@ class TestNDPRouters(unittest.TestCase):
 
 	def test_process_other(self):
 		"""Should send solicitation messages."""
-		dummysocket = DummySock()
-		dummyinterface = DummyInterface()
-		job = RouterSoliciter(dummysocket, dummyinterface, repeat=1)
+		job = RouterSoliciter(None, None, repeat=1)
 		ndp = RouterSolicitation()
-		# Process solicitation
 		result = job.process(bytes(ndp.to_frame()), ("ff80::1", 0))
 		self.assertEqual(result, None)
 

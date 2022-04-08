@@ -109,13 +109,13 @@ class ICMPv6(FrameWithChecksum):
 		return t
 
 	@classmethod
-	def parse(cls, data: bytes, network: bool = False, data_link: bool = False) -> List[Frame]:
+	def parse(cls, data: bytes, network: bool = False, link: bool = False) -> List[Frame]:
 		"""Parses ICMPv6 message, including sub layers, from bytes.
 
 		Args:
 			data: bytes received.
 			network: True if data includes IPv6 header.
-			data_link: True if data includes EthernetII header.
+			link: True if data includes EthernetII header.
 		
 		Returns:
 			A list with all the frames parsed.
@@ -123,7 +123,7 @@ class ICMPv6(FrameWithChecksum):
 		"""
 		frames = []
 		buf = Buffer.from_bytes(data)
-		if data_link:
+		if link:
 			frames.append(Ethernet.read_from_buffer(buf))
 		if network:
 			frames.append(IPv6.read_from_buffer(buf))

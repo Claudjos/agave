@@ -272,7 +272,7 @@ class NeighborSolicitation(NeighborMessage):
 		return IPv6Address(b'\xff\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\xff' + x.packed[13:])
 
 
-class NeighborAdvertisment(NeighborMessage):
+class NeighborAdvertisement(NeighborMessage):
 
 	ICMP_TYPE = TYPE_NEIGHBOR_ADVERTISEMENT
 

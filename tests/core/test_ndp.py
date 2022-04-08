@@ -1,7 +1,7 @@
 import unittest
 from agave.core.icmpv6 import ICMPv6
 from agave.core.ndp import (
-	NeighborSolicitation, NeighborAdvertisment, RouterSolicitation,
+	NeighborSolicitation, NeighborAdvertisement, RouterSolicitation,
 	SourceLinkLayerAddress, TargetLinkLayerAddress, RouterAdvertisement,
 	PrefixInformation, MTU
 )
@@ -16,7 +16,7 @@ class TestNDP(unittest.TestCase):
 		b'\x7e\xf9\x0e\xff\xfe\x48\xe4\xc4'
 	)
 
-	ICMP_neighbour_advertisment = (
+	ICMP_neighbour_advertisement = (
 		b'\x88\x00\x02\x59\x60\x00\x00\x00\xfe\x80\x00\x00\x00\x00\x00\x00'
 		b'\x7e\xf9\x0e\xff\xfe\x48\xe4\xc4\x02\x01\x7c\xf9\x0e\x48\xe4\xc4'
 	)
@@ -47,8 +47,8 @@ class TestNDP(unittest.TestCase):
 
 	def test_read_neighbour_advertisment(self):
 		"""Decode NDP neighbor advertisement (with link layer address option) from bytes."""
-		icmp = ICMPv6.from_bytes(self.ICMP_neighbour_advertisment)
-		ndp = NeighborAdvertisment.parse(icmp)
+		icmp = ICMPv6.from_bytes(self.ICMP_neighbour_advertisement)
+		ndp = NeighborAdvertisement.parse(icmp)
 		self.assertEqual(ndp.target, IPv6Address("fe80::7ef9:eff:fe48:e4c4"))
 		self.assertEqual(ndp.options[0].mac, MACAddress("7c:f9:0e:48:e4:c4"))
 		self.assertFalse(ndp.router_flag)
@@ -57,14 +57,14 @@ class TestNDP(unittest.TestCase):
 
 	def test_write_neighbour_advertisement(self):
 		"""Recreates the test advertisement message."""
-		ndp = NeighborAdvertisment(
+		ndp = NeighborAdvertisement(
 			IPv6Address("fe80::7ef9:eff:fe48:e4c4"),
 			[TargetLinkLayerAddress.build(MACAddress("7c:f9:0e:48:e4:c4"))]
 		)
 		ndp.override_flag = ndp.solicited_flag = True
 		icmp = ndp.to_frame()
 		icmp.checksum = 0x0259
-		self.assertEqual(bytes(icmp), self.ICMP_neighbour_advertisment)
+		self.assertEqual(bytes(icmp), self.ICMP_neighbour_advertisement)
 
 	def test_read_router_solicitation(self):
 		"""Decode NDP router solicitation (with link layer address option) from bytes."""

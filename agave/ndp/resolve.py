@@ -7,21 +7,11 @@ Note:
 Usage:
 	python3 -m agave.ndp.resolve <IPv6|subnet> [interface]
 
-Notes:
-	When I test this module locally using AF_INET6 SOCK_RAW
-	IPPROTO_ICMPV6 two problems occur:
-	- the hop limit is set to 1, not 255 as for RFC 4861, and
-		I failed to change sock option IPV6_HOPLIMIT;
-	- the destination Ethernet multicast address used is in the
-		format 33-33-xx (as for RFC 2464) yet I don't receive
-		any reply back from other nodes.
-	This is way I added the code to work at link layer.
-
 """
-import select, time, socket
+import socket
 from typing import Union, Iterator, Tuple
 from agave.arp.utils import Host
-from agave.core.ethernet import MACAddress, ETHER_TYPE_IPV6
+from agave.core.ethernet import MACAddress
 from agave.arp.resolve import MACAddressNotFoundError
 from agave.core.helpers import SocketAddress, Job
 from agave.core.ndp import (
@@ -31,7 +21,7 @@ from agave.core.ndp import (
 )
 from agave.core.icmpv6 import ICMPv6, TYPE_NEIGHBOR_ADVERTISEMENT
 from agave.nic.interfaces import NetworkInterface
-from .utils import NDPLinkLayerJob, handle_link_layer
+from .utils import NDPLinkLayerJob, handle_link_layer, create_ndp_socket
 from ipaddress import IPv6Address, IPv6Network
 
 
@@ -147,11 +137,7 @@ def resolve(
 	if interface is None:
 		interface = NetworkInterface.get_by_host(subnet.network_address)
 	if sock is None:
-		try:
-			sock = socket.socket(socket.AF_INET6, socket.SOCK_RAW, socket.IPPROTO_ICMPV6)
-			sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_HOPLIMIT, 255)					# see module doc note.
-		except:
-			sock = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(ETHER_TYPE_IPV6))
+		sock = create_ndp_socket(hop_limit=255)
 	if sock.family == socket.AF_INET6:
 		return NeighborSoliciter(sock, interface, subnet, repeat, wait=wait, interval=interval).stream()
 	if sock.family == socket.AF_PACKET:

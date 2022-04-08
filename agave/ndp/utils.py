@@ -1,3 +1,17 @@
+"""Utilities to handle NDP package at link layer rather the network.
+
+Note:
+	This module would be useless if it were not that testing locally using 
+	socket family AF_INET6, type SOCK_RAW, and protocol IPPROTO_ICMPV6 two 
+	problems occur:
+		- the IPv6hop limit is set to 1 (default), not 255 as for RFC 4861,
+			and I failed to change it using sock option IPV6_HOPLIMIT;
+		- the IPv6 multicast is mapped correctly to Ethernet with the format 
+			33-33-xx-xx-xx-xx (as for RFC 2464), yet I don't receive any reply 
+			back from other nodes unless I use broadcast ff:ff:ff:ff:ff:ff.
+
+"""
+import socket
 from agave.core.helpers import Job, SocketAddress
 from typing import Union, Iterator, Tuple, Any, Callable
 from agave.core.buffer import Buffer
@@ -15,7 +29,7 @@ class NDPLinkLayerJob(Job):
 
 	__slots__ = ("interface")
 
-	def __init__(self, sock: "socket", interface: NetworkInterface, **kwargs):
+	def __init__(self, sock: "socket.socket", interface: NetworkInterface, **kwargs):
 		super().__init__(sock, **kwargs)
 		self.interface = interface
 
@@ -64,7 +78,7 @@ def generate_packets(self, _generate_packets: Callable) -> Iterator[Tuple[bytes,
 		icmp.set_checksum()
 		# Creates EthernetII header
 		dest_mac = NDP.map_multicast_over_ethernet(dest_ip).packed
-		dest_mac = b'\xff\xff\xff\xff\xff\xff'
+		dest_mac = b'\xff\xff\xff\xff\xff\xff'	# see module comments
 		eth = Ethernet(dest_mac, self.interface.mac.packed, ETHER_TYPE_IPV6)
 		# Yields
 		yield (
@@ -73,3 +87,13 @@ def generate_packets(self, _generate_packets: Callable) -> Iterator[Tuple[bytes,
 		)
 	return
 
+
+def create_ndp_socket(hop_limit = 1) -> "socket.socket":
+	try:
+		sock = socket.socket(socket.AF_INET6, socket.SOCK_RAW, socket.IPPROTO_ICMPV6)
+		if hop_limit != 1:
+			sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_HOPLIMIT, hop_limit)
+	except:
+		sock = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(ETHER_TYPE_IPV6))
+	finally:
+		return sock

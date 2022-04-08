@@ -1,10 +1,16 @@
+"""Primitives to retrieve routing information.
+
+Note:
+	This module also provides a script to retrieve the 
+	IPv6 address of the routers available.
+
+Usage:
+	python3 -m agave.ndp.routers interface
+
 """
-"""
-import select, time, socket
+import socket
 from typing import Union, Iterator, Tuple
 from agave.arp.utils import Host
-from agave.core.ethernet import MACAddress, ETHER_TYPE_IPV6
-from agave.arp.resolve import MACAddressNotFoundError
 from agave.core.helpers import SocketAddress, Job
 from agave.core.ndp import (
 	SourceLinkLayerAddress, RouterSolicitation,
@@ -17,7 +23,7 @@ from agave.core.ip import (
 )
 from agave.core.icmpv6 import ICMPv6, TYPE_ROUTER_ADVERTISEMENT
 from agave.nic.interfaces import NetworkInterface
-from .utils import NDPLinkLayerJob, handle_link_layer
+from .utils import NDPLinkLayerJob, handle_link_layer, create_ndp_socket
 from ipaddress import IPv6Address, IPv6Network
 
 
@@ -85,11 +91,7 @@ def routers(
 	if interface is None:
 		interface = NetworkInterface.get_by_host(subnet.network_address)
 	if sock is None:
-		try:
-			sock = socket.socket(socket.AF_INET6, socket.SOCK_RAW, socket.IPPROTO_ICMPV6)
-			sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_HOPLIMIT, 255)					# see module doc note.
-		except:
-			sock = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(ETHER_TYPE_IPV6))
+		sock = create_ndp_socket(hop_limit=255)
 	if sock.family == socket.AF_INET6:
 		return RouterSoliciter(sock, interface, repeat, wait=wait, interval=interval).stream()
 	elif sock.family == socket.AF_PACKET:
@@ -107,5 +109,5 @@ if __name__ == "__main__":
 		print("Too few parameters")
 	else:
 		for router in routers(sys.argv[1], sock=None, interval=0.5, repeat=1):
-			print(router)
+			print(router[0])
 

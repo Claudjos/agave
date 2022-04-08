@@ -27,23 +27,21 @@ from agave.core.helpers import SocketAddress, Job
 from agave.core.ndp import (
 	SourceLinkLayerAddress, NeighborSolicitation,
 	TargetLinkLayerAddress, NeighborAdvertisement,
-	NDP_OPTION_TYPE_TARGET_LINK_LAYER_ADDRESS, NDP
+	NDP_OPTION_TYPE_TARGET_LINK_LAYER_ADDRESS
 )
-from agave.core.ethernet import Ethernet, ETHER_TYPE_IPV6
-from agave.core.ip import IPv6, PROTO_ICMPv6
 from agave.core.icmpv6 import ICMPv6, TYPE_NEIGHBOR_ADVERTISEMENT
-from agave.core.buffer import Buffer
 from agave.nic.interfaces import NetworkInterface
+from .utils import NDPLinkLayerJob, handle_link_layer
 from ipaddress import IPv6Address, IPv6Network
 
 
-class NeighborSoliciter(Job):
+class NeighborSoliciter(NDPLinkLayerJob):
 
 	__slots__ = ("_cache", "_count", "interface", "repeat", "subnet", "_request_to_send")
 
 	def __init__(self, sock: "socket", interface: NetworkInterface, subnet: IPv6Network, repeat: int, **args):
-		super().__init__(sock, **args)
-		self.interface: NetworkInterface = interface
+		super().__init__(sock, interface, **args)
+		#self.interface: NetworkInterface = interface
 		self.subnet: IPv6Network = subnet
 		self.repeat: int = repeat
 		self._cache: set = set()
@@ -85,39 +83,7 @@ class NeighborSoliciter(Job):
 		return
 
 
-class LowLevelNeighborSoliciter(NeighborSoliciter):
-
-	def process(self, data: bytes, address: SocketAddress) -> Union[Host, None]:
-		"""Removes the link and network layer from message."""
-		if address[1] == ETHER_TYPE_IPV6:
-			buf = Buffer.from_bytes(data)
-			eth = Ethernet.read_from_buffer(buf)
-			ip = IPv6.read_from_buffer(buf)
-			if ip.next_header == PROTO_ICMPv6:
-				return super().process(buf.read_remaining(), (str(ip.source), 0))
-
-	def generate_packets(self) -> Iterator[Tuple[bytes, SocketAddress]]:
-		"""Adds link and network layer to messages."""
-		for data, addr in super().generate_packets():
-			# Parses back ICMPv6 message
-			icmp = ICMPv6.from_bytes(data)
-			# Creates IPv6 header
-			dest_ip = IPv6Address(addr[0])
-			ip = IPv6(0, 0, len(data), PROTO_ICMPv6, 255,
-				self.interface.ipv6, dest_ip)
-			# Calculates checksum for ICMPv6
-			icmp.set_pseudo_header(ip.get_pseudo_header())
-			icmp.set_checksum()
-			# Creates EthernetII header
-			dest_mac = NDP.map_multicast_over_ethernet(dest_ip).packed
-			dest_mac = b'\xff\xff\xff\xff\xff\xff'				# see module doc note.
-			eth = Ethernet(dest_mac, self.interface.mac.packed, ETHER_TYPE_IPV6)
-			# Yields
-			yield (
-				bytes(eth) + bytes(ip) + bytes(icmp),
-				(self.interface.name, ETHER_TYPE_IPV6)
-			)
-		return
+LowLevelNeighborSoliciter = handle_link_layer(NeighborSoliciter)
 
 
 def resolve_mac(

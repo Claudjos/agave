@@ -9,26 +9,25 @@ from agave.core.helpers import SocketAddress, Job
 from agave.core.ndp import (
 	SourceLinkLayerAddress, RouterSolicitation,
 	TargetLinkLayerAddress, RouterAdvertisement,
-	NDP_OPTION_TYPE_TARGET_LINK_LAYER_ADDRESS, NDP
+	NDP_OPTION_TYPE_TARGET_LINK_LAYER_ADDRESS
 )
-from agave.core.ethernet import Ethernet, ETHER_TYPE_IPV6
 from agave.core.ip import (
-	IPv6, PROTO_ICMPv6, IPV6_ALL_ROUTERS_MULTICAST_SITE_LOCAL,
+	IPV6_ALL_ROUTERS_MULTICAST_SITE_LOCAL,
 	IPV6_ALL_ROUTERS_MULTICAST_INTERFACE_LOCAL, IPV6_ALL_ROUTERS_MULTICAST_LINK_LOCAL
 )
 from agave.core.icmpv6 import ICMPv6, TYPE_ROUTER_ADVERTISEMENT
-from agave.core.buffer import Buffer
 from agave.nic.interfaces import NetworkInterface
+from .utils import NDPLinkLayerJob, handle_link_layer
 from ipaddress import IPv6Address, IPv6Network
 
 
-class RouterSoliciter(Job):
+class RouterSoliciter(NDPLinkLayerJob):
 
 	__slots__ = ("_cache", "_count", "interface", "repeat", "_request_to_send")
 
-	def __init__(self, sock: "socket", interface: NetworkInterface, repeat: int, **args):
-		super().__init__(sock, **args)
-		self.interface: NetworkInterface = interface
+	def __init__(self, sock: "socket", interface: NetworkInterface, repeat: int, **kwargs):
+		super().__init__(sock, interface, **kwargs)
+		#self.interface: NetworkInterface = interface
 		self.repeat: int = repeat
 		self._request_to_send: Iterator[Tuple[bytes, SocketAddress]] = self.generate_packets()
 		self._cache = set()
@@ -58,39 +57,7 @@ class RouterSoliciter(Job):
 		return
 
 
-class LowLevelRouterSoliciter(RouterSoliciter):
-
-	def process(self, data: bytes, address: SocketAddress) -> Union[Host, None]:
-		"""Removes the link and network layer from message."""
-		if address[1] == ETHER_TYPE_IPV6:
-			buf = Buffer.from_bytes(data)
-			eth = Ethernet.read_from_buffer(buf)
-			ip = IPv6.read_from_buffer(buf)
-			if ip.next_header == PROTO_ICMPv6:
-				return super().process(buf.read_remaining(), (str(ip.source), 0))
-
-	def generate_packets(self) -> Iterator[Tuple[bytes, SocketAddress]]:
-		"""Adds link and network layer to messages."""
-		for data, addr in super().generate_packets():
-			# Parses back ICMPv6 message
-			icmp = ICMPv6.from_bytes(data)
-			# Creates IPv6 header
-			dest_ip = IPv6Address(addr[0])
-			ip = IPv6(0, 0, len(data), PROTO_ICMPv6, 255,
-				self.interface.ipv6, dest_ip)
-			# Calculates checksum for ICMPv6
-			icmp.set_pseudo_header(ip.get_pseudo_header())
-			icmp.set_checksum()
-			# Creates EthernetII header
-			dest_mac = NDP.map_multicast_over_ethernet(dest_ip).packed
-			dest_mac = b'\xff\xff\xff\xff\xff\xff'				# see module doc note.
-			eth = Ethernet(dest_mac, self.interface.mac.packed, ETHER_TYPE_IPV6)
-			# Yields
-			yield (
-				bytes(eth) + bytes(ip) + bytes(icmp),
-				(self.interface.name, ETHER_TYPE_IPV6)
-			)
-		return
+LowLevelRouterSoliciter = handle_link_layer(RouterSoliciter)
 
 
 def routers(
@@ -125,7 +92,7 @@ def routers(
 			sock = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(ETHER_TYPE_IPV6))
 	if sock.family == socket.AF_INET6:
 		return RouterSoliciter(sock, interface, repeat, wait=wait, interval=interval).stream()
-	if sock.family == socket.AF_PACKET:
+	elif sock.family == socket.AF_PACKET:
 		return LowLevelRouterSoliciter(sock, interface, repeat, wait=wait, interval=interval).stream()
 	else:
 		raise ValueError("Socket family must be either AF_INET6 or AF_PACKET.")

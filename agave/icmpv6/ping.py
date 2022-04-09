@@ -1,4 +1,4 @@
-"""ICMPv4 Echo request/reply PING.
+"""ICMPv6 Echo request/reply PING.
 
 The module provides a script to discover host in a network by 
 using Echo ICMPv6 messages. With the option -m, returns also

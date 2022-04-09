@@ -8,10 +8,10 @@ Usage:
 	python3 -m agave.ndp.routers interface
 
 """
-import socket
+import socket, array
 from typing import Union, Iterator, Tuple
 from agave.arp.utils import Host
-from agave.core.helpers import SocketAddress, Job
+from agave.core.helpers import SocketAddress, Job, SendMsgArgs
 from agave.core.ndp import (
 	SourceLinkLayerAddress, RouterSolicitation,
 	TargetLinkLayerAddress, RouterAdvertisement,
@@ -47,19 +47,20 @@ class RouterSoliciter(NDPLinkLayerJob):
 
 	def loop(self) -> bool:
 		for message in self._request_to_send:
-			self.sock.sendto(*message)
+			self.sock.sendmsg(*message)
 			return True
 		return False
 
-	def generate_packets(self) -> Iterator[Tuple[bytes, SocketAddress]]:
+	def generate_packets(self) -> Iterator[SendMsgArgs]:
 		options = [SourceLinkLayerAddress.build(self.interface.mac)]
+		ancdata = [(socket.IPPROTO_IPV6, socket.IPV6_HOPLIMIT, array.array("i", [255]))]
 		for _ in range(0, self.repeat):
 			for ip in [
 				IPV6_ALL_ROUTERS_MULTICAST_INTERFACE_LOCAL,
 				IPV6_ALL_ROUTERS_MULTICAST_LINK_LOCAL,
 				IPV6_ALL_ROUTERS_MULTICAST_SITE_LOCAL
 			]:
-				yield (bytes(RouterSolicitation(options).to_frame()), (ip, 0))
+				yield ([bytes(RouterSolicitation(options).to_frame())], ancdata, 0, (ip, 0))
 		return
 
 
@@ -91,7 +92,7 @@ def routers(
 	if interface is None:
 		interface = NetworkInterface.get_by_host(subnet.network_address)
 	if sock is None:
-		sock = create_ndp_socket(hop_limit=255)
+		sock = create_ndp_socket()
 	if sock.family == socket.AF_INET6:
 		return RouterSoliciter(sock, interface, repeat, wait=wait, interval=interval).stream()
 	elif sock.family == socket.AF_PACKET:

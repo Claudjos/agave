@@ -8,12 +8,12 @@ Usage:
 	python3 -m agave.ndp.resolve <IPv6|subnet> [interface]
 
 """
-import socket
+import socket, array
 from typing import Union, Iterator, Tuple
 from agave.arp.utils import Host
 from agave.core.ethernet import MACAddress
 from agave.arp.resolve import MACAddressNotFoundError
-from agave.core.helpers import SocketAddress, Job
+from agave.core.helpers import SocketAddress, Job, SendMsgArgs
 from agave.core.ndp import (
 	SourceLinkLayerAddress, NeighborSolicitation,
 	TargetLinkLayerAddress, NeighborAdvertisement,
@@ -58,17 +58,20 @@ class NeighborSoliciter(NDPLinkLayerJob):
 
 	def loop(self) -> bool:
 		for message in self._request_to_send:
-			self.sock.sendto(*message)
+			self.sock.sendmsg(*message)
 			return True
 		return False
 
-	def generate_packets(self) -> Iterator[Tuple[bytes, SocketAddress]]:
+	def generate_packets(self) -> Iterator[SendMsgArgs]:
 		options = [SourceLinkLayerAddress.build(self.interface.mac)]
+		ancdata = [(socket.IPPROTO_IPV6, socket.IPV6_HOPLIMIT, array.array("i", [255]))]
 		for _ in range(0, self.repeat):
 			for host in self.subnet.hosts():
 				if str(host) not in self._cache:
 					yield (
-						bytes(NeighborSolicitation(host, options).to_frame()),
+						[bytes(NeighborSolicitation(host, options).to_frame())],
+						ancdata,
+						0,
 						(str(NeighborSolicitation.compute_solicited_node_multicast_address(host)), 0)
 					)
 		return
@@ -137,7 +140,7 @@ def resolve(
 	if interface is None:
 		interface = NetworkInterface.get_by_host(subnet.network_address)
 	if sock is None:
-		sock = create_ndp_socket(hop_limit=255)
+		sock = create_ndp_socket()
 	if sock.family == socket.AF_INET6:
 		return NeighborSoliciter(sock, interface, subnet, repeat, wait=wait, interval=interval).stream()
 	if sock.family == socket.AF_PACKET:

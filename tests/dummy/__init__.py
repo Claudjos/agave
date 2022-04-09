@@ -1,6 +1,6 @@
 """Dummy class for testing. """
-from typing import Tuple
-from agave.core.helpers import SocketAddress
+from typing import Tuple, List, Iterable
+from agave.core.helpers import SocketAddress, AncillaryData
 from agave.core.buffer import Buffer
 from agave.core.ethernet import MACAddress
 from ipaddress import IPv6Address, IPv6Network
@@ -26,6 +26,10 @@ class DummySock:
 
 	def sendto(self, data: bytes, address: SocketAddress):
 		self.messages.append((data, address))
+
+	def sendmsg(self, data: Iterable[bytes], ancdata: List[AncillaryData], flags: int, 
+		address: SocketAddress):
+		self.messages.append((b''.join(data), address))
 
 	def get_message(self, index: int) -> Tuple[bytes, SocketAddress]:
 		return self.messages[index]

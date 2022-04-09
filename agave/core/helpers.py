@@ -1,9 +1,12 @@
 import select, time
-from typing import Tuple, Iterator, List, Callable, Any
+from typing import Tuple, Iterator, List, Callable, Any, Iterable
 
+
+SOCKET_MAX_READ = 0xffff
 
 SocketAddress = Tuple
-SOCKET_MAX_READ = 0xffff
+AncillaryData = List[Tuple[int, int, Iterable[bytes]]]
+SendMsgArgs = Iterable[Tuple[Iterable[bytes], List[AncillaryData], int, SocketAddress]]
 
 
 class BaseJob:

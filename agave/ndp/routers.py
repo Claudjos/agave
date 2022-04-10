@@ -29,7 +29,7 @@ from ipaddress import IPv6Address, IPv6Network
 
 class RouterSoliciter(NDPLinkLayerJob):
 
-	__slots__ = ("_cache", "_count", "interface", "repeat", "_request_to_send")
+	__slots__ = ("_cache", "interface", "repeat", "_request_to_send")
 
 	def __init__(self, sock: "socket", interface: NetworkInterface, repeat: int, **kwargs):
 		super().__init__(sock, interface, **kwargs)
@@ -89,8 +89,6 @@ def routers(
 	"""
 	if type(interface) == str:
 		interface = NetworkInterface.get_by_name(interface)
-	if interface is None:
-		interface = NetworkInterface.get_by_host(subnet.network_address)
 	if sock is None:
 		sock = create_ndp_socket()
 	if sock.family == socket.AF_INET6:

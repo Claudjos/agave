@@ -153,7 +153,8 @@ class IPv4(FrameWithChecksum):
 		destination: IPv4Address,
 		source: IPv4Address,
 		payload: bytes,
-		proto: int
+		proto: int,
+		ttl: int = 64
 	) -> bytes:
 		buf = Buffer.from_bytes()
 		ip_frame = cls(
@@ -164,7 +165,7 @@ class IPv4(FrameWithChecksum):
 			identification=0,
 			flags=2, 								# don't fragment
 			fragment_offset=0,
-			ttl=64,
+			ttl=ttl,
 			protocol=proto,
 			checksum=0,
 			source=source.packed,

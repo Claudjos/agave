@@ -7,7 +7,7 @@ class EndOfBufferError(Exception):
 
 class Buffer:
 
-	__slots__ = ("_buf")
+	__slots__ = ("_buf", "_mark")
 
 	@classmethod
 	def from_bytes(cls, data: bytes = b''):
@@ -15,6 +15,7 @@ class Buffer:
 
 	def __init__(self, buf: BytesIO):
 		self._buf = buf
+		self._mark = 0
 	
 	def read(self, size: int = 1) -> bytes:
 		if size == 0:
@@ -59,3 +60,9 @@ class Buffer:
 
 	def read_remaining(self):
 		return self._buf.read()
+
+	def mark(self):
+		self._mark = self._buf.tell()
+
+	def restore(self):
+		self._buf.seek(self._mark)

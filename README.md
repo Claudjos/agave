@@ -6,6 +6,7 @@ It started as a collection of scripts shared to show some knowledge of networkin
 
 The main motivation behind the development of the project comes from the curiosity to learn more about network protocols and vulnerabilities. Agave is a byproduct of learning-by-doing.
 
+
 ## Usage of the CLI scripts
 
 ##### Requirements
@@ -95,13 +96,40 @@ python3 -m agave.icmp.redirect 8.8.8.8 192.168.0.2 192.168.0.3 192.168.0.1
 
 ### IRDP
 
-Solicit routers advertise messages.
+Listing routers available on the network. 
 ```
 python3 -m agave.irdp.solicit
 ```
-Advertise a list of routers.
+Advertising a list of routers.
 ```
 python3 -m agave.irdp.advertise <preference> <router> [...[<preference> <router>]]
 python3 -m agave.irdp.advertise 100 192.168.1.10
 python3 -m agave.irdp.advertise 100 192.168.1.10 50 192.168.1.20
+```
+
+### ICMPv6
+Ping sweep.
+```
+python3 -m agave.icmpv6.ping <ip|subnet> [-m]
+python3 -m agave.icmpv6.ping fe80::7ef9:33ff:feaa:bbcc
+```
+
+### NDP
+Retrieving link layer address(es).
+```
+python3 -m agave.ndp.resolve <ip|subnet> [interface]
+python3 -m agave.ndp.resolve fe80::7ef9:33ff:feaa:bbcc/128
+```
+
+Listing routers available on the network. 
+```
+python3 -m agave.ndp.routers <interface>
+python3 -m agave.ndp.routers eth0
+```
+
+Advertising an interfaces as default router.
+```
+python3 -m agave.ndp.advertise <interface> [[prefix], ...]
+python3 -m agave.ndp.advertise eth0
+python3 -m agave.irdp.advertise eth0 2001:4860:4860::8888/128
 ```

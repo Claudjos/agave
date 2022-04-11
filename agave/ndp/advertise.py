@@ -45,7 +45,7 @@ class RouterAdvertiser(Job):
 			self.sock.sendmsg([self.message], [], 0, address)
 
 	def loop(self) -> bool:
-		ancdata = [(socket.IPPROTO_IPV6, socket.IPV6_HOPLIMIT, array.array("i", [1]))]
+		ancdata = [(socket.IPPROTO_IPV6, socket.IPV6_HOPLIMIT, array.array("i", [255]))]
 		self.sock.sendmsg([self.message], ancdata, 0, (IPV6_ALL_NODES_MULTICAST_INTERFACE_LOCAL, 0))
 		self.sock.sendmsg([self.message], ancdata, 0, (IPV6_ALL_NODES_MULTICAST_LINK_LOCAL, 0))
 		return True

@@ -6,6 +6,9 @@ It started as a collection of scripts shared to show some knowledge of networkin
 
 The main motivation behind the development of the project comes from the curiosity to learn more about network protocols and vulnerabilities. Agave is a byproduct of learning-by-doing.
 
+## Note/TODOs
+At the moment the main goal is to add new models for protocols to the package *core*.
+For each protocol I'm adding some PoC scripts, but I don't know what to do with them yet.
 
 ## Usage of the CLI scripts
 
@@ -131,5 +134,5 @@ Advertising an interfaces as default router.
 ```
 python3 -m agave.ndp.advertise <interface> [[prefix], ...]
 python3 -m agave.ndp.advertise eth0
-python3 -m agave.irdp.advertise eth0 2001:4860:4860::8888/128
+python3 -m agave.ndp.advertise eth0 2001:4860:4860::8888/128
 ```

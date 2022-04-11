@@ -19,11 +19,14 @@ from agave.core.ndp import (
 )
 from agave.core.ip import (
 	IPV6_ALL_ROUTERS_MULTICAST_SITE_LOCAL,
-	IPV6_ALL_ROUTERS_MULTICAST_INTERFACE_LOCAL, IPV6_ALL_ROUTERS_MULTICAST_LINK_LOCAL
+	IPV6_ALL_ROUTERS_MULTICAST_INTERFACE_LOCAL,
+	IPV6_ALL_ROUTERS_MULTICAST_LINK_LOCAL,
+	IPV6_ALL_NODES_MULTICAST_INTERFACE_LOCAL,
+	IPV6_ALL_NODES_MULTICAST_LINK_LOCAL
 )
 from agave.core.icmpv6 import ICMPv6, TYPE_ROUTER_ADVERTISEMENT
 from agave.nic.interfaces import NetworkInterface
-from .utils import NDPLinkLayerJob, handle_link_layer, create_ndp_socket
+from .utils import NDPLinkLayerJob, handle_link_layer, create_ndp_socket, join_group
 from ipaddress import IPv6Address, IPv6Network
 
 
@@ -92,6 +95,8 @@ def routers(
 	if sock is None:
 		sock = create_ndp_socket()
 	if sock.family == socket.AF_INET6:
+		join_group(sock, IPV6_ALL_NODES_MULTICAST_INTERFACE_LOCAL)
+		join_group(sock, IPV6_ALL_NODES_MULTICAST_LINK_LOCAL)
 		return RouterSoliciter(sock, interface, repeat, wait=wait, interval=interval).stream()
 	elif sock.family == socket.AF_PACKET:
 		return LowLevelRouterSoliciter(sock, interface, repeat, wait=wait, interval=interval).stream()

@@ -44,7 +44,7 @@ class Pinger(Job):
 			self._cache.add(address[0])
 			result = True, IPv6Address(address[0]), hop_limit
 		if icmp_h.type == TYPE_DESTINATION_UNREACHABLE:
-			ip_frame = IPv6.from_bytes(icmp_h.payload)
+			ip_frame = IPv6.from_bytes(icmp_h.body[4:])
 			destination = IPv6Address(ip_frame.destination)
 			if destination not in self._cache:# and ip_frame.is_checksum_valid():
 				self._count -= 1

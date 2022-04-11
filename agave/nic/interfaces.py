@@ -21,6 +21,7 @@ SIOCGIFADDR = 0x8915        # get PA address
 SIOCGIFBRDADDR = 0x8919     # get broadcast PA address
 SIOCGIFNETMASK = 0x891b     # get network PA mask
 SIOCGIFHWADDR = 0x8927      # get HW address
+SIOGIFINDEX = 0x8933        # get index
 
 
 def _get_socket() -> socket.socket:
@@ -48,6 +49,7 @@ class NetworkInterface:
     """This class represents a network interface and provides builders.
 
     Attributes:
+        index: the interface index.
         name: the interface name.
         mac: the interface hardware address.
         ip: the interface network address.
@@ -56,15 +58,16 @@ class NetworkInterface:
 
     """
 
-    __slots__ = ("name", "mac", "ip", "network", "broadcast","ipv6", "netv6")
+    __slots__ = ("index", "name", "mac", "ip", "network", "broadcast","ipv6", "netv6")
 
-    def __init__(self, name: str, mac: MACAddress, ip: IPv4Address,  network: IPv6Network,
+    def __init__(self, index: int, name: str, mac: MACAddress, ip: IPv4Address,  network: IPv6Network,
         broadcast: IPv4Address, ipv6: IPv6Address, net6: IPv6Network):
-        self.name : str = name
-        self.mac : MACAddress = mac
-        self.ip : IPv4Address = ip
-        self.network : IPv6Network = network
-        self.broadcast : IPAddress = broadcast
+        self.index: int = index
+        self.name: str = name
+        self.mac: MACAddress = mac
+        self.ip: IPv4Address = ip
+        self.network: IPv6Network = network
+        self.broadcast: IPAddress = broadcast
         self.ipv6: IPv6Address = ipv6
         self.netv6: IPv6Network = net6
 
@@ -113,6 +116,7 @@ class NetworkInterface:
         """
         try:
             iface = struct.pack('256s', bytes(nic_name, 'utf-8')[:15])
+            index = fcntl.ioctl(fileno, SIOGIFINDEX, iface)[16]
             mac = MACAddress(fcntl.ioctl(fileno, SIOCGIFHWADDR, iface)[18:24])
         except OSError:
             raise NetworkInterfaceNotFound(
@@ -134,7 +138,7 @@ class NetworkInterface:
             ))
         except:
             ip = broadcast = network = None
-        return cls(nic_name, mac, ip, network, broadcast, ipv6, net6)
+        return cls(index, nic_name, mac, ip, network, broadcast, ipv6, net6)
 
     @classmethod
     def list(cls) -> List["NetworkInterface"]:
@@ -230,7 +234,8 @@ if __name__ == "__main__":
         except NetworkInterfaceNotFound as e:
             print(e)
         else:
-            print("{:20}{}\n{:20}{}\n{:20}{}\n{:20}{}\n{:20}{}\n{:20}{}\n{:20}{}".format(
+            print("{:20}{}\n{:20}{}\n{:20}{}\n{:20}{}\n{:20}{}\n{:20}{}\n{:20}{}\n{:20}{}".format(
+                "INDEX", nic.index,
                 "NAME", nic.name,
                 "MAC", nic.mac,
                 "IP", nic.ip,
@@ -240,12 +245,12 @@ if __name__ == "__main__":
                 "NETWORKv6", nic.netv6,
             ))
     else:
-        print("{:20}\t{:20}\t{:20}\t{:20}\t{:20}\t{:30}\t{:20}".format(
-            "NAME", "MAC", "IPv4", "NETWORKv4", "BROADCASTv4", "IPv6", "NETWORKv6"))
+        print("{:5}\t{:20}\t{:20}\t{:20}\t{:20}\t{:20}\t{:30}\t{:20}".format(
+            "INDEX", "NAME", "MAC", "IPv4", "NETWORKv4", "BROADCASTv4", "IPv6", "NETWORKv6"))
         print("".join(["-"] * 180))
         for nic in NetworkInterface.list():
-            print("{:20}\t{:20}\t{:20}\t{:20}\t{:20}\t{:30}\t{:20}".format(
-                nic.name, str(nic.mac), str(nic.ip), str(nic.network), str(nic.broadcast),
+            print("{:5}\t{:20}\t{:20}\t{:20}\t{:20}\t{:20}\t{:30}\t{:20}".format(
+                nic.index, nic.name, str(nic.mac), str(nic.ip), str(nic.network), str(nic.broadcast),
                 str(nic.ipv6), str(nic.netv6)
             ))
 

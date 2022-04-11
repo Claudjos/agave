@@ -32,7 +32,7 @@ class RouterAdvertiser(Job):
 		if icmp.type == TYPE_ROUTER_SOLICITATION_MESSAGE:
 			# TODO (?) validate
 			# Extra call to Job.loop
-			self.sock.sendmsg(self.message, 0, [], address)
+			self.sock.sendmsg([self.message], [], 0, address)
 
 	def loop(self) -> bool:
 		ancdata_multicast = [(socket.IPPROTO_IP, socket.IP_TTL, array.array("i", [1]))]

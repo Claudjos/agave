@@ -1,17 +1,36 @@
 """Primitives to retrieve routing information.
 
+Note:
+	This module also provides a script to retrieve the 
+	IPv6 address of the routers available.
+
+Usage:
+	python3 -m agave.ndp.routers interface
+
 """
 import socket, array
-from typing import Union, Iterator, Iterable, Tuple
+from typing import Union, Iterator, Tuple
+from agave.arp.utils import Host
 from agave.core.helpers import SocketAddress, Job, SendMsgArgs
-from agave.core.irdp import IRDP, ROUTER_SOLICITATION_MULTICAST_ADDRESS, ROUTER_ADVERTISMENT_MULTICAST_ADDRESS
-from agave.core.icmpv4 import ICMPv4, TYPE_ROUTER_ADVERTISMENT_MESSAGE
+from agave.core.ndp import (
+	SourceLinkLayerAddress, RouterSolicitation,
+	TargetLinkLayerAddress, RouterAdvertisement,
+	NDP_OPTION_TYPE_TARGET_LINK_LAYER_ADDRESS
+)
+from agave.core.ip import (
+	IPV6_ALL_ROUTERS_MULTICAST_SITE_LOCAL,
+	IPV6_ALL_ROUTERS_MULTICAST_INTERFACE_LOCAL,
+	IPV6_ALL_ROUTERS_MULTICAST_LINK_LOCAL,
+	IPV6_ALL_NODES_MULTICAST_INTERFACE_LOCAL,
+	IPV6_ALL_NODES_MULTICAST_LINK_LOCAL
+)
+from agave.core.icmpv6 import ICMPv6, TYPE_ROUTER_ADVERTISEMENT
 from agave.nic.interfaces import NetworkInterface
-from .utils import IRDPLinkLayerJob, handle_link_layer, create_irdp_socket, join_group
-from ipaddress import IPv4Address, IPv4Network
+from .utils import NDPLinkLayerJob, handle_link_layer, create_ndp_socket, join_group
+from ipaddress import IPv6Address, IPv6Network
 
 
-class RouterSoliciter(IRDPLinkLayerJob):
+class RouterSoliciter(NDPLinkLayerJob):
 
 	__slots__ = ("_cache", "interface", "repeat", "_request_to_send")
 
@@ -22,12 +41,12 @@ class RouterSoliciter(IRDPLinkLayerJob):
 		self._request_to_send: Iterator[Tuple[bytes, SocketAddress]] = self.generate_packets()
 		self._cache = set()
 
-	def process(self, data: bytes, address: SocketAddress) -> Union[Tuple[IPv4Address, ICMPv4], None]:
-		_, icmp = ICMPv4.parse(data)
-		if icmp.type == TYPE_ROUTER_ADVERTISMENT_MESSAGE:
+	def process(self, data: bytes, address: SocketAddress) -> Union[Tuple[IPv6Address, RouterAdvertisement], None]:
+		icmp, = ICMPv6.parse(data)
+		if icmp.type == TYPE_ROUTER_ADVERTISEMENT:
 			if address[0] not in self._cache:
 				self._cache.add(address[0])
-				return (IPv4Address(address[0]), icmp)
+				return (IPv6Address(address[0]), RouterAdvertisement.parse(icmp))
 
 	def loop(self) -> bool:
 		for message in self._request_to_send:
@@ -36,12 +55,15 @@ class RouterSoliciter(IRDPLinkLayerJob):
 		return False
 
 	def generate_packets(self) -> Iterator[SendMsgArgs]:
-		message = bytes(IRDP.solicitation())
-		ancdata_multicast = [(socket.IPPROTO_IP, socket.IP_TTL, array.array("i", [1]))]
-		ancdata_broadcast = [(socket.IPPROTO_IP, socket.IP_TTL, array.array("i", [255]))]
+		options = [SourceLinkLayerAddress.build(self.interface.mac)]
+		ancdata = [(socket.IPPROTO_IPV6, socket.IPV6_HOPLIMIT, array.array("i", [255]))]
 		for _ in range(0, self.repeat):
-			yield [message], ancdata_multicast, 0, (ROUTER_SOLICITATION_MULTICAST_ADDRESS, 0)
-			yield [message], ancdata_broadcast, 0, ("255.255.255.255", 0)
+			for ip in [
+				IPV6_ALL_ROUTERS_MULTICAST_INTERFACE_LOCAL,
+				IPV6_ALL_ROUTERS_MULTICAST_LINK_LOCAL,
+				IPV6_ALL_ROUTERS_MULTICAST_SITE_LOCAL
+			]:
+				yield ([bytes(RouterSolicitation(options).to_frame())], ancdata, 0, (ip, 0))
 		return
 
 
@@ -54,7 +76,7 @@ def routers(
 	repeat: int = 3,
 	wait: float = 1,
 	interval: int = 0.003
-) -> Iterable[Tuple[IPv4Address, ICMPv4]]:
+) -> Iterator[Host]:
 	"""Returns all the routers.
 		
 	Args:
@@ -65,20 +87,21 @@ def routers(
 		interval: delta time between requests.
 
 	Returns:
-		An Iterable of IPv4 address and ICMPv4 message.
+		An Iterator with the tuple MAC, IPv6 addresses.
 
 	"""
 	if type(interface) == str:
 		interface = NetworkInterface.get_by_name(interface)
 	if sock is None:
-		sock = create_irdp_socket()
-	if sock.family == socket.AF_INET:
-		join_group(sock, ROUTER_ADVERTISMENT_MULTICAST_ADDRESS)
+		sock = create_ndp_socket()
+	if sock.family == socket.AF_INET6:
+		join_group(sock, IPV6_ALL_NODES_MULTICAST_INTERFACE_LOCAL)
+		join_group(sock, IPV6_ALL_NODES_MULTICAST_LINK_LOCAL)
 		return RouterSoliciter(sock, interface, repeat, wait=wait, interval=interval).stream()
 	elif sock.family == socket.AF_PACKET:
 		return LowLevelRouterSoliciter(sock, interface, repeat, wait=wait, interval=interval).stream()
 	else:
-		raise ValueError("Socket family must be either AF_INET or AF_PACKET.")
+		raise ValueError("Socket family must be either AF_INET6 or AF_PACKET.")
 
 
 if __name__ == "__main__":

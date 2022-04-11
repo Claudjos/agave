@@ -22,6 +22,12 @@ IPv6_EXTENSION = [
 	PROTO_IPv6_OPTS
 ]
 
+IPV6_ALL_NODES_MULTICAST_INTERFACE_LOCAL = "FF01:0:0:0:0:0:0:1"
+IPV6_ALL_NODES_MULTICAST_LINK_LOCAL = "FF02:0:0:0:0:0:0:1"
+IPV6_ALL_ROUTERS_MULTICAST_INTERFACE_LOCAL = "FF01:0:0:0:0:0:0:2"
+IPV6_ALL_ROUTERS_MULTICAST_LINK_LOCAL = "FF02:0:0:0:0:0:0:2"
+IPV6_ALL_ROUTERS_MULTICAST_SITE_LOCAL = "FF05:0:0:0:0:0:0:2"
+
 
 class IPv4(FrameWithChecksum):
 	"""IPv4 header.
@@ -147,7 +153,8 @@ class IPv4(FrameWithChecksum):
 		destination: IPv4Address,
 		source: IPv4Address,
 		payload: bytes,
-		proto: int
+		proto: int,
+		ttl: int = 64
 	) -> bytes:
 		buf = Buffer.from_bytes()
 		ip_frame = cls(
@@ -158,7 +165,7 @@ class IPv4(FrameWithChecksum):
 			identification=0,
 			flags=2, 								# don't fragment
 			fragment_offset=0,
-			ttl=64,
+			ttl=ttl,
 			protocol=proto,
 			checksum=0,
 			source=source.packed,
@@ -203,7 +210,7 @@ class IPv6(Frame):
 		hop_limit: int,
 		source: IPv6Address,
 		destination: IPv6Address,
-		extensions: bytes = None
+		extensions: bytes = b''
 	):
 		self.version: int = 6
 		self.traffic_class: int = traffic_class
@@ -213,7 +220,7 @@ class IPv6(Frame):
 		self.hop_limit: int = hop_limit
 		self.source: IPv6Address = source
 		self.destination: IPv6Address = destination
-		self.extensions: bytes = b''
+		self.extensions: bytes = extensions
 
 	@classmethod
 	def read_from_buffer(cls, buf: Buffer) -> "IPv6":
@@ -289,8 +296,9 @@ class IPv6(Frame):
 			self.next_header
 		)
 
+	@classmethod
 	def build_pseudo_header(
-		self,
+		cls,
 		source: IPv6Address,
 		destination: IPv6Address,
 		packet_length: int,
@@ -313,4 +321,3 @@ class IPv6(Frame):
 			b'\x00\x00\x00' +
 			next_header.to_bytes(1, byteorder="big")
 		)
-

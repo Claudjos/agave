@@ -1,34 +1,28 @@
-"""ICMPv4 Echo request/reply PING.
+"""ICMPv6 Echo request/reply PING.
 
 The module provides a script to discover host in a network by 
-using Echo ICMPv4 messages. With the option -m, returns also
+using Echo ICMPv6 messages. With the option -m, returns also
 the host for which neither a reply or a destination unreachable 
 message was received.
 
-Usage:
-	python3 -m agave.icmp.ping <subnet> [-m]
-
-Example:
-	python3 -m agave.icmp.ping 192.168.1.0/24
-	python3 -m agave.icmp.ping 192.168.1.0/24 -m
-
 """
-import socket
+import socket, array
 from agave.core.helpers import Job, SocketAddress
-from agave.core.icmpv4 import ICMPv4, TYPE_ECHO_REPLY, TYPE_DESTINATION_UNREACHABLE
-from agave.core.ip import IPv4
-from ipaddress import IPv4Address, IPv4Network, ip_network
+from agave.core.icmpv6 import ICMPv6, TYPE_ECHO_REPLY, TYPE_DESTINATION_UNREACHABLE
+from agave.core.ip import IPv6, PROTO_ICMPv6
+from ipaddress import IPv6Address, IPv6Network, ip_network
 from typing import List, Tuple, Iterator
 
 
 class Pinger(Job):
 
-	def __init__(self, sock: "socket.socket", subnet: IPv4Network, repeat: int = 2, **kwargs):
+	def __init__(self, sock: "socket.socket", subnet: IPv6Network, repeat: int = 2, **kwargs):
 		super().__init__(sock, **kwargs)
 		self.subnet = subnet
-		self.packets_to_send = self.generate_echo_requests(repeat)
+		self.packets_to_send = self.generate_echo_requests(subnet, repeat)
 		self._cache = set()
 		self._count = self.subnet.num_addresses
+		self.sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_RECVHOPLIMIT, 1);
 
 	def loop(self) -> bool:
 		for message in self.packets_to_send:
@@ -36,17 +30,23 @@ class Pinger(Job):
 			return True
 		return False
 
-	def process(self, data: bytes, address: SocketAddress) -> Tuple[bool, IPv4Address, int]:
+	def recv_message(self):
+		fds = array.array("i")
+		m, ancillary_data, _, addr = self.sock.recvmsg(self.max_read, 
+			socket.CMSG_LEN(socket.CMSG_LEN(10 * fds.itemsize)), socket.IPV6_HOPLIMIT)
+		return m, ancillary_data[0][2][0], addr
+
+	def process(self, data: bytes, hop_limit: int, address: SocketAddress) -> Tuple[bool, IPv6Address, int]:
 		result = None
-		ip_h, icmp_h = ICMPv4.parse(data)
+		p_h, icmp_h = None, ICMPv6.parse(data)[0]
 		if address[0] not in self._cache and icmp_h.type == TYPE_ECHO_REPLY:
 			self._count -= 1
 			self._cache.add(address[0])
-			result = True, IPv4Address(address[0]), ip_h.ttl
+			result = True, IPv6Address(address[0]), hop_limit
 		if icmp_h.type == TYPE_DESTINATION_UNREACHABLE:
-			ip_frame = IPv4.from_bytes(icmp_h.data)
-			destination = IPv4Address(ip_frame.destination)
-			if destination not in self._cache and ip_frame.is_checksum_valid():
+			ip_frame = IPv6.from_bytes(icmp_h.body[4:])
+			destination = IPv6Address(ip_frame.destination)
+			if destination not in self._cache:# and ip_frame.is_checksum_valid():
 				self._count -= 1
 				self._cache.add(str(destination))
 		if self._count < 1:
@@ -56,13 +56,14 @@ class Pinger(Job):
 	def get_missing_hosts(self) -> set:
 		return set(map(lambda x: str(x), self.subnet.hosts())) - self._cache
 
-	def generate_echo_requests(self, repeat: int) -> Iterator[Tuple[bytes, SocketAddress]]:
+	def generate_echo_requests(self, subnet: IPv6Network, repeat: int) -> Iterator[Tuple[bytes, SocketAddress]]:
 		for _ in range(0, repeat):
-			for address in self.subnet.hosts():
-				if str(address) not in self._cache:
-					t = ICMPv4.echo(b"abcdefghijklmonpqrstuvwxyz")
-					t.set_checksum()
-					yield bytes(t), (str(address), 0)
+			for address in subnet.hosts():
+				if address not in self._cache:
+					yield (
+						bytes(ICMPv6.echo_request(b"abcdefghijklmonpqrstuvwxyz")),
+						(str(address), 0)
+					)
 		return
 
 
@@ -83,7 +84,7 @@ if __name__ == "__main__":
 		print_missing = False
 		wait = 0.5
 	# Create Job
-	sock = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP)
+	sock = socket.socket(socket.AF_INET6, socket.SOCK_RAW, socket.IPPROTO_ICMPV6)
 	sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 	job = Pinger(
 		sock,

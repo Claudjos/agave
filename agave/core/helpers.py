@@ -1,9 +1,12 @@
 import select, time
-from typing import Tuple, Iterator, List, Callable, Any
+from typing import Tuple, Iterator, List, Callable, Any, Iterable
 
+
+SOCKET_MAX_READ = 0xffff
 
 SocketAddress = Tuple
-SOCKET_MAX_READ = 0xffff
+AncillaryData = List[Tuple[int, int, Iterable[bytes]]]
+SendMsgArgs = Iterable[Tuple[Iterable[bytes], List[AncillaryData], int, SocketAddress]]
 
 
 class BaseJob:
@@ -96,8 +99,7 @@ class Job(BaseJob):
 			rl, wl, xl = select.select([self.sock], [], [], timeout)
 			# Process
 			if rl != []:
-				message = self.sock.recvfrom(self.max_read)
-				result = self.process(*message)
+				result = self.process(*self.recv_message())
 				if result is not None:
 					yield result
 			# Loop
@@ -118,4 +120,8 @@ class Job(BaseJob):
 		"""Run the service but do not return any value."""
 		for _ in self.stream():
 			pass
+
+	def recv_message(self):
+		"""Temporary fix to allow sub classes to request ancillary data."""
+		return self.sock.recvfrom(self.max_read)
 

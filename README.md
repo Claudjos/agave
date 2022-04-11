@@ -50,8 +50,8 @@ python3 -m agave.arp.listen
 
 Translating MAC address into IPv4 address. Note that RARP protocol is obsolete.
 ```
-python3 -m agave.arp.resolve <mac> <interface>
-python3 -m agave.arp.resolve aa:bb:cc:00:11:22 eth0
+python3 -m agave.arp.reverse <mac> <interface>
+python3 -m agave.arp.reverse aa:bb:cc:00:11:22 eth0
 ```
 
 ARP Spoofing. The script replies to ARP requests with spoofed messages in order to redirect traffic for the target subnet to your host. The optional victim argument restricts spoofing to some hosts. With the option -f gratuitous spoofed replies are sent periodically to the victim.

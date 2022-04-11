@@ -99,8 +99,7 @@ class Job(BaseJob):
 			rl, wl, xl = select.select([self.sock], [], [], timeout)
 			# Process
 			if rl != []:
-				message = self.sock.recvfrom(self.max_read)
-				result = self.process(*message)
+				result = self.process(*self.recv_message())
 				if result is not None:
 					yield result
 			# Loop
@@ -121,4 +120,8 @@ class Job(BaseJob):
 		"""Run the service but do not return any value."""
 		for _ in self.stream():
 			pass
+
+	def recv_message(self):
+		"""Temporary fix to allow sub classes to request ancillary data."""
+		return self.sock.recvfrom(self.max_read)
 

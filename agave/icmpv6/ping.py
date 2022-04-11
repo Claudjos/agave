@@ -6,7 +6,7 @@ the host for which neither a reply or a destination unreachable
 message was received.
 
 """
-import socket
+import socket, array
 from agave.core.helpers import Job, SocketAddress
 from agave.core.icmpv6 import ICMPv6, TYPE_ECHO_REPLY, TYPE_DESTINATION_UNREACHABLE
 from agave.core.ip import IPv6, PROTO_ICMPv6
@@ -22,6 +22,7 @@ class Pinger(Job):
 		self.packets_to_send = self.generate_echo_requests(subnet, repeat)
 		self._cache = set()
 		self._count = self.subnet.num_addresses
+		self.sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_RECVHOPLIMIT, 1);
 
 	def loop(self) -> bool:
 		for message in self.packets_to_send:
@@ -29,13 +30,19 @@ class Pinger(Job):
 			return True
 		return False
 
-	def process(self, data: bytes, address: SocketAddress) -> Tuple[bool, IPv6Address, int]:
+	def recv_message(self):
+		fds = array.array("i")
+		m, ancillary_data, _, addr = self.sock.recvmsg(self.max_read, 
+			socket.CMSG_LEN(socket.CMSG_LEN(10 * fds.itemsize)), socket.IPV6_HOPLIMIT)
+		return m, ancillary_data[0][2][0], addr
+
+	def process(self, data: bytes, hop_limit: int, address: SocketAddress) -> Tuple[bool, IPv6Address, int]:
 		result = None
 		p_h, icmp_h = None, ICMPv6.parse(data)[0]
 		if address[0] not in self._cache and icmp_h.type == TYPE_ECHO_REPLY:
 			self._count -= 1
 			self._cache.add(address[0])
-			result = True, IPv6Address(address[0]), 0 #ip_h.hop_limit TODO
+			result = True, IPv6Address(address[0]), hop_limit
 		if icmp_h.type == TYPE_DESTINATION_UNREACHABLE:
 			ip_frame = IPv6.from_bytes(icmp_h.payload)
 			destination = IPv6Address(ip_frame.destination)

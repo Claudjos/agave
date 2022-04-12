@@ -43,7 +43,7 @@ class MAC_802_11(Frame):
 	def is_probe_response(self) -> bool:
 		return self.subtype == 5 and self.type == 0
 
-	def is_become_frame(self) -> bool:
+	def is_beacon_frame(self) -> bool:
 		return self.subtype == 8 and self.type == 0
 
 	@classmethod

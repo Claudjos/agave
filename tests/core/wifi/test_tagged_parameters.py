@@ -1,5 +1,6 @@
 import unittest
-from agave.core.wifi.tags import TaggedParameter, PARAM_SSID_PARAMETER_SET, PARAM_RSN_INFORMATION
+from agave.core.wifi.tags import (TaggedParameter, PARAM_SSID_PARAMETER_SET, 
+	PARAM_RSN_INFORMATION, PARAM_SUPPORTED_RATES, SupportedRates)
 from agave.core.buffer import Buffer
 
 
@@ -33,8 +34,18 @@ class TestTaggedParameter(unittest.TestCase):
 		ssid = params[PARAM_SSID_PARAMETER_SET]
 		self.assertEqual(ssid.SSID, "SantoroWifi")
 
+	def test_read_supported_rates(self):
+		"""Tests supported rates."""
+		buf = Buffer.from_bytes(self.message)
+		params = TaggedParameter.parse_all(buf)
+		rates = params[PARAM_SUPPORTED_RATES]
+		self.assertEqual(rates.rates, [0x82, 0x84, 0x8b, 0x96, 0x12, 0x24, 0x48, 0x6c])
+
+	def test_write_supported_rates(self):
+		self.assertEqual(bytes(SupportedRates.build([0x82, 0x84])), b'\x01\x02\x82\x84')
+
 	def test_rsn(self):
-		"""Tests RSN Information."""
+		"""Tests RSN."""
 		buf = Buffer.from_bytes(self.message)
 		params = TaggedParameter.parse_all(buf)
 		rsn = params[PARAM_RSN_INFORMATION]

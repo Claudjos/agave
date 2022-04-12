@@ -3,6 +3,7 @@ from agave.core.buffer import Buffer, EndOfBufferError
 
 
 PARAM_SSID_PARAMETER_SET = 0
+PARAM_SUPPORTED_RATES = 1
 PARAM_RSN_INFORMATION = 48
 
 
@@ -29,12 +30,36 @@ class TaggedParameter:
 		finally:
 			return tags
 
+	def __bytes__(self):
+		return (
+			self.number.to_bytes(1, byteorder="little") +
+			self.length.to_bytes(1, byteorder="little") +
+			self.data
+		)
+
 
 class SSIDTaggedParameter(TaggedParameter):
 
 	@property
 	def SSID(self) -> str:
 		return self.data.decode()
+
+
+class SupportedRates(TaggedParameter):
+
+	@property
+	def rates(self) -> List[int]:
+		return list(self.data)
+
+	@rates.setter
+	def rates(self, rates: List[int]):
+		self.data = b''.join(map(lambda x: x.to_bytes(1, byteorder="little"), rates))
+
+	@classmethod
+	def build(cls, rates: List[int]):
+		t = cls(PARAM_SUPPORTED_RATES, len(rates), b'')
+		t.rates = rates
+		return t
 
 
 class RSNTaggedParameter(TaggedParameter):
@@ -88,6 +113,7 @@ class RSNTaggedParameter(TaggedParameter):
 
 TaggedParameterMap = {
 	PARAM_SSID_PARAMETER_SET: SSIDTaggedParameter,
+	PARAM_SUPPORTED_RATES: SupportedRates,
 	PARAM_RSN_INFORMATION: RSNTaggedParameter
 }
 

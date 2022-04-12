@@ -1,5 +1,5 @@
 import unittest
-from agave.core.wifi.tags import TaggedParameter, PARAM_SSID_PARAMETER_SET
+from agave.core.wifi.tags import TaggedParameter, PARAM_SSID_PARAMETER_SET, PARAM_RSN_INFORMATION
 from agave.core.buffer import Buffer
 
 
@@ -26,8 +26,24 @@ class TestTaggedParameter(unittest.TestCase):
 		b'\xdd\x07\x00\x0c\x43\x07\x00\x00\x00'
 	)
 
-	def test_read(self):
+	def test_ssid(self):
+		"""Tests SSID Information."""
 		buf = Buffer.from_bytes(self.message)
 		params = TaggedParameter.parse_all(buf)
-		self.assertEqual(params[PARAM_SSID_PARAMETER_SET].SSID, "SantoroWifi")
+		ssid = params[PARAM_SSID_PARAMETER_SET]
+		self.assertEqual(ssid.SSID, "SantoroWifi")
+
+	def test_rsn(self):
+		"""Tests RSN Information."""
+		buf = Buffer.from_bytes(self.message)
+		params = TaggedParameter.parse_all(buf)
+		rsn = params[PARAM_RSN_INFORMATION]
+		self.assertEqual(rsn.version, 1)
+		self.assertEqual(rsn.group_cipher_suite_OUI, b'\x00\x0f\xac')
+		self.assertEqual(rsn.group_cipher_suite_type, 4)
+		self.assertEqual(rsn.pairwise_cipher_suit_count, 1)
+		self.assertEqual(rsn.get_pairwise_cipher_suit_list(), [(b'\x00\x0f\xac', 4)])
+		self.assertEqual(rsn.auth_key_management_count, 1)
+		self.assertEqual(rsn.get_auth_key_management_list(), [(b'\x00\x0f\xac', 2)])
+		self.assertEqual(rsn.capabilities, 0)
 

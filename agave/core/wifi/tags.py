@@ -38,11 +38,22 @@ class TaggedParameter:
 		)
 
 
-class SSIDTaggedParameter(TaggedParameter):
+class SSID(TaggedParameter):
 
 	@property
 	def SSID(self) -> str:
-		return self.data.decode()
+		if self.length == 0:
+			return ""
+		else:
+			return self.data.decode()
+
+	@SSID.setter
+	def SSID(self, x: str):
+		self.data = x.encode()
+
+	@classmethod
+	def build(cls, ssid: str) -> "SSID":
+		return cls(PARAM_SSID_PARAMETER_SET, len(ssid), ssid.encode())
 
 
 class SupportedRates(TaggedParameter):
@@ -56,13 +67,13 @@ class SupportedRates(TaggedParameter):
 		self.data = b''.join(map(lambda x: x.to_bytes(1, byteorder="little"), rates))
 
 	@classmethod
-	def build(cls, rates: List[int]):
+	def build(cls, rates: List[int]) -> "SupportedRates":
 		t = cls(PARAM_SUPPORTED_RATES, len(rates), b'')
 		t.rates = rates
 		return t
 
 
-class RSNTaggedParameter(TaggedParameter):
+class RSN(TaggedParameter):
 
 	def __init__(self, *args):
 		super().__init__(*args)
@@ -112,8 +123,8 @@ class RSNTaggedParameter(TaggedParameter):
 	
 
 TaggedParameterMap = {
-	PARAM_SSID_PARAMETER_SET: SSIDTaggedParameter,
+	PARAM_SSID_PARAMETER_SET: SSID,
 	PARAM_SUPPORTED_RATES: SupportedRates,
-	PARAM_RSN_INFORMATION: RSNTaggedParameter
+	PARAM_RSN_INFORMATION: RSN
 }
 

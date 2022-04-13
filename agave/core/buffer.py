@@ -16,7 +16,7 @@ class Buffer:
 	def __init__(self, buf: BytesIO, byteorder: str):
 		self._buf = buf
 		self._mark = 0
-		self._byteorder = byteorder
+		self.byteorder = byteorder 	# the property setter will check the value.
 	
 	def read(self, size: int = 1) -> bytes:
 		if size == 0:
@@ -73,3 +73,18 @@ class Buffer:
 
 	def restore(self):
 		self._buf.seek(self._mark)
+
+	@property
+	def byteorder(self) -> str:
+		return self._byteorder
+
+	@byteorder.setter
+	def byteorder(self, x: str):
+		if x != "big" and x != "little":
+			raise ValueError("byte order value can be 'little' or 'big'")
+		else:
+			self._byteorder = x
+
+	def invert_byteorder(self):
+		self._byteorder = "big" if self._byteorder == "little" else "little"
+

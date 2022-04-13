@@ -91,7 +91,10 @@ class SimpleLoader:
 	def __init__(self, buf: Buffer):
 		self.buf = buf
 
-	def get_interace_by_id(self, interface_id: int) -> InterfaceDescription:
+	def get_section_byte_order(self) -> str:
+		return self.buf.byteorder
+
+	def get_interface_by_id(self, interface_id: int) -> InterfaceDescription:
 		return self.current_interfaces[interface_id]
 
 	def stream_section(self) -> Iterator[Tuple[int, bytes]]:

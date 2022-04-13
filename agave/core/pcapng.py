@@ -14,7 +14,7 @@ Note:
 from typing import Tuple, Any, List
 from sys import byteorder
 from agave.core.frame import Frame
-from agave.core.buffer import Buffer
+from agave.core.buffer import Buffer, EndOfBufferError
 from agave.core.ethernet import MACAddress
 from ipaddress import IPv4Address, IPv6Address, IPv6Network
 
@@ -118,18 +118,18 @@ class Option(Frame):
 
 		"""
 		output = []
-		buf = Buffer.from_bytes(byteorder=endianness)
-		while True:
-			x = get_next_option_class(buf).read_from_buffer(buf)
-			pos = buf.tell()
-			if isinstance(k, EndOfOptions):
-				break
-			if pos == limit:
-				break
-			if pos > limit:
-				raise Exception("Error while parsing options.")
-			output.append(x)
-		return output
+		buf = Buffer.from_bytes(data, byteorder=endianness)
+		try:
+			while True:
+				x = get_next_option_class(buf).read_from_buffer(buf)
+				if isinstance(x, EndOfOptions):
+					break
+				output.append(x)
+		except EndOfBufferError:
+			# Maybe log a debug message
+			pass
+		finally:
+			return output
 
 	@classmethod
 	def encode(self, opts: List["Option"], endianness: str = None) -> bytes:
@@ -279,7 +279,7 @@ class BlockWithOptions(Block):
 	"""
 	__slots__ = ("options")
 
-	def get_options(self, endianness: str = None) -> List[Option]:
+	def get_options(self, endianness: str = byteorder) -> List[Option]:
 		return Option.decode(self.options, endianness)
 
 

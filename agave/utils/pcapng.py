@@ -37,14 +37,12 @@ class SimpleDumper:
 			IfName.build(interface.name),
 			IfMACAddress.build(interface.mac),
 			IfIPv4Address.build((interface.ip, interface.network.netmask)),
-			IfIPv6Address.build(IPv6Network(interface.ipv6)),
-			EndOfOption.build()
+			IfIPv6Address.build(IPv6Network(interface.ipv6))
 		]
-		opts = b''.join(map(lambda x: bytes(x), options))
-		self.add_interface(interface.name, linktype, snaplen, options=opts)
+		self.add_interface(interface.name, linktype, snaplen, options=options)
 
 
-	def add_interface(self, interface_id: str, linktype: int, snaplen: int, options: bytes = b''):
+	def add_interface(self, interface_id: str, linktype: int, snaplen: int, options: List[Option] = None):
 		"""Adds an Interface Description block.
 
 		Args:
@@ -54,7 +52,7 @@ class SimpleDumper:
 			snaplen: max size for a packet; equal to max size read from a socket.
 
 		"""
-		InterfaceDescription.build(linktype=linktype, snaplen=snaplen).write_to_buffer(self.buf)
+		InterfaceDescription.build(linktype=linktype, snaplen=snaplen, options=options).write_to_buffer(self.buf)
 		self.current_interfaces[interface_id] = self.current_interfaces_count
 		self.current_interfaces_count += 1
 
@@ -81,7 +79,7 @@ class SimpleDumper:
 		"""
 		if timestamp is None:
 			timestamp = int(time.time() * 1000000)
-		options = bytes(Comment.build(comment)) + bytes(EndOfOption.build()) if comment is not None else b''
+		options = [Comment.build(comment)] if comment is not None else None
 		EnhancedPacket.build(self.current_interfaces[interface_id], packet, timestamp=timestamp,
 			options=options).write_to_buffer(self.buf)
 

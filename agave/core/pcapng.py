@@ -11,7 +11,7 @@ Note:
 		https://www.tcpdump.org/linktypes.html
 
 """
-from typing import Tuple, Any
+from typing import Tuple, Any, List
 from sys import byteorder
 from agave.core.frame import Frame
 from agave.core.buffer import Buffer
@@ -104,8 +104,58 @@ class Option(Frame):
 	def value(self, x: bytes):
 		self.set_value(x)
 
+	@classmethod
+	def decode(self, data: bytes, endianness: str) -> List["Option"]:
+		"""Decode bytes into options.
 
-class EndOfOption(Option):
+		Args:
+			data: bytes.
+			endianness: the byte order of the option; depends on the
+				encoding machine byteorder.
+
+		Returns:
+			A list of option.
+
+		"""
+		output = []
+		buf = Buffer.from_bytes(byteorder=endianness)
+		while True:
+			x = get_next_option_class(buf).read_from_buffer(buf)
+			pos = buf.tell()
+			if isinstance(k, EndOfOptions):
+				break
+			if pos == limit:
+				break
+			if pos > limit:
+				raise Exception("Error while parsing options.")
+			output.append(x)
+		return output
+
+	@classmethod
+	def encode(self, opts: List["Option"], endianness: str = None) -> bytes:
+		"""Encode options into bytes.
+
+		Args:
+			opts: list of option.
+			endianness: the byte order; default to the machine one.
+
+		Returns:
+			The options as bytes, completed with the EndOfOptionss.
+
+		"""
+		if opts is None:
+			return b''
+		else:
+			if endianness is None:
+				endianness = byteorder
+			buf = Buffer.from_bytes(byteorder=endianness)
+			for opt in opts:
+				opt.write_to_buffer(buf)
+			EndOfOptions.build().write_to_buffer(buf)
+			return bytes(buf)
+
+
+class EndOfOptions(Option):
 
 	OPT_CODE = OPTION_TYPE_ENDOFOPT
 
@@ -220,7 +270,20 @@ class Block(Frame):
 		return "Block {}".format(self.type)
 
 
-class SectionHeader(Block):
+class BlockWithOptions(Block):
+	"""General block containing options.
+
+	Attributes:
+		options: the options as bytes.
+
+	"""
+	__slots__ = ("options")
+
+	def get_options(self, endianness: str = None) -> List[Option]:
+		return Option.decode(self.options, endianness)
+
+
+class SectionHeader(BlockWithOptions):
 	"""Interface Description block.
 
 	Attributes:
@@ -233,7 +296,7 @@ class SectionHeader(Block):
 		options: options.
 
 	"""
-	__slots__ = ("byte_order_magic", "major", "minor", "section_length", "options")
+	__slots__ = ("byte_order_magic", "major", "minor", "section_length")
 
 	@classmethod
 	def read_from_buffer(cls, buf: Buffer):
@@ -269,22 +332,22 @@ class SectionHeader(Block):
 		buf.write_int(self.length)
 
 	@classmethod
-	def build(cls, options: bytes = b'', section_length: int = 0xffffffffffffffff) -> "SectionHeader":
+	def build(cls, options: List[Option] = None, section_length: int = 0xffffffffffffffff) -> "SectionHeader":
 		x = cls()
 		x.type = BLOCK_TYPE_SECTION_HEADER
-		x.length = 28 + len(options)
 		x.byte_order_magic = BYTE_ORDER_MAGIC
 		x.major = 1
 		x.minor = 0
 		x.section_length = section_length
-		x.options = options
+		x.options = Option.encode(options)
+		x.length = 28 + len(x.options)
 		return x
 
 	def __str__(self):
 		return "SectionHeader {}.{}".format(self.major, self.minor)
 
 
-class InterfaceDescription(Block):
+class InterfaceDescription(BlockWithOptions):
 	"""Interface Description block.
 
 	Attributes:
@@ -295,7 +358,7 @@ class InterfaceDescription(Block):
 		options: options.
 
 	"""
-	__slots__ = ("linktype", "reserved", "snaplen", "options")
+	__slots__ = ("linktype", "reserved", "snaplen")
 
 	@classmethod
 	def read_from_buffer(cls, buf: Buffer):
@@ -327,15 +390,14 @@ class InterfaceDescription(Block):
 		buf.write_int(self.length)
 
 	@classmethod
-	def build(cls, linktype: int, snaplen: int, options: bytes = b'') -> "SectionHeader":
+	def build(cls, linktype: int, snaplen: int, options: List[Option] = None) -> "SectionHeader":
 		x = cls()
 		x.type = BLOCK_TYPE_INTERFACE_DESCRIPTION
-		x.length = 20 + len(options)
-		# Specific
 		x.linktype = linktype
 		x.reserved = 0
 		x.snaplen = snaplen
-		x.options = options
+		x.options = Option.encode(options)
+		x.length = 20 + len(x.options)
 		return x
 
 	def __str__(self):
@@ -395,7 +457,7 @@ class SimplePacket(Block):
 		return "SimplePacket - Size {}".format(self.original_packet_length)
 
 
-class EnhancedPacket(Block):
+class EnhancedPacket(BlockWithOptions):
 	"""Enhanced Packet block.
 
 	Attributes:
@@ -414,7 +476,7 @@ class EnhancedPacket(Block):
 
 	"""
 	__slots__ = ("interface_id", "timestamp_high", "timestamp_low", "captured_packet_length", 
-		"original_packet_length", "data", "pad", "options")
+		"original_packet_length", "data", "pad")
 
 	@classmethod
 	def read_from_buffer(cls, buf: Buffer):
@@ -455,7 +517,7 @@ class EnhancedPacket(Block):
 		buf.write_int(self.length)
 
 	@classmethod
-	def build(cls, interface_id: int, data: bytes, timestamp: int = None, original_size: int = None, options: bytes = b'') -> "SectionHeader":
+	def build(cls, interface_id: int, data: bytes, timestamp: int = None, original_size: int = None, options: List[Option] = None) -> "SectionHeader":
 		x = cls()
 		x.type = BLOCK_TYPE_ENHANCED_PACKET_BLOCK
 		x.interface_id = interface_id
@@ -466,8 +528,8 @@ class EnhancedPacket(Block):
 		x.data = data
 		padsize = count_pad_32(x.captured_packet_length)
 		x.pad = bytes(padsize)
-		x.options = options
-		x.length = 32 + x.captured_packet_length + padsize + len(options)
+		x.options = Option.encode(options)
+		x.length = 32 + x.captured_packet_length + padsize + len(x.options)
 		return x
 
 	def __str__(self):
@@ -483,7 +545,7 @@ BLOCK_MAP = {
 
 
 OPTION_MAP = {
-	OPTION_TYPE_ENDOFOPT: EndOfOption,
+	OPTION_TYPE_ENDOFOPT: EndOfOptions,
 	OPTION_TYPE_COMMENT: Comment,
 	OPTION_TYPE_IF_NAME: IfName,
 	OPTION_TYPE_IF_DESCRIPTION: IfDescription,

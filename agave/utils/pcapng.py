@@ -11,6 +11,7 @@ Note:
 		https://www.tcpdump.org/linktypes.html
 
 """
+import time
 from agave.core.frame import Frame
 from agave.core.buffer import Buffer, EndOfBufferError
 from typing import Iterator, Tuple
@@ -359,17 +360,54 @@ def get_next_block_class(buf: Buffer):
 
 class SimpleDumper:
 	"""Basic class to dump packets to pcapng file. Useful for debug."""
-	__slots__ = ("buf")
+	__slots__ = ("buf", "current_interfaces", "current_interfaces_count")
 
 	def __init__(self, buf: Buffer):
 		self.buf = buf
 
-	def start_section(self, linktype: int, snaplen: int):
+	def start_section(self):
+		"""Adds a section block."""
 		SectionHeader.build().write_to_buffer(self.buf)
+		self.current_interfaces = {}
+		self.current_interfaces_count = 0
+
+	def add_interface(self, interface_id: str, linktype: int, snaplen: int):
+		"""Adds an Interface Description block.
+
+		Args:
+			interface_id: id used by the user to refer to this interfaces. For example,
+				the name, or the id, or the address.
+			linktype: linktype value.
+			snaplen: max size for a packet; equal to max size read from a socket.
+
+		"""
 		InterfaceDescription.build(linktype=linktype, snaplen=snaplen).write_to_buffer(self.buf)
+		self.current_interfaces[interface_id] = self.current_interfaces_count
+		self.current_interfaces_count += 1
 
 	def dump(self, packet: bytes):
+		"""Dumps a packet as a Simple Block.
+		
+		Args:
+			packet: packet as bytes.
+
+		"""
 		SimplePacket.build(packet).write_to_buffer(self.buf)
+
+	def edump(self, interface_id: int, packet: bytes, timestamp: int = None) -> "SectionHeader":
+		"""Dumps a packet as a Enhanced Block.
+
+		Args:
+			interface_id: id used by the user to refer to this interfaces. For example,
+				the name, or the id, or the address.
+			packet: packet as bytes.
+			timestamp: timestamp; resolution is assumed in micro seconds (at lest as long
+				as support for 'option' is added to this module). Default to now.
+		
+		"""
+		if timestamp is None:
+			timestamp = int(time.time() * 1000000)
+		EnhancedPacket.build(self.current_interfaces[interface_id], packet, timestamp=timestamp).write_to_buffer(self.buf)
 
 
 class SimpleLoader:
@@ -404,7 +442,7 @@ class SimpleLoader:
 		try:
 			while True:
 				block = get_next_block_class(self.buf).read_from_buffer(self.buf)
-				print(block)
+				# print(block)
 				if isinstance(block, InterfaceDescription):
 					self.current_interfaces.append(block)
 				elif isinstance(block, SimplePacket):

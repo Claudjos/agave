@@ -60,13 +60,13 @@ class NetworkInterface:
 
     __slots__ = ("index", "name", "mac", "ip", "network", "broadcast","ipv6", "netv6")
 
-    def __init__(self, index: int, name: str, mac: MACAddress, ip: IPv4Address,  network: IPv6Network,
+    def __init__(self, index: int, name: str, mac: MACAddress, ip: IPv4Address,  network: IPv4Network,
         broadcast: IPv4Address, ipv6: IPv6Address, net6: IPv6Network):
         self.index: int = index
         self.name: str = name
         self.mac: MACAddress = mac
         self.ip: IPv4Address = ip
-        self.network: IPv6Network = network
+        self.network: IPv4Network = network
         self.broadcast: IPAddress = broadcast
         self.ipv6: IPv6Address = ipv6
         self.netv6: IPv6Network = net6

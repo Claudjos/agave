@@ -12,6 +12,7 @@ Note:
 
 """
 from typing import Tuple, Any
+from sys import byteorder
 from agave.core.frame import Frame
 from agave.core.buffer import Buffer
 from agave.core.ethernet import MACAddress
@@ -66,6 +67,7 @@ class Option(Frame):
 	__slots__ = ("code", "length", "_value", "pad")
 
 	OPT_CODE = None
+	BYTEORDER = byteorder
 
 	@classmethod
 	def read_from_buffer(cls, buf: Buffer) -> "Option":
@@ -196,6 +198,8 @@ class Block(Frame):
 
 	"""
 	__slots__ = ("type", "length", "body")
+
+	BYTEORDER = byteorder
 
 	@classmethod
 	def read_from_buffer(cls, buf: Buffer) -> "Block":

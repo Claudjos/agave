@@ -5,7 +5,9 @@ Utilities to parse/dump packets from/to file.
 import time
 from agave.core.pcapng import *
 from agave.core.buffer import EndOfBufferError
+from agave.nic.interfaces import NetworkInterface
 from typing import Iterator, Tuple
+from ipaddress import IPv6Network
 
 
 class SimpleDumper:
@@ -21,7 +23,28 @@ class SimpleDumper:
 		self.current_interfaces = {}
 		self.current_interfaces_count = 0
 
-	def add_interface(self, interface_id: str, linktype: int, snaplen: int):
+	def add_network_interface(self, interface: NetworkInterface, linktype: int, snaplen: int):
+		"""Adds an Interface Description block. Additionally to SimpleDumper.add_interface,
+		it adds options specifying interface name, MAC, IPv4, and IPv6.
+
+		Args:
+			interface: network interface.
+			linktype: linktype value.
+			snaplen: max size for a packet; equal to max size read from a socket.
+
+		"""
+		options = [
+			IfName.build(interface.name),
+			IfMACAddress.build(interface.mac),
+			IfIPv4Address.build((interface.ip, interface.network.netmask)),
+			IfIPv6Address.build(IPv6Network(interface.ipv6)),
+			EndOfOption.build()
+		]
+		opts = b''.join(map(lambda x: bytes(x), options))
+		self.add_interface(interface.name, linktype, snaplen, options=opts)
+
+
+	def add_interface(self, interface_id: str, linktype: int, snaplen: int, options: bytes = b''):
 		"""Adds an Interface Description block.
 
 		Args:
@@ -44,7 +67,7 @@ class SimpleDumper:
 		"""
 		SimplePacket.build(packet).write_to_buffer(self.buf)
 
-	def edump(self, interface_id: int, packet: bytes, timestamp: int = None) -> "SectionHeader":
+	def edump(self, interface_id: int, packet: bytes, timestamp: int = None, comment: str = None) -> "SectionHeader":
 		"""Dumps a packet as a Enhanced Block.
 
 		Args:
@@ -53,11 +76,14 @@ class SimpleDumper:
 			packet: packet as bytes.
 			timestamp: timestamp; resolution is assumed in micro seconds (at lest as long
 				as support for 'option' is added to this module). Default to now.
+			comment: comment to add to the block as option.
 		
 		"""
 		if timestamp is None:
 			timestamp = int(time.time() * 1000000)
-		EnhancedPacket.build(self.current_interfaces[interface_id], packet, timestamp=timestamp).write_to_buffer(self.buf)
+		options = bytes(Comment.build(comment)) + bytes(EndOfOption.build()) if comment is not None else b''
+		EnhancedPacket.build(self.current_interfaces[interface_id], packet, timestamp=timestamp,
+			options=options).write_to_buffer(self.buf)
 
 
 class SimpleLoader:

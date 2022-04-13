@@ -11,14 +11,26 @@ Note:
 		https://www.tcpdump.org/linktypes.html
 
 """
+from typing import Tuple, Any
 from agave.core.frame import Frame
 from agave.core.buffer import Buffer
+from agave.core.ethernet import MACAddress
+from ipaddress import IPv4Address, IPv6Address, IPv6Network
 
 
 BLOCK_TYPE_SECTION_HEADER = 0x0A0D0D0A
 BLOCK_TYPE_INTERFACE_DESCRIPTION = 1
 BLOCK_TYPE_SIMPLE_PACKET_BLOCK = 3
 BLOCK_TYPE_ENHANCED_PACKET_BLOCK = 6
+
+
+OPTION_TYPE_ENDOFOPT = 0
+OPTION_TYPE_COMMENT = 1
+OPTION_TYPE_IF_NAME = 2
+OPTION_TYPE_IF_DESCRIPTION = 3
+OPTION_TYPE_IF_IPV4ADDR	= 4
+OPTION_TYPE_IF_IPV6ADDR	= 5
+OPTION_TYPE_IF_MACADDR = 6
 
 
 BYTE_ORDER_MAGIC = 0x1A2B3C4D
@@ -40,6 +52,138 @@ LINKTYPE_TO_STR = {
 
 class EndiannessError(Exception):
 	pass
+
+
+class Option(Frame):
+	"""Block option.
+
+	Attributes:
+		code: option code.
+		length: value size (without pad).
+		_value: option value.
+
+	"""
+	__slots__ = ("code", "length", "_value", "pad")
+
+	OPT_CODE = None
+
+	@classmethod
+	def read_from_buffer(cls, buf: Buffer) -> "Option":
+		x = cls()
+		x.code = buf.read_short()
+		x.length = buf.read_short()
+		x._value = buf.read(x.length)
+		x.pad = buf.read(count_pad_32(x.length))
+		return x
+
+	def write_to_buffer(self, buf: Buffer):
+		buf.write_short(self.code)
+		buf.write_short(self.length)
+		buf.write(self._value)
+		buf.write(self.pad)
+
+	@classmethod
+	def build(cls, value: Any = b'', code: int = None) -> "Option":
+		x = cls()
+		x.code = code if cls.OPT_CODE is None else cls.OPT_CODE
+		x.value = value
+		return x
+
+	def set_value(self, value: bytes):
+		self.length = len(value)
+		self._value = value
+		self.pad = bytes(count_pad_32(self.length))
+
+	@property
+	def value(self) -> bytes:
+		return self._value
+
+	@value.setter
+	def value(self, x: bytes):
+		self.set_value(x)
+
+
+class EndOfOption(Option):
+
+	OPT_CODE = OPTION_TYPE_ENDOFOPT
+
+
+class StringOption(Option):
+
+	@property
+	def value(self) -> str:
+		return self._value.decode()
+
+	@value.setter
+	def value(self, x: str):
+		self.set_value(x.encode())
+
+
+class Comment(StringOption):
+
+	OPT_CODE = OPTION_TYPE_COMMENT
+
+
+class IfName(StringOption):
+
+	OPT_CODE = OPTION_TYPE_IF_NAME
+
+
+class IfDescription(StringOption):
+
+	OPT_CODE = OPTION_TYPE_IF_DESCRIPTION
+
+
+class IfIPv4Address(Option):
+
+	OPT_CODE = OPTION_TYPE_IF_IPV4ADDR
+
+	@property
+	def value(self) -> Tuple[IPv4Address, IPv4Address]:
+		"""Getter method.
+
+		Returns:
+			The pair ip address and netmask.
+		
+		"""
+		return IPv4Address(self._value[0:4]), IPv4Address(self._value[4:])
+
+	@value.setter
+	def value(self, x: Tuple[IPv4Address, IPv4Address]):
+		"""Setter method.
+
+		Args:
+			x: the pair ip address and netmask.
+
+		"""
+		self.set_value(x[0].packed + x[1].packed)
+
+
+class IfIPv6Address(Option):
+
+	OPT_CODE = OPTION_TYPE_IF_IPV6ADDR
+
+	@property
+	def value(self) -> IPv6Network:
+		return IPv6Network("{}/{}".format(IPv6Address(self._value[0:16]), self._value[16]))
+
+	@value.setter
+	def value(self, x: IPv6Network):
+		# byte order doesn't matter for one byte
+		self.set_value(x.network_address.packed + x.prefixlen.to_bytes(1, byteorder="big"))
+
+
+class IfMACAddress(Option):
+
+	OPT_CODE = OPTION_TYPE_IF_MACADDR
+
+	@property
+	def value(self) -> MACAddress:
+		return MACAddress(self._value)
+
+	@value.setter
+	def value(self, x: MACAddress):
+		self.set_value(x.packed)
 
 
 class Block(Frame):
@@ -334,19 +478,15 @@ BLOCK_MAP = {
 }
 
 
-def count_pad_32(number_of_octects: int) -> int:
-	"""Counts the number of bytes needed to pad data of a
-	given length to a size multiple of 32 bits.
-
-	Args:
-		number_of_octects: size of the data.
-
-	Returns:
-		Number of bytes to add as padding.
-
-	"""
-	t = number_of_octects % 4
-	return 0 if t == 0 else 4 - t
+OPTION_MAP = {
+	OPTION_TYPE_ENDOFOPT: EndOfOption,
+	OPTION_TYPE_COMMENT: Comment,
+	OPTION_TYPE_IF_NAME: IfName,
+	OPTION_TYPE_IF_DESCRIPTION: IfDescription,
+	OPTION_TYPE_IF_MACADDR: IfMACAddress,
+	OPTION_TYPE_IF_IPV4ADDR: IfIPv4Address,
+	OPTION_TYPE_IF_IPV6ADDR: IfIPv6Address
+}
 
 
 def get_next_block_class(buf: Buffer):
@@ -364,4 +504,36 @@ def get_next_block_class(buf: Buffer):
 	k = BLOCK_MAP.get(buf.read_int(), Block)
 	buf.restore()
 	return k
+
+
+def get_next_option_class(buf: Buffer):
+	"""Returns the class needed to parse the next option in
+	a buffer.
+
+	Args:
+		buf: buffer to parse.
+
+	Returns:
+		An Option subclass.
+
+	"""
+	buf.mark()
+	k = OPTION_MAP.get(buf.read_short(), Option)
+	buf.restore()
+	return k
+
+
+def count_pad_32(number_of_octects: int) -> int:
+	"""Counts the number of bytes needed to pad data of a
+	given length to a size multiple of 32 bits.
+
+	Args:
+		number_of_octects: size of the data.
+
+	Returns:
+		Number of bytes to add as padding.
+
+	"""
+	t = number_of_octects % 4
+	return 0 if t == 0 else 4 - t
 

@@ -68,6 +68,9 @@ class Buffer:
 	def read_remaining(self):
 		return self._buf.read()
 
+	def tell(self) -> int:
+		return self._buf.tell()
+
 	def mark(self):
 		self._mark = self._buf.tell()
 

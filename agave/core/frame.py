@@ -5,6 +5,8 @@ class Frame:
 
 	__slots__ = ()
 
+	BYTEORDER = "big"	# Network byte order
+
 	@classmethod
 	def read_from_buffer(cls, buf: Buffer):
 		raise NotImplementedError()
@@ -14,10 +16,10 @@ class Frame:
 
 	@classmethod
 	def from_bytes(cls, data: bytes) -> "Frame":
-		return cls.read_from_buffer(Buffer.from_bytes(data))
+		return cls.read_from_buffer(Buffer.from_bytes(data, byteorder=cls.BYTEORDER))
 
 	def __bytes__(self) -> bytes:
-		buf = Buffer.from_bytes()
+		buf = Buffer.from_bytes(byteorder=self.BYTEORDER)
 		self.write_to_buffer(buf)
 		return bytes(buf)
 

@@ -10,6 +10,26 @@ The main motivation behind the development of the project comes from the curiosi
 At the moment the main goal is to add new models for protocols to the package *core*.
 For each protocol I'm adding some PoC scripts, but I don't know what to do with them yet.
 
+### Examples
+
+#### Working with PCAP Next Generation
+```
+from agave.utils.pcapng import StreamLoader, StreamDumper
+from agave.core.pcapng import LINKTYPE_ETHERNET
+
+with StreamDumper.from_file("test.pcapng") as dumper:
+	dumper.start_section()
+	dumper.add_interface("eth0", linktype=LINKTYPE_ETHERNET, snaplen=4096)
+	dumper.edump("eth0", b'\x00.....', comment="Test!")
+	...
+
+with StreamLoader.from_file("test.pcapng") as loader:
+	for interface, data in loader.stream_section():
+		print(interface, data)
+		...
+
+```
+
 ## Usage of the PoC scripts
 
 ##### Requirements

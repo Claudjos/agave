@@ -3,6 +3,7 @@ Utilities to parse/dump packets from/to file.
 
 """
 import time
+from sys import byteorder
 from agave.core.pcapng import *
 from agave.core.buffer import EndOfBufferError
 from agave.nic.interfaces import NetworkInterface
@@ -10,7 +11,7 @@ from typing import Iterator, Tuple
 from ipaddress import IPv6Network
 
 
-class SimpleDumper:
+class BufferedDumper:
 	"""Basic class to dump packets to pcapng file. Useful for debug."""
 	__slots__ = ("buf", "current_interfaces", "current_interfaces_count")
 
@@ -24,7 +25,7 @@ class SimpleDumper:
 		self.current_interfaces_count = 0
 
 	def add_network_interface(self, interface: NetworkInterface, linktype: int, snaplen: int):
-		"""Adds an Interface Description block. Additionally to SimpleDumper.add_interface,
+		"""Adds an Interface Description block. Additionally to BufferedDumper.add_interface,
 		it adds options specifying interface name, MAC, IPv4, and IPv6.
 
 		Args:
@@ -84,7 +85,7 @@ class SimpleDumper:
 			options=options).write_to_buffer(self.buf)
 
 
-class SimpleLoader:
+class BufferedLoader:
 	"""Basic class to load packets from pcapng file. Useful for debug."""
 	__slots__ = ("buf", "current_header", "current_interfaces")
 
@@ -137,3 +138,43 @@ class SimpleLoader:
 			# File end or parsing error
 			return
 		
+
+class StreamDumper(BufferedDumper):
+
+	__slots__ = ("stream")
+
+	def __init__(self, stream):
+		super().__init__(Buffer(stream, byteorder))
+		self.stream = stream
+
+	@classmethod
+	def from_file(cls, path: str):
+		return cls(open(path, "wb"))
+
+	def __enter__(self):
+		self.stream.__enter__()
+		return self
+
+	def __exit__(self, *args, **kwargs):
+		return self.stream.__exit__(*args, **kwargs)
+
+
+class StreamLoader(BufferedLoader):
+
+	__slots__ = ("stream")
+
+	def __init__(self, stream):
+		super().__init__(Buffer(stream, byteorder))
+		self.stream = stream
+
+	@classmethod
+	def from_file(cls, path: str):
+		return cls(open(path, "rb"))
+
+	def __enter__(self):
+		self.stream.__enter__()
+		return self
+
+	def __exit__(self, *args, **kwargs):
+		return self.stream.__exit__(*args, **kwargs)
+

@@ -37,9 +37,11 @@ class BufferedDumper:
 		options = [
 			IfName.build(interface.name),
 			IfMACAddress.build(interface.mac),
-			IfIPv4Address.build((interface.ip, interface.network.netmask)),
-			IfIPv6Address.build(IPv6Network(interface.ipv6))
 		]
+		if interface.ip is not None:
+			options.append(IfIPv4Address.build((interface.ip, interface.network.netmask)))
+		if interface.ipv6 is not None:
+			options.append(IfIPv6Address.build(IPv6Network(interface.ipv6)))
 		self.add_interface(interface.name, linktype, snaplen, options=options)
 
 

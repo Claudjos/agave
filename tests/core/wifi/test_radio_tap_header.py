@@ -15,6 +15,7 @@ class TestRadioTap(unittest.TestCase):
 		self.assertEqual(frame.revision, 0)
 		self.assertEqual(frame.pad, 0)
 		self.assertEqual(frame.length, 36)
-		self.assertEqual(len(frame.data), 32)
+		self.assertEqual(frame.bitmasks[0], 0xa000402f)
+		self.assertEqual(len(frame.data), 24)
 
 		

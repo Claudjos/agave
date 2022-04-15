@@ -50,9 +50,9 @@ echo 0 | sudo tee /proc/sys/net/ipv4/conf/*/send_redirects
 
 Retrieve network interfaces information.
 ```
-python3 -m agave.nic.interfaces [interface]
-python3 -m agave.nic.interfaces
-python3 -m agave.nic.interfaces wlan0
+python3 -m agave.utils.interfaces [interface]
+python3 -m agave.utils.interfaces
+python3 -m agave.utils.interfaces wlan0
 ```
 
 ### ARP

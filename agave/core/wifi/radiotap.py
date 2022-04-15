@@ -283,12 +283,22 @@ radio_tap_fields = [
 
 
 class RadioTapHeader(Frame):
+	"""RadioTap header.
 
+	Attributes:
+		- revision (int): revision, 0.
+		- pad (int): padding, 0.
+		- length (int): whole header length.
+		- bitmasks (List[int]): list of present fields flags.
+		- data (bytes): unparsed fields.
+		- fields (List[RadioTapField]): list of fields.
+		- _offset (int): offset between the start of the frame and the fields.
+	
+	"""
 	BYTEORDER = "little"
 
-	__slots__ = ("revision", "pad", "length", "bitmasks", "offset", "data")
+	__slots__ = ("revision", "pad", "length", "bitmasks", "_offset", "data", "fields")
 
-	@classmethod
 	def is_present(self, field: int) -> bool:
 		"""Check if at least one bit mask as the bit set."""
 		for bitmask in self.bitmasks:
@@ -297,30 +307,52 @@ class RadioTapHeader(Frame):
 		return False
 
 	@classmethod
-	def read_from_buffer(cls, buf: Buffer, parse_fields: bool = True) -> "RadioTapHeader":
+	def build(cls, fields: List[RadioTapField] = None):
+		"""Builds a header. Fields are ignored for now.
+		
+		TODO:
+			* encode fields.
+		"""
+		x = cls()
+		x.revision = x.pad = 0
+		x.length = 8
+		x.bitmasks = [0]
+		x.data = b''
+		return x
+
+	@classmethod
+	def read_from_buffer(cls, buf: Buffer) -> "RadioTapHeader":
 		"""Read from buffer the RadioTap header, without parsing the fields."""
 		frame = cls()
 		frame.revision = buf.read_byte() 
 		frame.pad = buf.read_byte()
 		frame.length = buf.read_short()
-		frame.offset = 4
+		frame._offset = 4
 		frame.bitmasks = []
 		while True:
-			frame.offset += 4
+			frame._offset += 4
 			bitmask = buf.read_int()
 			frame.bitmasks.append(bitmask)
 			if not (bitmask & FIELD_EXT):
 				break
 		frame.fields = []
-		frame.data = buf.read(frame.length - frame.offset)
+		frame.data = buf.read(frame.length - frame._offset)
 		return frame
+
+	def write_to_buffer(self, buf: Buffer):
+		buf.write_byte(self.revision)
+		buf.write_byte(self.pad)
+		buf.write_byte(self.length)
+		for bitmask in self.bitmasks:
+			buf.write_int(bitmask)
+		buf.write(self.data)
 
 	def get_fields(self) -> List[RadioTapField]:
 		"""Parses the present fields."""
 		if self.fields is None:
 			buf = Buffer.from_bytes(self.data, "little")
 			# Reads fields for each bit mask
-			offset = self.offset
+			offset = self._offset
 			self.fields = []
 			for bitmask in self.bitmasks:
 				for field, klass in radio_tap_fields:

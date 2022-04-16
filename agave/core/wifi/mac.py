@@ -11,6 +11,8 @@ FRAME_TYPE_MANAGEMENT_FRAME = 0
 FRAME_SUB_TYPE_PROBE_REQUEST = 4
 FRAME_SUB_TYPE_PROBE_RESPONSE = 5
 FRAME_SUB_TYPE_BEACON = 8
+FRAME_SUB_TYPE_AUTHENTICATION = 11
+FRAME_SUB_TYPE_DEAUTHENTICATION = 12
 
 FRAME_TYPE_CONTROL_FRAME = 1
 FRAME_SUB_TYPE_BLOCK_ACK_REQ = 8
@@ -34,8 +36,8 @@ _all_map = {
 		7: "Reserved",
 		FRAME_SUB_TYPE_BEACON: "Beacon",
 		10: "Disassociation",
-		11: "Authentication",
-		12: "Deauthentication",
+		FRAME_SUB_TYPE_AUTHENTICATION: "Authentication",
+		FRAME_SUB_TYPE_DEAUTHENTICATION: "Deauthentication",
 		13: "Action",
 	}),
 	FRAME_TYPE_CONTROL_FRAME: ("Control Frame", {
@@ -436,7 +438,8 @@ class ManagementFrame(MAC_802_11_Frame):
 
 
 class Beacon(ManagementFrame):
-	"""Beacon Frame.
+	"""Beacon Frame. Sent periodically by AP to advertise their
+	presence.
 
 	Attributes:
 		timestamp (int): timestamp.
@@ -459,12 +462,13 @@ class Beacon(ManagementFrame):
 
 
 class ProbeResponse(Beacon):
-
+	"""Probe Response Frame. Sent in response to probe requests,
+	advertise the AP."""
 	SUBTYPE = FRAME_SUB_TYPE_PROBE_RESPONSE
 
 
 class ProbeRequest(Beacon):
-
+	"""Probe Request Frame. Request APs to advertise."""
 	SUBTYPE = FRAME_SUB_TYPE_PROBE_REQUEST
 
 	@classmethod
@@ -474,10 +478,56 @@ class ProbeRequest(Beacon):
 		return mac
 
 
+class Authentication(ManagementFrame):
+	"""Authentication. First step in network attachment. Hello exchange
+	between AP and mobile station. 
+
+	Attributes:
+		- algorithm (int): algorithm used, 0 for OSA (Open System 
+			Authentication). An other algorithm is Shared Key.
+		- sequence (int): sequence of this frame (1 or 2 for OSA).
+		- status (int): status code, 0 for success.
+
+	"""
+	__slots__ = ("algorithm", "sequence", "status")
+
+	SUBTYPE = FRAME_SUB_TYPE_AUTHENTICATION
+
+	@classmethod
+	def read_from_buffer(cls, buf: Buffer) -> "Authentication":
+		mac = super().read_from_buffer(buf)
+		mac.algorithm = mac.data.read_short()
+		mac.sequence = mac.data.read_short()
+		mac.status = mac.data.read_short()
+		return mac
+
+
+class Deauthentication(ManagementFrame):
+	"""Deauthentication frame. 
+
+	Attributes:
+		- reason (int): reason code.
+
+	"""
+	__slots__ = ("reason")
+
+	SUBTYPE = FRAME_SUB_TYPE_DEAUTHENTICATION
+	# Reason codes
+	REASON_STA_IS_LEAVING_OR_HAS_LEFT = 3
+
+	@classmethod
+	def read_from_buffer(cls, buf: Buffer) -> "Deauthentication":
+		mac = super().read_from_buffer(buf)
+		mac.reason = mac.data.read_short()
+		return mac
+
+
 frame_class_map = {
 	0x40: ProbeRequest,
 	0x50: ProbeResponse,
 	0x80: Beacon,
+	0xb0: Authentication,
+	0xc0: Deauthentication,
 	0x84: BlockACKRequest,
 	0x94: BlockACKResponse,
 	0xb4: RequestToSend,

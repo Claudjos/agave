@@ -85,6 +85,8 @@ _all_map = {
 
 class MAC_802_11(Frame):
 
+	BYTEORDER = "little"
+
 	def is_probe_request(self) -> bool:
 		return self.subtype == FRAME_SUB_TYPE_PROBE_REQUEST and self.type == FRAME_TYPE_MANAGEMENT_FRAME
 

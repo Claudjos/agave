@@ -13,7 +13,8 @@ class TestWirelessManagement(unittest.TestCase):
 	)
 
 	def test_read(self):
-		frame = WirelessManagement.from_bytes(self.message)
+		buf = Buffer.from_bytes(self.message, "little")
+		frame = WirelessManagement.read_from_buffer(buf, with_fixed=True)
 		self.assertEqual(frame.timestamp, 1245954048345)
 		#self.assertEqual(frame.beacon_interval, )
 		#self.assertEqual(frame.capabilities_information, )

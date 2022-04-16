@@ -36,7 +36,7 @@ _all_map = {
 		10: "Disassociation",
 		11: "Authentication",
 		12: "Deauthentication",
-		16: "Action",
+		13: "Action",
 	}),
 	FRAME_TYPE_CONTROL_FRAME: ("Control Frame", {
 		FRAME_SUB_TYPE_BLOCK_ACK_REQ: "Block ACK Req",
@@ -316,6 +316,8 @@ class ControlFrame(MAC_802_11_Frame):
 	"""
 	__slots__ = ("duration_id", "receiver", "transmitter")
 
+	TYPE = FRAME_TYPE_CONTROL_FRAME
+
 	@classmethod
 	def read_from_buffer(cls, buf: Buffer) -> "ControlFrame":
 		mac = super().read_from_buffer(buf)
@@ -326,7 +328,6 @@ class ControlFrame(MAC_802_11_Frame):
 
 class ClearToSend(ControlFrame):
 
-	TYPE = FRAME_TYPE_CONTROL_FRAME
 	SUBTYPE = FRAME_SUB_TYPE_CLEAR_TO_SEND
 
 	@classmethod
@@ -338,7 +339,6 @@ class ClearToSend(ControlFrame):
 
 class Acknowledgment(ControlFrame):
 
-	TYPE = FRAME_TYPE_CONTROL_FRAME
 	SUBTYPE = FRAME_SUB_TYPE_ACK
 
 	@classmethod
@@ -350,7 +350,6 @@ class Acknowledgment(ControlFrame):
 
 class RequestToSend(ControlFrame):
 
-	TYPE = FRAME_TYPE_CONTROL_FRAME
 	SUBTYPE = FRAME_SUB_TYPE_REQUEST_TO_SEND
 
 	@classmethod
@@ -371,7 +370,6 @@ class BlockACKRequest(ControlFrame):
 	"""
 	__slots__ = ("control", "ssc", "bitmap")
 
-	TYPE = FRAME_TYPE_CONTROL_FRAME
 	SUBTYPE = FRAME_SUB_TYPE_BLOCK_ACK_REQ
 
 	@classmethod
@@ -395,7 +393,6 @@ class BlockACKResponse(ControlFrame):
 	"""
 	__slots__ = ("control", "ssc", "bitmap")
 
-	TYPE = FRAME_TYPE_CONTROL_FRAME
 	SUBTYPE = FRAME_SUB_TYPE_BLOCK_ACK_RES
 
 	@classmethod
@@ -409,7 +406,78 @@ class BlockACKResponse(ControlFrame):
 		return mac
 
 
+class ManagementFrame(MAC_802_11_Frame):
+	"""Base class for MAC 802.11 Management Frames.
+
+	Attributes:
+		- destination (MACAddress): destination address.
+		- source (MACAddress): source address.
+		- BSSID (MACAddress): BSSID address.
+		- sequence_control (int): sequence and fragment number.
+		- data (Buffer): unparsed frame data, i.e., Wirless Management.
+		- tags (List[TaggedParameter]): list of tag parameters.
+
+	"""
+	__slots__ = ("destination", "source", "BSSID", "sequence_control", "tags", "data")
+
+	TYPE = FRAME_TYPE_MANAGEMENT_FRAME
+
+	@classmethod
+	def read_from_buffer(cls, buf: Buffer) -> "ManagementFrame":
+		mac = super().read_from_buffer(buf)
+		mac.destination = MACAddress(buf.read(6))
+		mac.source = MACAddress(buf.read(6))
+		mac.BSSID = MACAddress(buf.read(6))
+		mac.sequence_control = buf.read_short()
+		t = buf.read_remaining()
+		mac.data = Buffer.from_bytes(t[:-4], byteorder="little")
+		mac.fcs = int.from_bytes(t[-4:], byteorder="little")
+		return mac
+
+
+class Beacon(ManagementFrame):
+	"""Beacon Frame.
+
+	Attributes:
+		timestamp (int): timestamp.
+		beacon_interval (int): beacon interval.
+		capabilities (int): capabilities:
+
+	"""
+	__slots__ = ("timestamp", "beacon_interval", "capabilities")
+
+	SUBTYPE = FRAME_SUB_TYPE_BEACON
+
+	@classmethod
+	def read_from_buffer(cls, buf: Buffer) -> "Beacon":
+		mac = super().read_from_buffer(buf)
+		mac.timestamp = mac.data.read_long()
+		mac.beacon_interval = mac.data.read_short()
+		mac.capabilities = mac.data.read_short()
+		mac.tags = TaggedParameter.parse_all(mac.data)
+		return mac
+
+
+class ProbeResponse(Beacon):
+
+	SUBTYPE = FRAME_SUB_TYPE_PROBE_RESPONSE
+
+
+class ProbeRequest(Beacon):
+
+	SUBTYPE = FRAME_SUB_TYPE_PROBE_REQUEST
+
+	@classmethod
+	def read_from_buffer(cls, buf: Buffer) -> "ProbeRequest":
+		mac = super().read_from_buffer(buf)
+		mac.tags = TaggedParameter.parse_all(mac.data)
+		return mac
+
+
 frame_class_map = {
+	0x40: ProbeRequest,
+	0x50: ProbeResponse,
+	0x80: Beacon,
 	0x84: BlockACKRequest,
 	0x94: BlockACKResponse,
 	0xb4: RequestToSend,

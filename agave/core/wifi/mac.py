@@ -24,6 +24,8 @@ FRAME_SUB_TYPE_CLEAR_TO_SEND = 12
 FRAME_SUB_TYPE_ACK = 13
 
 FRAME_TYPE_DATA_FRAME = 2
+FRAME_SUB_TYPE_NULL = 4
+FRAME_SUB_TYPE_QOS_NULL = 12
 
 
 _all_map = {
@@ -51,9 +53,9 @@ _all_map = {
 	}),
 	FRAME_TYPE_DATA_FRAME: ("Data Frame", {
 		0: "Data",
-		4: "Null Function (No data)",
+		FRAME_SUB_TYPE_NULL: "Null",
 		8: "QoS Data",
-		12: "QoS Null Function"
+		FRAME_SUB_TYPE_QOS_NULL: "QoS Null"
 	})
 
 }
@@ -412,13 +414,16 @@ class BlockACKResponse(ControlFrame):
 
 class ManagementFrame(MAC_802_11_Frame):
 	"""Base class for MAC 802.11 Management Frames.
+	
+	Todos:
+		* fix names.
 
 	Attributes:
 		- destination (MACAddress): destination address.
 		- source (MACAddress): source address.
 		- BSSID (MACAddress): BSSID address.
 		- sequence_control (int): sequence and fragment number.
-		- data (Buffer): unparsed frame data, i.e., Wirless Management.
+		- data (Buffer): unparsed frame data, i.e., Wireless Management.
 		- tags (List[TaggedParameter]): list of tag parameters.
 
 	"""
@@ -568,6 +573,60 @@ class AssociationResponse(ManagementFrame):
 		return mac
 
 
+class DataFrame(MAC_802_11_Frame):
+	"""Base class for MAC 802.11 Data Frames.
+
+	Attributes:
+		- receiver (MACAddress): receiver address.
+		- transmitter (MACAddress): transmitter address.
+		- destination (MACAddress): destination address.
+		- source (MACAddress): source address.
+		- sequence_control (int): sequence and fragment number.
+		- data (Buffer): unparsed frame data, i.e., Wireless Management.
+
+	"""
+	__slots__ = ("receiver", "transmitter", "destination", "source", "sequence_control", "data")
+
+	TYPE = FRAME_TYPE_DATA_FRAME
+
+	@classmethod
+	def read_from_buffer(cls, buf: Buffer) -> "DataFrame":
+		mac = super().read_from_buffer(buf)
+		mac.receiver = MACAddress(buf.read(6))
+		mac.transmitter = MACAddress(buf.read(6))
+		mac.destination = MACAddress(buf.read(6))
+		mac.sequence_control = buf.read_short()
+		if mac.flag_from_ds and mac.flag_to_ds:
+			mac.source = MACAddress(buf.read(6))
+		t = buf.read_remaining()
+		mac.data = Buffer.from_bytes(t[:-4], byteorder="little")
+		mac.fcs = int.from_bytes(t[-4:], byteorder="little")
+		return mac
+
+
+class Null(DataFrame):
+	"""Null frame. Frames with no data used to transmit control
+	information."""
+	SUBTYPE = FRAME_SUB_TYPE_NULL
+
+
+class QoSNull(DataFrame):
+	"""QoS Null frame. Frames with no data used to transmit control
+	information.
+
+	Attributes:
+		- qos_control (int): QoS control.
+
+	"""
+	SUBTYPE = FRAME_SUB_TYPE_QOS_NULL
+
+	@classmethod
+	def read_from_buffer(cls, buf: Buffer) -> "QoSNull":
+		mac = super().read_from_buffer(buf)
+		mac.qos_control = mac.data.read_short()
+		return mac
+
+
 frame_class_map = {
 	0x00: AssociationRequest,
 	0x10: AssociationResponse,
@@ -580,7 +639,9 @@ frame_class_map = {
 	0x94: BlockACKResponse,
 	0xb4: RequestToSend,
 	0xc4: ClearToSend,
-	0xd4: Acknowledgment
+	0xd4: Acknowledgment,
+	0x48: Null,
+	0xc8: QoSNull
 }
 
 

@@ -13,6 +13,10 @@ FRAME_SUB_TYPE_PROBE_RESPONSE = 5
 FRAME_SUB_TYPE_BEACON = 8
 
 FRAME_TYPE_CONTROL_FRAME = 1
+FRAME_SUB_TYPE_BLOCK_ACK_REQ = 8
+FRAME_SUB_TYPE_BLOCK_ACK_RES = 9
+FRAME_SUB_TYPE_REQUEST_TO_SEND = 11
+FRAME_SUB_TYPE_CLEAR_TO_SEND = 12
 FRAME_SUB_TYPE_ACK = 13
 
 FRAME_TYPE_DATA_FRAME = 2
@@ -35,43 +39,11 @@ _all_map = {
 		16: "Action",
 	}),
 	FRAME_TYPE_CONTROL_FRAME: ("Control Frame", {
-		8: "Block ACK Req",
-		9: "Block ACK",
-		11: "Request-To-Send",
-		12: "Clear-To-Send",
-		13: "Acknowledgment"
-	}),
-	FRAME_TYPE_DATA_FRAME: ("Data Frame", {
-		0: "Data",
-		4: "Null Function (No data)",
-		8: "QoS Data",
-		12: "QoS Null Function"
-	})
-
-}
-
-_all_map = {
-	FRAME_TYPE_MANAGEMENT_FRAME: ("Management Frame", {
-		0: "Association request",
-		1: "Association response",
-		2: "Reassociation request",
-		3: "Reassociation response",
-		FRAME_SUB_TYPE_PROBE_REQUEST: "Probe request",
-		FRAME_SUB_TYPE_PROBE_RESPONSE: "Probe response",
-		6: "Timing advertisement",
-		7: "Reserved",
-		FRAME_SUB_TYPE_BEACON: "Beacon",
-		10: "Disassociation",
-		11: "Authentication",
-		12: "Deauthentication",
-		16: "Action",
-	}),
-	FRAME_TYPE_CONTROL_FRAME: ("Control Frame", {
-		8: "Block ACK Req",
-		9: "Block ACK",
-		11: "Request-To-Send",
-		12: "Clear-To-Send",
-		13: "Acknowledgment"
+		FRAME_SUB_TYPE_BLOCK_ACK_REQ: "Block ACK Req",
+		FRAME_SUB_TYPE_BLOCK_ACK_RES: "Block ACK Res",
+		FRAME_SUB_TYPE_REQUEST_TO_SEND: "Request-To-Send",
+		FRAME_SUB_TYPE_CLEAR_TO_SEND: "Clear-To-Send",
+		FRAME_SUB_TYPE_ACK: "Acknowledgment"
 	}),
 	FRAME_TYPE_DATA_FRAME: ("Data Frame", {
 		0: "Data",
@@ -258,4 +230,198 @@ class WirelessManagement(Frame):
 			buf.write_short(self.beacon_interval)
 			buf.write_short(self.capabilities_information)
 		buf.write(b''.join(map(lambda x: bytes(x[1]), self.tags.items())))
+
+
+"""
+New models
+"""
+
+class MAC_802_11_Frame(Frame):
+	"""Base class for MAC 802.11 Frames.
+
+	Attributes:
+		- fvts (int): frame version, type, and subtype.
+		- flags (int): flags.
+		- fcs (int): Frame Check Sequence, CRC32.
+
+	"""
+	__slots__ = ("fvts", "flags", "fcs")
+
+	BYTEORDER = "little"
+
+	TYPE = -1
+	SUBTYPE = -1
+
+	@classmethod
+	def read_from_buffer(cls, buf: Buffer) -> "MAC_802_11_Frame":
+		mac = cls()
+		mac.fvts = buf.read_byte()
+		mac.flags = buf.read_byte()
+		assert mac.TYPE == mac.type
+		assert mac.SUBTYPE == mac.subtype
+		return mac
+
+	@property
+	def subtype(self):
+		return (self.fvts & 0xf0) >> 4
+
+	@property
+	def type(self):
+		return (self.fvts & 0x0c) >> 2
+
+	@property
+	def version(self):
+		return (self.fvts & 0x03) >> 2
+	
+	@property
+	def flag_to_ds(self):
+		return self.flags & 0x01 > 0
+
+	@property
+	def flag_from_ds(self):
+		return self.flags & 0x02 > 0
+
+	@property
+	def flag_more_frag(self):
+		return self.flags & 0x04 > 0
+
+	@property
+	def flag_retry(self):
+		return self.flags & 0x08 > 0
+
+	@property
+	def flag_PWR_MGT(self):
+		return self.flags & 0x10 > 0
+
+	@property
+	def flag_more_data(self):
+		return self.flags & 0x20 > 0
+
+	@property
+	def flag_protected(self):
+		return self.flags & 0x40 > 0
+
+	@property
+	def flag_order(self):
+		return self.flags & 0x80 > 0
+
+
+class ControlFrame(MAC_802_11_Frame):
+	"""Base class for MAC 802.11 Control Frames.
+
+	Attributes:
+		- receiver (MACAddress): receiver address.
+		- transmitter (MACAddress): transmitter address.
+
+	"""
+	__slots__ = ("duration_id", "receiver", "transmitter")
+
+	@classmethod
+	def read_from_buffer(cls, buf: Buffer) -> "ControlFrame":
+		mac = super().read_from_buffer(buf)
+		mac.duration_id = buf.read_short()
+		mac.receiver =  MACAddress(buf.read(6))
+		return mac
+
+
+class ClearToSend(ControlFrame):
+
+	TYPE = FRAME_TYPE_CONTROL_FRAME
+	SUBTYPE = FRAME_SUB_TYPE_CLEAR_TO_SEND
+
+	@classmethod
+	def read_from_buffer(cls, buf: Buffer) -> "ClearToSend":
+		mac = super().read_from_buffer(buf)
+		mac.fcs =  buf.read_int()
+		return mac
+
+
+class Acknowledgment(ControlFrame):
+
+	TYPE = FRAME_TYPE_CONTROL_FRAME
+	SUBTYPE = FRAME_SUB_TYPE_ACK
+
+	@classmethod
+	def read_from_buffer(cls, buf: Buffer) -> "Acknowledgment":
+		mac = super().read_from_buffer(buf)
+		mac.fcs =  buf.read_int()
+		return mac
+
+
+class RequestToSend(ControlFrame):
+
+	TYPE = FRAME_TYPE_CONTROL_FRAME
+	SUBTYPE = FRAME_SUB_TYPE_REQUEST_TO_SEND
+
+	@classmethod
+	def read_from_buffer(cls, buf: Buffer) -> "RequestToSend":
+		mac = super().read_from_buffer(buf)
+		mac.transmitter =  MACAddress(buf.read(6))
+		mac.fcs = buf.read_int()
+		return mac
+
+
+class BlockACKRequest(ControlFrame):
+	"""Block ACK request.
+
+	Attributes:
+		- control: block ACK control.
+		- ssc: block ACK starting sequence control.
+
+	"""
+	__slots__ = ("control", "ssc", "bitmap")
+
+	TYPE = FRAME_TYPE_CONTROL_FRAME
+	SUBTYPE = FRAME_SUB_TYPE_BLOCK_ACK_REQ
+
+	@classmethod
+	def read_from_buffer(cls, buf: Buffer) -> "BlockACKRequest":
+		mac = super().read_from_buffer(buf)
+		mac.transmitter =  MACAddress(buf.read(6))
+		mac.control = buf.read_short()
+		mac.ssc = buf.read_short()
+		mac.fcs = buf.read_int()
+		return mac
+
+
+class BlockACKResponse(ControlFrame):
+	"""Block ACK response.
+
+	Attributes:
+		- control (int): block ACK control.
+		- ssc (int): block ACK starting sequence control.
+		- bitmap (int): block ACK bitmap.
+
+	"""
+	__slots__ = ("control", "ssc", "bitmap")
+
+	TYPE = FRAME_TYPE_CONTROL_FRAME
+	SUBTYPE = FRAME_SUB_TYPE_BLOCK_ACK_RES
+
+	@classmethod
+	def read_from_buffer(cls, buf: Buffer) -> "BlockACKResponse":
+		mac = super().read_from_buffer(buf)
+		mac.transmitter =  MACAddress(buf.read(6))
+		mac.control = buf.read_short()
+		mac.ssc = buf.read_short()
+		mac.bitmap = buf.read_long()
+		mac.fcs = buf.read_int()
+		return mac
+
+
+frame_class_map = {
+	0x84: BlockACKRequest,
+	0x94: BlockACKResponse,
+	0xb4: RequestToSend,
+	0xc4: ClearToSend,
+	0xd4: Acknowledgment
+}
+
+
+def next_frame_class(buf: Buffer) -> MAC_802_11_Frame:
+	buf.mark()
+	stv = buf.read_byte()
+	klass = frame_class_map.get(stv, None)
+	buf.restore()
+	return klass
 

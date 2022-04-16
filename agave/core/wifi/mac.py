@@ -8,6 +8,8 @@ from typing import List
 
 
 FRAME_TYPE_MANAGEMENT_FRAME = 0
+FRAME_SUB_TYPE_ASSOCIATION_REQUEST = 0
+FRAME_SUB_TYPE_ASSOCIATION_RESPONSE = 1
 FRAME_SUB_TYPE_PROBE_REQUEST = 4
 FRAME_SUB_TYPE_PROBE_RESPONSE = 5
 FRAME_SUB_TYPE_BEACON = 8
@@ -26,8 +28,8 @@ FRAME_TYPE_DATA_FRAME = 2
 
 _all_map = {
 	FRAME_TYPE_MANAGEMENT_FRAME: ("Management Frame", {
-		0: "Association request",
-		1: "Association response",
+		FRAME_SUB_TYPE_ASSOCIATION_REQUEST: "Association request",
+		FRAME_SUB_TYPE_ASSOCIATION_RESPONSE: "Association response",
 		2: "Reassociation request",
 		3: "Reassociation response",
 		FRAME_SUB_TYPE_PROBE_REQUEST: "Probe request",
@@ -522,7 +524,53 @@ class Deauthentication(ManagementFrame):
 		return mac
 
 
+class AssociationRequest(ManagementFrame):
+	"""Association request frame. 
+
+	Attributes:
+		- capabilities (int): capabilities.
+		- listen_interval (int): listen interval.
+
+	"""
+	__slots__ = ("capabilities", "listen_interval")
+
+	SUBTYPE = FRAME_SUB_TYPE_ASSOCIATION_REQUEST
+
+	@classmethod
+	def read_from_buffer(cls, buf: Buffer) -> "AssociationRequest":
+		mac = super().read_from_buffer(buf)
+		mac.capabilities = mac.data.read_short()
+		mac.listen_interval = mac.data.read_short()
+		mac.tags = TaggedParameter.parse_all(buf)
+		return mac
+
+
+class AssociationResponse(ManagementFrame):
+	"""Association response frame. 
+
+	Attributes:
+		- capabilities (int): capabilities.
+		- status_code (int): status code.
+		- association_id (int): association id.
+
+	"""
+	__slots__ = ("capabilities", "status_code", "association_id")
+
+	SUBTYPE = FRAME_SUB_TYPE_ASSOCIATION_RESPONSE
+
+	@classmethod
+	def read_from_buffer(cls, buf: Buffer) -> "AssociationResponse":
+		mac = super().read_from_buffer(buf)
+		mac.capabilities = mac.data.read_short()
+		mac.status_code = mac.data.read_short()
+		mac.association_id = mac.data.read_short()
+		mac.tags = TaggedParameter.parse_all(buf)
+		return mac
+
+
 frame_class_map = {
+	0x00: AssociationRequest,
+	0x10: AssociationResponse,
 	0x40: ProbeRequest,
 	0x50: ProbeResponse,
 	0x80: Beacon,

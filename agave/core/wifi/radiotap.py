@@ -342,7 +342,7 @@ class RadioTapHeader(Frame):
 	def write_to_buffer(self, buf: Buffer):
 		buf.write_byte(self.revision)
 		buf.write_byte(self.pad)
-		buf.write_byte(self.length)
+		buf.write_short(self.length)
 		for bitmask in self.bitmasks:
 			buf.write_int(bitmask)
 		buf.write(self.data)

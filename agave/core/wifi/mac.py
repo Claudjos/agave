@@ -243,17 +243,17 @@ class WirelessManagement(Frame):
 		frame.tags = {}
 		frame.has_fixed_parameters = with_fixed
 		if with_fixed:
-			frame.timestamp = int.from_bytes(buf.read(8), byteorder="little")
-			frame.beacon_interval = buf.read(2)
-			frame.capabilities_information = buf.read(2)
+			frame.timestamp = buf.read_long()
+			frame.beacon_interval = buf.read_short()
+			frame.capabilities_information = buf.read_short()
 		# parse tags
 		frame.tags = TaggedParameter.parse_all(buf)
 		return frame
 
 	def write_to_buffer(self, buf: Buffer):
 		if self.has_fixed_parameters:
-			buf.write(self.timestamp.to_bytes(8, byteorder="little"))
-			buf.write(self.beacon_interval)
-			buf.write(self.capabilities_information)
+			buf.write_long(self.timestamp)
+			buf.write_short(self.beacon_interval)
+			buf.write_short(self.capabilities_information)
 		buf.write(b''.join(map(lambda x: bytes(x[1]), self.tags.items())))
 

@@ -273,6 +273,17 @@ class MAC_802_11_Frame(Frame):
 		assert mac.SUBTYPE == mac.subtype
 		return mac
 
+	def write_to_buffer(self, buf: Buffer):
+		buf.write_byte(self.fvts)
+		buf.write_byte(self.flags)
+
+	@classmethod
+	def build(cls, flags: int = 0) -> "MAC_802_11_Frame":
+		mac = cls()
+		mac.fvts = (cls.TYPE << 2) | (cls.SUBTYPE << 4)
+		mac.flags = flags
+		return mac
+
 	@property
 	def subtype(self):
 		return (self.fvts & 0xf0) >> 4
@@ -283,7 +294,7 @@ class MAC_802_11_Frame(Frame):
 
 	@property
 	def version(self):
-		return (self.fvts & 0x03) >> 2
+		return (self.fvts & 0x03)
 	
 	@property
 	def flag_to_ds(self):
@@ -437,28 +448,60 @@ class ManagementFrame(MAC_802_11_Frame):
 		* fix names.
 
 	Attributes:
+		- receiver (MACAddress): receiver address.
+		- transmitter (MACAddress): transmitter address.
 		- destination (MACAddress): destination address.
-		- source (MACAddress): source address.
-		- BSSID (MACAddress): BSSID address.
 		- sequence_control (int): sequence and fragment number.
 		- data (Buffer): unparsed frame data, i.e., Wireless Management.
 		- tags (List[TaggedParameter]): list of tag parameters.
 
 	"""
-	__slots__ = ("destination", "source", "BSSID", "sequence_control", "tags", "data")
+	__slots__ = ("receiver", "transmitter", "destination", "sequence_control", 
+		"tags", "data", "duration_id")
 
 	TYPE = FRAME_TYPE_MANAGEMENT_FRAME
 
 	@classmethod
 	def read_from_buffer(cls, buf: Buffer) -> "ManagementFrame":
 		mac = super().read_from_buffer(buf)
+		mac.duration_id = buf.read_short()
+		mac.receiver = MACAddress(buf.read(6))
+		mac.transmitter = MACAddress(buf.read(6))
 		mac.destination = MACAddress(buf.read(6))
-		mac.source = MACAddress(buf.read(6))
-		mac.BSSID = MACAddress(buf.read(6))
 		mac.sequence_control = buf.read_short()
 		t = buf.read_remaining()
 		mac.data = Buffer.from_bytes(t[:-4], byteorder="little")
 		mac.fcs = int.from_bytes(t[-4:], byteorder="little")
+		return mac
+
+	def write_to_buffer(self, buf: Buffer):
+		super().write_to_buffer(buf)
+		buf.write_short(self.duration_id)
+		buf.write(self.receiver.packed)
+		buf.write(self.transmitter.packed)
+		buf.write(self.destination.packed)
+		buf.write_short(self.sequence_control)
+		buf.write(bytes(self.data))
+		#buf.write_int(self.fcs)
+
+	@classmethod
+	def build(cls, receiver: MACAddress, transmitter: MACAddress, 
+		destination: MACAddress, duration_id: int = 8252, sequence_control: int = 0, 
+		**kwargs) -> "ManagementFrame":
+		"""Builder.
+
+		Args:
+			**kwargs: keyword arguments for MAC_802_11_Frame.build.
+
+		"""
+		mac = super().build(**kwargs)
+		mac.duration_id = duration_id
+		mac.receiver = receiver
+		mac.transmitter = transmitter
+		mac.destination = destination
+		mac.sequence_control = sequence_control
+		mac.data = Buffer.from_bytes(b'', byteorder="little")
+		mac.fcs = 0
 		return mac
 
 
@@ -544,6 +587,16 @@ class Deauthentication(ManagementFrame):
 	def read_from_buffer(cls, buf: Buffer) -> "Deauthentication":
 		mac = super().read_from_buffer(buf)
 		mac.reason = mac.data.read_short()
+		return mac
+
+	def write_to_buffer(self, buf: Buffer):
+		self.data.write_short(self.reason)
+		super().write_to_buffer(buf)
+
+	@classmethod
+	def build(cls, station: MACAddress, ap: MACAddress, reason: int = 3, **kwargs) -> "Deauthentication":
+		mac = super().build(ap, station, ap, **kwargs)
+		mac.reason = reason
 		return mac
 
 

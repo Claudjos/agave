@@ -13,12 +13,14 @@ FRAME_SUB_TYPE_ASSOCIATION_RESPONSE = 1
 FRAME_SUB_TYPE_PROBE_REQUEST = 4
 FRAME_SUB_TYPE_PROBE_RESPONSE = 5
 FRAME_SUB_TYPE_BEACON = 8
+FRAME_SUB_TYPE_DEASSOCIATION = 10
 FRAME_SUB_TYPE_AUTHENTICATION = 11
 FRAME_SUB_TYPE_DEAUTHENTICATION = 12
 
 FRAME_TYPE_CONTROL_FRAME = 1
 FRAME_SUB_TYPE_BLOCK_ACK_REQ = 8
 FRAME_SUB_TYPE_BLOCK_ACK_RES = 9
+FRAME_SUB_TYPE_POWER_SAVE_POLL = 10
 FRAME_SUB_TYPE_REQUEST_TO_SEND = 11
 FRAME_SUB_TYPE_CLEAR_TO_SEND = 12
 FRAME_SUB_TYPE_ACK = 13
@@ -41,7 +43,7 @@ _all_map = {
 		6: "Timing advertisement",
 		7: "Reserved",
 		FRAME_SUB_TYPE_BEACON: "Beacon",
-		10: "Disassociation",
+		FRAME_SUB_TYPE_DEASSOCIATION: "Disassociation",
 		FRAME_SUB_TYPE_AUTHENTICATION: "Authentication",
 		FRAME_SUB_TYPE_DEAUTHENTICATION: "Deauthentication",
 		13: "Action",
@@ -49,6 +51,7 @@ _all_map = {
 	FRAME_TYPE_CONTROL_FRAME: ("Control Frame", {
 		FRAME_SUB_TYPE_BLOCK_ACK_REQ: "Block ACK Req",
 		FRAME_SUB_TYPE_BLOCK_ACK_RES: "Block ACK Res",
+		FRAME_SUB_TYPE_POWER_SAVE_POLL: "Power Save Poll",
 		FRAME_SUB_TYPE_REQUEST_TO_SEND: "Request-To-Send",
 		FRAME_SUB_TYPE_CLEAR_TO_SEND: "Clear-To-Send",
 		FRAME_SUB_TYPE_ACK: "Acknowledgment"
@@ -414,6 +417,18 @@ class BlockACKResponse(ControlFrame):
 		return mac
 
 
+class PowerSavePoll(ControlFrame):
+	"""PowerSavePoll frame."""
+	SUBTYPE = FRAME_SUB_TYPE_POWER_SAVE_POLL
+
+	@classmethod
+	def read_from_buffer(cls, buf: Buffer) -> "PowerSavePoll":
+		mac = super().read_from_buffer(buf)
+		mac.transmitter =  MACAddress(buf.read(6))
+		mac.fcs = buf.read_int()
+		return mac
+
+
 class ManagementFrame(MAC_802_11_Frame):
 	"""Base class for MAC 802.11 Management Frames.
 	
@@ -529,6 +544,11 @@ class Deauthentication(ManagementFrame):
 		mac = super().read_from_buffer(buf)
 		mac.reason = mac.data.read_short()
 		return mac
+
+
+class Disassociation(Deauthentication):
+	"""Disassociation frame."""
+	SUBTYPE = FRAME_SUB_TYPE_DEASSOCIATION
 
 
 class AssociationRequest(ManagementFrame):
@@ -675,10 +695,12 @@ frame_class_map = {
 	0x40: ProbeRequest,
 	0x50: ProbeResponse,
 	0x80: Beacon,
+	0x0a: Disassociation,
 	0xb0: Authentication,
 	0xc0: Deauthentication,
 	0x84: BlockACKRequest,
 	0x94: BlockACKResponse,
+	0xa4: PowerSavePoll,
 	0xb4: RequestToSend,
 	0xc4: ClearToSend,
 	0xd4: Acknowledgment,

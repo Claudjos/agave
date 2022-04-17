@@ -24,7 +24,9 @@ FRAME_SUB_TYPE_CLEAR_TO_SEND = 12
 FRAME_SUB_TYPE_ACK = 13
 
 FRAME_TYPE_DATA_FRAME = 2
+FRAME_SUB_TYPE_DATA = 0
 FRAME_SUB_TYPE_NULL = 4
+FRAME_SUB_TYPE_QOS_DATA = 8
 FRAME_SUB_TYPE_QOS_NULL = 12
 
 
@@ -52,9 +54,9 @@ _all_map = {
 		FRAME_SUB_TYPE_ACK: "Acknowledgment"
 	}),
 	FRAME_TYPE_DATA_FRAME: ("Data Frame", {
-		0: "Data",
+		FRAME_SUB_TYPE_DATA: "Data",
 		FRAME_SUB_TYPE_NULL: "Null",
-		8: "QoS Data",
+		FRAME_SUB_TYPE_QOS_DATA: "QoS Data",
 		FRAME_SUB_TYPE_QOS_NULL: "QoS Null"
 	})
 
@@ -610,6 +612,25 @@ class Null(DataFrame):
 	SUBTYPE = FRAME_SUB_TYPE_NULL
 
 
+class Data(DataFrame):
+	"""Data frame. Frames with data.
+
+	Todos:
+		* understand is ccmp is always present, not clear.
+
+	Attributes:
+		- ccmp_params (int): CCMP parameters.
+
+	"""
+	SUBTYPE = FRAME_SUB_TYPE_DATA
+
+	@classmethod
+	def read_from_buffer(cls, buf: Buffer) -> "Data":
+		mac = super().read_from_buffer(buf)
+		mac.ccmp_params = mac.data.read_long()
+		return mac
+
+
 class QoSNull(DataFrame):
 	"""QoS Null frame. Frames with no data used to transmit control
 	information.
@@ -627,6 +648,27 @@ class QoSNull(DataFrame):
 		return mac
 
 
+class QoSData(DataFrame):
+	"""QoS Data frame. Frames with data.
+
+	Todos:
+		* understand is ccmp is always present, not clear.
+
+	Attributes:
+		- qos_control (int): QoS control.
+		- ccmp_params (int): CCMP parameters.
+
+	"""
+	SUBTYPE = FRAME_SUB_TYPE_QOS_DATA
+
+	@classmethod
+	def read_from_buffer(cls, buf: Buffer) -> "QoSData":
+		mac = super().read_from_buffer(buf)
+		mac.qos_control = mac.data.read_short()
+		mac.ccmp_params = mac.data.read_long()
+		return mac
+
+
 frame_class_map = {
 	0x00: AssociationRequest,
 	0x10: AssociationResponse,
@@ -640,8 +682,10 @@ frame_class_map = {
 	0xb4: RequestToSend,
 	0xc4: ClearToSend,
 	0xd4: Acknowledgment,
+	0x08: Data,
 	0x48: Null,
-	0xc8: QoSNull
+	0x88: QoSData,
+	0xc8: QoSNull,
 }
 
 

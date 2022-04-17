@@ -16,6 +16,7 @@ FRAME_SUB_TYPE_BEACON = 8
 FRAME_SUB_TYPE_DEASSOCIATION = 10
 FRAME_SUB_TYPE_AUTHENTICATION = 11
 FRAME_SUB_TYPE_DEAUTHENTICATION = 12
+FRAME_SUB_TYPE_ACTION = 13
 
 FRAME_TYPE_CONTROL_FRAME = 1
 FRAME_SUB_TYPE_BLOCK_ACK_REQ = 8
@@ -46,7 +47,7 @@ _all_map = {
 		FRAME_SUB_TYPE_DEASSOCIATION: "Disassociation",
 		FRAME_SUB_TYPE_AUTHENTICATION: "Authentication",
 		FRAME_SUB_TYPE_DEAUTHENTICATION: "Deauthentication",
-		13: "Action",
+		FRAME_SUB_TYPE_ACTION: "Action",
 	}),
 	FRAME_TYPE_CONTROL_FRAME: ("Control Frame", {
 		FRAME_SUB_TYPE_BLOCK_ACK_REQ: "Block ACK Req",
@@ -595,6 +596,30 @@ class AssociationResponse(ManagementFrame):
 		return mac
 
 
+class Action(ManagementFrame):
+	"""Action response frame. 
+
+	Attributes:
+		- category (int): category code.
+		- action (int): action code.
+
+	Todos:
+		* parse fixed parameters. Vary on category/action.
+
+	"""
+	__slots__ = ("category", "action")
+
+	SUBTYPE = FRAME_SUB_TYPE_ACTION
+
+	@classmethod
+	def read_from_buffer(cls, buf: Buffer) -> "Action":
+		mac = super().read_from_buffer(buf)
+		mac.category = mac.data.read_byte()
+		mac.action = mac.data.read_byte()
+		# Parse other fields.
+		return mac
+
+
 class DataFrame(MAC_802_11_Frame):
 	"""Base class for MAC 802.11 Data Frames.
 
@@ -698,6 +723,7 @@ frame_class_map = {
 	0x0a: Disassociation,
 	0xb0: Authentication,
 	0xc0: Deauthentication,
+	0xd0: Action,
 	0x84: BlockACKRequest,
 	0x94: BlockACKResponse,
 	0xa4: PowerSavePoll,

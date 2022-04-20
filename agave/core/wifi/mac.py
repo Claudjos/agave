@@ -25,6 +25,7 @@ FRAME_SUB_TYPE_POWER_SAVE_POLL = 10
 FRAME_SUB_TYPE_REQUEST_TO_SEND = 11
 FRAME_SUB_TYPE_CLEAR_TO_SEND = 12
 FRAME_SUB_TYPE_ACK = 13
+FRAME_SUB_TYPE_CF_END = 14
 
 FRAME_TYPE_DATA_FRAME = 2
 FRAME_SUB_TYPE_DATA = 0
@@ -55,7 +56,8 @@ _all_map = {
 		FRAME_SUB_TYPE_POWER_SAVE_POLL: "Power Save Poll",
 		FRAME_SUB_TYPE_REQUEST_TO_SEND: "Request-To-Send",
 		FRAME_SUB_TYPE_CLEAR_TO_SEND: "Clear-To-Send",
-		FRAME_SUB_TYPE_ACK: "Acknowledgment"
+		FRAME_SUB_TYPE_ACK: "Acknowledgment",
+		FRAME_SUB_TYPE_CF_END: "CF-End"
 	}),
 	FRAME_TYPE_DATA_FRAME: ("Data Frame", {
 		FRAME_SUB_TYPE_DATA: "Data",
@@ -440,6 +442,17 @@ class PowerSavePoll(ControlFrame):
 		mac.fcs = buf.read_int()
 		return mac
 
+class CFEnd(ControlFrame):
+	"""CF-End frame."""
+	SUBTYPE = FRAME_SUB_TYPE_CF_END
+
+	@classmethod
+	def read_from_buffer(cls, buf: Buffer) -> "CFEnd":
+		mac = super().read_from_buffer(buf)
+		mac.transmitter =  MACAddress(buf.read(6))
+		mac.fcs = buf.read_int()
+		return mac
+
 
 class ManagementFrame(MAC_802_11_Frame):
 	"""Base class for MAC 802.11 Management Frames.
@@ -783,6 +796,7 @@ frame_class_map = {
 	0xb4: RequestToSend,
 	0xc4: ClearToSend,
 	0xd4: Acknowledgment,
+	0xe4: CFEnd,
 	0x08: Data,
 	0x48: Null,
 	0x88: QoSData,

@@ -11,8 +11,15 @@ Usage:
 import socket
 from agave.core.ethernet import MACAddress
 from agave.core.buffer import Buffer
+from agave.core.wifi.mac import (
+	FRAME_TYPE_MANAGEMENT_FRAME,
+	FRAME_SUB_TYPE_PROBE_RESPONSE,
+	FRAME_SUB_TYPE_PROBE_REQUEST,
+	FRAME_SUB_TYPE_BEACON,
+	ProbeRequest,
+	WiFiMAC
+)
 from agave.core.wifi.radiotap import RadioTapHeader, RadioTapField
-from agave.core.wifi.mac import ProbeRequest, WirelessManagement, MAC_802_11
 from agave.core.wifi.tags import SSID, SupportedRates, TaggedParameter
 from agave.utils.jobs import Job, SocketAddress
 from agave.utils.interfaces import NetworkInterface
@@ -43,32 +50,34 @@ class Scanner(Job):
 			return True
 		return False
 
-	def process(self, data: bytes, address: SocketAddress) -> Tuple[MACAddress, str, WirelessManagement]:
-		buf = Buffer.from_bytes(data[:-4], "little")
+	def process(self, data: bytes, address: SocketAddress) -> Tuple[MACAddress, str, WiFiMAC]:
+		buf = Buffer.from_bytes(data, "little")
 		rth = RadioTapHeader.read_from_buffer(buf)
-		frame = MAC_802_11.read_from_buffer(buf)
-		if frame.is_probe_response() or frame.is_beacon_frame():
-			wm = WirelessManagement.read_from_buffer(buf)
-			t = (str(frame.BSSID), str(wm.tags[0].SSID))
-			if t not in self._cache:
-				self._cache.add(t)
-				if self._ssids is not None:
-					if t[1] in self._ssids:
-						self._ssids.remove(t[1])
-						if len(self._ssids) == 0:
-							self.set_finished()
-						return frame.BSSID, str(wm.tags[0].SSID), wm
+		frame = WiFiMAC.from_buffer(buf)
+		if frame.type == FRAME_TYPE_MANAGEMENT_FRAME:
+			if (
+				frame.subtype == FRAME_SUB_TYPE_PROBE_RESPONSE or
+				frame.subtype == FRAME_SUB_TYPE_BEACON
+			):
+				t = (str(frame.transmitter), str(frame.tags[0].SSID))
+				if t not in self._cache:
+					self._cache.add(t)
+					if self._ssids is not None:
+						if t[1] in self._ssids:
+							self._ssids.remove(t[1])
+							if len(self._ssids) == 0:
+								self.set_finished()
+							return frame.transmitter, str(frame.tags[0].SSID), frame
+						else:
+							self._others.append((t[0], t[1], frame))
 					else:
-						self._others.append((t[0], t[1], wm))
-				else:
-					return frame.BSSID, str(wm.tags[0].SSID), wm
-		if frame.is_probe_request():
-			wm = WirelessManagement.read_from_buffer(buf, with_fixed=False)
-			t = str(wm.tags[0].SSID)
-			if t != "" and t not in self._cache_req:
-				self._cache_req.add(t)
+						return frame.transmitter, str(frame.tags[0].SSID), frame
+			if frame.subtype == FRAME_SUB_TYPE_PROBE_REQUEST:
+				t = str(frame.tags[0].SSID)
+				if t != "" and t not in self._cache_req:
+					self._cache_req.add(t)
 
-	def get_others(self) -> List[Tuple[MACAddress, str, WirelessManagement]]:
+	def get_others(self) -> List[Tuple[MACAddress, str, WiFiMAC]]:
 		"""Returns info about APs whose beacon or response where received,
 		but are not in the SSID list."""
 		return self._others

@@ -26,6 +26,10 @@ class MACAddress:
 	def mac_to_str(cls, address: bytes):
 		return ':'.join('%02x'%i for i in address)
 
+	@classmethod
+	def broadcast(cls) -> "MACAddress":
+		return cls(b'\xff\xff\xff\xff\xff\xff')
+
 	def __str__(self):
 		return self.mac_to_str(self.packed)
 

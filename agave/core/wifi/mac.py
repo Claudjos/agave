@@ -442,6 +442,7 @@ class PowerSavePoll(ControlFrame):
 		mac.fcs = buf.read_int()
 		return mac
 
+
 class CFEnd(ControlFrame):
 	"""CF-End frame."""
 	SUBTYPE = FRAME_SUB_TYPE_CF_END
@@ -548,7 +549,7 @@ class ProbeResponse(Beacon):
 	SUBTYPE = FRAME_SUB_TYPE_PROBE_RESPONSE
 
 
-class ProbeRequest(Beacon):
+class ProbeRequest(ManagementFrame):
 	"""Probe Request Frame. Request APs to advertise."""
 	SUBTYPE = FRAME_SUB_TYPE_PROBE_REQUEST
 
@@ -557,6 +558,25 @@ class ProbeRequest(Beacon):
 		mac = super().read_from_buffer(buf)
 		mac.tags = TaggedParameter.parse_all(mac.data)
 		return mac
+
+	def write_to_buffer(self, buf: Buffer) -> "ProbeRequest":
+		self.data.write(b''.join(map(lambda x: bytes(x[1]), self.tags.items())))
+		super().write_to_buffer(buf)
+
+	@classmethod
+	def build(cls, transmitter: MACAddress, params: List[TaggedParameter], 
+		**kwargs) -> "ProbeRequest":
+		"""Builder.
+
+		Args:
+			transmitter: transmitter station address.
+			params: list of parameters.
+			kwargs; keyword argument for ManagementFrame.build.
+		"""
+		destination = MACAddress.broadcast()
+		x = super().build(destination, transmitter, destination)
+		x.tags = {k: v for k,v in map(lambda p: (p.number, p), params)}
+		return x
 
 
 class Authentication(ManagementFrame):

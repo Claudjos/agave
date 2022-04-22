@@ -12,7 +12,7 @@ import socket
 from agave.core.ethernet import MACAddress
 from agave.core.buffer import Buffer
 from agave.core.wifi.radiotap import RadioTapHeader, RadioTapField
-from agave.core.wifi.mac import MAC_802_11, WirelessManagement
+from agave.core.wifi.mac import ProbeRequest, WirelessManagement, MAC_802_11
 from agave.core.wifi.tags import SSID, SupportedRates, TaggedParameter
 from agave.utils.jobs import Job, SocketAddress
 from agave.utils.interfaces import NetworkInterface
@@ -87,7 +87,7 @@ class Scanner(Job):
 		return output
 
 	@classmethod
-	def build_probe_request(cls, ssids: List[str], tags: Dict[int, TaggedParameter] = None, 
+	def build_probe_request(cls, ssids: List[str], tags: List[TaggedParameter] = None, 
 		fields: List[RadioTapField] = None) -> bytes:
 		"""Builds a probe request.
 
@@ -102,23 +102,16 @@ class Scanner(Job):
 		"""
 		# RadioTap
 		radiotap = RadioTapHeader.build(fields)
-		# 802.11 MAC
-		mac = MAC_802_11.build_probe_request(interface.mac)
-		mac.sequence_control = 1900
-		# Wireless Management
-		wm = WirelessManagement()
-		wm.has_fixed_parameters = False
-		wm.tags = {}
-		wm.tags[0] = SSID(0, 0, ssids[0].encode() if len(ssids) == 1 else b'')
-		wm.tags[1] = SupportedRates.build([0x82, 0x84, 0x8b, 0x96, 0x12, 0x24, 0x48, 0x6c])
-		if tags is not None:
-			for k, v in tags.items():
-				wm.tags[k] = v
+		# 802.11
+		if tags is None:
+			tags = []
+		tags.append(SSID.build(ssids[0] if len(ssids) == 1 else ""))
+		tags.append(SupportedRates.build([0x82, 0x84, 0x8b, 0x96, 0x12, 0x24, 0x48, 0x6c]))
+		wmac = ProbeRequest.build(interface.mac, tags)
 		# Build the packet
 		buf = Buffer.from_bytes(b'', byteorder="little")
 		radiotap.write_to_buffer(buf)
-		mac.write_to_buffer(buf)
-		wm.write_to_buffer(buf)
+		wmac.write_to_buffer(buf)
 		return bytes(buf)
 
 

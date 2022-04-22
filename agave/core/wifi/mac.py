@@ -250,7 +250,7 @@ class WirelessManagement(Frame):
 New models
 """
 
-class MAC_802_11_Frame(Frame):
+class WiFiMAC(Frame):
 	"""Base class for MAC 802.11 Frames.
 
 	Attributes:
@@ -267,7 +267,7 @@ class MAC_802_11_Frame(Frame):
 	SUBTYPE = -1
 
 	@classmethod
-	def read_from_buffer(cls, buf: Buffer) -> "MAC_802_11_Frame":
+	def read_from_buffer(cls, buf: Buffer) -> "WiFiMAC":
 		mac = cls()
 		mac.fvts = buf.read_byte()
 		mac.flags = buf.read_byte()
@@ -280,7 +280,7 @@ class MAC_802_11_Frame(Frame):
 		buf.write_byte(self.flags)
 
 	@classmethod
-	def build(cls, flags: int = 0) -> "MAC_802_11_Frame":
+	def build(cls, flags: int = 0) -> "WiFiMAC":
 		mac = cls()
 		mac.fvts = (cls.TYPE << 2) | (cls.SUBTYPE << 4)
 		mac.flags = flags
@@ -330,8 +330,16 @@ class MAC_802_11_Frame(Frame):
 	def flag_order(self):
 		return self.flags & 0x80 > 0
 
+	@classmethod
+	def from_buffer(cls, buf: Buffer) -> "WiFiMAC":
+		klass = next_frame_class(buf)
+		if klass is None:
+			return None
+		else:
+			return klass.read_from_buffer(buf)
 
-class ControlFrame(MAC_802_11_Frame):
+
+class ControlFrame(WiFiMAC):
 	"""Base class for MAC 802.11 Control Frames.
 
 	Attributes:
@@ -455,11 +463,8 @@ class CFEnd(ControlFrame):
 		return mac
 
 
-class ManagementFrame(MAC_802_11_Frame):
+class ManagementFrame(WiFiMAC):
 	"""Base class for MAC 802.11 Management Frames.
-	
-	Todos:
-		* fix names.
 
 	Attributes:
 		- receiver (MACAddress): receiver address.
@@ -505,7 +510,7 @@ class ManagementFrame(MAC_802_11_Frame):
 		"""Builder.
 
 		Args:
-			**kwargs: keyword arguments for MAC_802_11_Frame.build.
+			**kwargs: keyword arguments for WiFiMAC.build.
 
 		"""
 		mac = super().build(**kwargs)
@@ -706,7 +711,7 @@ class Action(ManagementFrame):
 		return mac
 
 
-class DataFrame(MAC_802_11_Frame):
+class DataFrame(WiFiMAC):
 	"""Base class for MAC 802.11 Data Frames.
 
 	Attributes:
@@ -824,7 +829,7 @@ frame_class_map = {
 }
 
 
-def next_frame_class(buf: Buffer) -> MAC_802_11_Frame:
+def next_frame_class(buf: Buffer) -> WiFiMAC:
 	buf.mark()
 	stv = buf.read_byte()
 	klass = frame_class_map.get(stv, None)

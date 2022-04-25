@@ -356,7 +356,6 @@ class ManagementFrame(WiFiMAC):
 		mac.destination = destination
 		mac.sequence_control = sequence_control
 		mac.data = Buffer.from_bytes(b'', byteorder="little")
-		mac.fcs = 0
 		return mac
 
 
@@ -453,6 +452,13 @@ class Authentication(ManagementFrame):
 		mac.status = mac.data.read_short()
 		return mac
 
+	def write_to_buffer(self, buf: Buffer):
+		self.data.seek(0)
+		self.data.write_short(self.algorithm)
+		self.data.write_short(self.sequence)
+		self.data.write_short(self.status)
+		super().write_to_buffer(buf)
+
 
 class Deauthentication(ManagementFrame):
 	"""Deauthentication frame. 
@@ -474,6 +480,7 @@ class Deauthentication(ManagementFrame):
 		return mac
 
 	def write_to_buffer(self, buf: Buffer):
+		self.data.seek(0)
 		self.data.write_short(self.reason)
 		super().write_to_buffer(buf)
 

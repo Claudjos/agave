@@ -1,7 +1,7 @@
 import unittest
 from agave.core.ethernet import MACAddress
 from agave.core.wifi.mac import (
-	Beacon, ProbeRequest
+	Beacon, ProbeRequest, Authentication, Deauthentication
 )
 
 
@@ -21,6 +21,16 @@ class TestFrameControl(unittest.TestCase):
 		b'\x0b\xff\xff\xff\xff\xff\xff\xa0\x09\x00\x00\x01\x04\x02\x04' 
 		b'\x0b\x16\x32\x08\x0c\x12\x18\x24\x30\x48\x60\x6c\x03\x01\x0b' 
 		b'\xff\xff\xff\xff'
+	)
+
+	authentication = (
+		b'\xb0\x00\x3a\x01\x00\x0c\xf6\xbe\x4d\x04\x7c\xf9\x0e\x48\xe4\xc4\x00'
+		b'\x0c\xf6\xbe\x4d\x04\xb0\x01\x00\x00\x01\x00\x00\x00\x28\x2f\xb9\x50'
+	)
+
+	deauthentication = (
+		b'\xc0\x00\x3c\x00\x00\x0c\xf6\xbe\x4d\x04\x7c\xf9\x0e\x48\xe4'
+		b'\xc4\x00\x0c\xf6\xbe\x4d\x04\x10\xec\x03\x00\x64\xc7\x31\x17'
 	)
 
 	def test_beacon(self):
@@ -47,3 +57,33 @@ class TestFrameControl(unittest.TestCase):
 		self.assertEqual(frame.sequence_control, 154 << 4)
 		# Checks writing by rewriting the frame
 		self.assertEqual(bytes(frame), self.probe_request)
+
+	def test_authentication(self):
+		"""Tests Authentication."""
+		frame = Authentication.from_bytes(self.authentication)
+		# Checks parsing
+		self.assertEqual(frame.duration_id, 314)
+		self.assertEqual(frame.receiver, MACAddress("00:0c:f6:be:4d:04"))
+		self.assertEqual(frame.transmitter, MACAddress("7c:f9:0e:48:e4:c4"))
+		self.assertEqual(frame.sequence_control, 27 << 4)
+		# Checks writing by rewriting the frame
+		self.assertEqual(bytes(frame), self.authentication)
+
+	def test_deauthentication(self):
+		"""Tests Deauthentication."""
+		frame = Deauthentication.from_bytes(self.deauthentication)
+		# Checks parsing
+		self.assertEqual(frame.duration_id, 60)
+		self.assertEqual(frame.receiver, MACAddress("00:0c:f6:be:4d:04"))
+		self.assertEqual(frame.transmitter, MACAddress("7c:f9:0e:48:e4:c4"))
+		self.assertEqual(frame.sequence_control, 3777 << 4)
+		self.assertEqual(frame.reason, Deauthentication.REASON_STA_IS_LEAVING_OR_HAS_LEFT)
+		# Checks writing by rewriting the frame
+		self.assertEqual(bytes(frame), self.deauthentication)
+		# Checks building
+		self.assertEqual(bytes(frame)[:-4], bytes(Deauthentication.build(
+			MACAddress("7c:f9:0e:48:e4:c4"), MACAddress("00:0c:f6:be:4d:04"),
+			Deauthentication.REASON_STA_IS_LEAVING_OR_HAS_LEFT,
+			duration_id=60, sequence_control=(3777 << 4)
+		)))
+

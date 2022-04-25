@@ -22,7 +22,7 @@ if __name__ == "__main__":
 	# Parse arguments
 	interface = read_interface_or_die(sys.argv[2])
 	bssid = read_bssid_or_die(sys.argv[1], interface)
-	wait = None if len(sys.argv) < 3 else float(sys.argv[3])
+	wait = float(sys.argv[3]) if len(sys.argv) > 3 else None
 	# Loop
 	try:
 		for i in list_bss_clients(bssid, create_socket(interface), wait=wait):

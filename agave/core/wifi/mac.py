@@ -181,39 +181,63 @@ class ControlFrame(WiFiMAC):
 		mac.receiver =  MACAddress(buf.read(6))
 		return mac
 
+	def write_to_buffer(self, buf: Buffer) -> "ControlFrame":
+		super().write_to_buffer(buf)
+		buf.write_short(self.duration_id)
+		buf.write(self.receiver.packed)
 
-class ClearToSend(ControlFrame):
 
-	SUBTYPE = FRAME_SUB_TYPE_CLEAR_TO_SEND
-
+class ControlFrameFlavourA(ControlFrame):
+	"""Just a common kind a ControlFrame frame."""
 	@classmethod
-	def read_from_buffer(cls, buf: Buffer) -> "ClearToSend":
+	def read_from_buffer(cls, buf: Buffer) -> "ControlFrameFlavourA":
 		mac = super().read_from_buffer(buf)
 		mac.fcs =  buf.read_int()
 		return mac
 
+	def write_to_buffer(self, buf: Buffer):
+		super().write_to_buffer(buf)
+		buf.write_int(self.fcs)
 
-class Acknowledgment(ControlFrame):
 
-	SUBTYPE = FRAME_SUB_TYPE_ACK
-
+class ControlFrameFlavourB(ControlFrame):
+	"""Just a common kind a ControlFrame frame."""
 	@classmethod
-	def read_from_buffer(cls, buf: Buffer) -> "Acknowledgment":
+	def read_from_buffer(cls, buf: Buffer) -> "ControlFrameFlavourA":
 		mac = super().read_from_buffer(buf)
+		mac.transmitter =  MACAddress(buf.read(6))
 		mac.fcs =  buf.read_int()
 		return mac
 
+	def write_to_buffer(self, buf: Buffer):
+		super().write_to_buffer(buf)
+		buf.write(self.transmitter.packed)
+		buf.write_int(self.fcs)
 
-class RequestToSend(ControlFrame):
+
+class PowerSavePoll(ControlFrameFlavourB):
+	"""PowerSavePoll frame."""
+	SUBTYPE = FRAME_SUB_TYPE_POWER_SAVE_POLL
+
+
+class RequestToSend(ControlFrameFlavourB):
 
 	SUBTYPE = FRAME_SUB_TYPE_REQUEST_TO_SEND
 
-	@classmethod
-	def read_from_buffer(cls, buf: Buffer) -> "RequestToSend":
-		mac = super().read_from_buffer(buf)
-		mac.transmitter =  MACAddress(buf.read(6))
-		mac.fcs = buf.read_int()
-		return mac
+
+class ClearToSend(ControlFrameFlavourA):
+
+	SUBTYPE = FRAME_SUB_TYPE_CLEAR_TO_SEND
+
+
+class Acknowledgment(ControlFrameFlavourA):
+
+	SUBTYPE = FRAME_SUB_TYPE_ACK
+
+
+class CFEnd(ControlFrameFlavourB):
+	"""CF-End frame."""
+	SUBTYPE = FRAME_SUB_TYPE_CF_END
 
 
 class BlockACKRequest(ControlFrame):
@@ -224,7 +248,7 @@ class BlockACKRequest(ControlFrame):
 		- ssc: block ACK starting sequence control.
 
 	"""
-	__slots__ = ("control", "ssc", "bitmap")
+	__slots__ = ("control", "ssc")
 
 	SUBTYPE = FRAME_SUB_TYPE_BLOCK_ACK_REQ
 
@@ -236,6 +260,13 @@ class BlockACKRequest(ControlFrame):
 		mac.ssc = buf.read_short()
 		mac.fcs = buf.read_int()
 		return mac
+
+	def write_to_buffer(self, buf: Buffer):
+		super().write_to_buffer(buf)
+		buf.write(self.transmitter.packed)
+		buf.write_short(self.control)
+		buf.write_short(self.ssc)
+		buf.write_int(self.fcs)
 
 
 class BlockACKResponse(ControlFrame):
@@ -261,29 +292,13 @@ class BlockACKResponse(ControlFrame):
 		mac.fcs = buf.read_int()
 		return mac
 
-
-class PowerSavePoll(ControlFrame):
-	"""PowerSavePoll frame."""
-	SUBTYPE = FRAME_SUB_TYPE_POWER_SAVE_POLL
-
-	@classmethod
-	def read_from_buffer(cls, buf: Buffer) -> "PowerSavePoll":
-		mac = super().read_from_buffer(buf)
-		mac.transmitter =  MACAddress(buf.read(6))
-		mac.fcs = buf.read_int()
-		return mac
-
-
-class CFEnd(ControlFrame):
-	"""CF-End frame."""
-	SUBTYPE = FRAME_SUB_TYPE_CF_END
-
-	@classmethod
-	def read_from_buffer(cls, buf: Buffer) -> "CFEnd":
-		mac = super().read_from_buffer(buf)
-		mac.transmitter =  MACAddress(buf.read(6))
-		mac.fcs = buf.read_int()
-		return mac
+	def write_to_buffer(self, buf: Buffer):
+		super().write_to_buffer(buf)
+		buf.write(self.transmitter.packed)
+		buf.write_short(self.control)
+		buf.write_short(self.ssc)
+		buf.write_long(self.bitmap)
+		buf.write_int(self.fcs)
 
 
 class ManagementFrame(WiFiMAC):

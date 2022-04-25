@@ -546,13 +546,14 @@ class DataFrame(WiFiMAC):
 		- data (Buffer): unparsed frame data, i.e., Wireless Management.
 
 	"""
-	__slots__ = ("receiver", "transmitter", "destination", "source", "sequence_control", "data")
+	__slots__ = ("duration_id", "receiver", "transmitter", "destination", "source", "sequence_control", "data")
 
 	TYPE = FRAME_TYPE_DATA_FRAME
 
 	@classmethod
 	def read_from_buffer(cls, buf: Buffer) -> "DataFrame":
 		mac = super().read_from_buffer(buf)
+		mac.duration_id = buf.read_short()
 		mac.receiver = MACAddress(buf.read(6))
 		mac.transmitter = MACAddress(buf.read(6))
 		mac.destination = MACAddress(buf.read(6))

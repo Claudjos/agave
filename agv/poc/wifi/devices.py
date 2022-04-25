@@ -1,3 +1,18 @@
+"""Retrieves devices connected to a BSS.
+
+Usage:
+	python3 -m agv.poc.wifi.devices <bss> <interface> [timeout]
+
+Args:
+	bssid: SSID or BSSID.
+	interface: interface to use.
+	timeout: seconds to wait before to stop.
+
+Examples:
+	python3 -m agv.poc.wifi.devices MyWiFi phy0.mon
+	python3 -m agv.poc.wifi.devices MyWiFi phy0.mon 5
+	
+"""
 import sys
 from agv.blocks.wifi import create_socket, list_bss_clients
 from agv.misc import read_bssid_or_die, read_interface_or_die

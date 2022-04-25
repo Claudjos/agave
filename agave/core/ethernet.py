@@ -30,6 +30,18 @@ class MACAddress:
 	def broadcast(cls) -> "MACAddress":
 		return cls(b'\xff\xff\xff\xff\xff\xff')
 
+	def is_ipv4_multicast(self) -> bool:
+		return self.packed[0:3] == b'\x01\x00\x5e'
+
+	def is_ipv6_multicast(self) -> bool:
+		return self.packed[0:2] == b'\x33\x33'
+
+	def is_multicast(self) -> bool:
+		return self.is_ipv4_multicast() or self.is_ipv6_multicast()
+
+	def is_broadcast(self) -> bool:
+		return self.packed == b'\xff\xff\xff\xff\xff\xff'
+
 	def __str__(self):
 		return self.mac_to_str(self.packed)
 

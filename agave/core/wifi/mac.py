@@ -94,6 +94,7 @@ class WiFiMAC(Frame):
 		assert mac.TYPE == mac.type
 		assert mac.SUBTYPE == mac.subtype
 		mac.duration_id = buf.read_short()
+		mac.fcs = None
 		return mac
 
 	def write_to_buffer(self, buf: Buffer):
@@ -107,6 +108,7 @@ class WiFiMAC(Frame):
 		mac.fvts = (cls.TYPE << 2) | (cls.SUBTYPE << 4)
 		mac.flags = flags
 		mac.duration_id = duration_id
+		mac.fcs = None
 		return mac
 
 	@property
@@ -335,7 +337,8 @@ class ManagementFrame(WiFiMAC):
 		buf.write(self.destination.packed)
 		buf.write_short(self.sequence_control)
 		buf.write(bytes(self.data))
-		#buf.write_int(self.fcs)
+		if self.fcs is not None:
+			buf.write_int(self.fcs)
 
 	@classmethod
 	def build(cls, receiver: MACAddress, transmitter: MACAddress, 
@@ -363,7 +366,8 @@ class Beacon(ManagementFrame):
 
 	Attributes:
 		timestamp (int): timestamp.
-		beacon_interval (int): beacon interval.
+		beacon_interval (int): beacon interval in TU (Time Unit).
+			1 TU = 1024 micro seconds. Typical value is 100.
 		capabilities (int): capabilities:
 
 	"""
@@ -379,6 +383,14 @@ class Beacon(ManagementFrame):
 		mac.capabilities = mac.data.read_short()
 		mac.tags = TaggedParameter.parse_all(mac.data)
 		return mac
+
+	def write_to_buffer(self, buf: Buffer):
+		self.data.seek(0)
+		self.data.write_long(self.timestamp)
+		self.data.write_short(self.beacon_interval)
+		self.data.write_short(self.capabilities)
+		self.data.write(b''.join(map(lambda x: bytes(x[1]), self.tags.items())))
+		super().write_to_buffer(buf)
 
 
 class ProbeResponse(Beacon):
@@ -398,6 +410,7 @@ class ProbeRequest(ManagementFrame):
 		return mac
 
 	def write_to_buffer(self, buf: Buffer) -> "ProbeRequest":
+		self.data.seek(0)
 		self.data.write(b''.join(map(lambda x: bytes(x[1]), self.tags.items())))
 		super().write_to_buffer(buf)
 

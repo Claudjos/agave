@@ -565,6 +565,18 @@ class DataFrame(WiFiMAC):
 		mac.fcs = int.from_bytes(t[-4:], byteorder="little")
 		return mac
 
+	def write_to_buffer(self, buf: Buffer):
+		super().write_to_buffer(buf)
+		buf.write_short(self.duration_id)
+		buf.write(self.receiver.packed)
+		buf.write(self.transmitter.packed)
+		buf.write(self.destination.packed)
+		buf.write_short(self.sequence_control)
+		if self.flag_from_ds and self.flag_to_ds:
+			buf.write(self.source.packed)
+		buf.write(bytes(self.data))
+		buf.write_int(self.fcs)
+
 
 class Null(DataFrame):
 	"""Null frame. Frames with no data used to transmit control
@@ -590,6 +602,11 @@ class Data(DataFrame):
 		mac.ccmp_params = mac.data.read_long()
 		return mac
 
+	def write_to_buffer(self, buf: Buffer):
+		self.data.seek(0)
+		self.data.write_long(self.ccmp_params)
+		super().write_to_buffer(buf)
+
 
 class QoSNull(DataFrame):
 	"""QoS Null frame. Frames with no data used to transmit control
@@ -612,6 +629,11 @@ class QoSNull(DataFrame):
 			mac.fcs = None
 		return mac
 
+	def write_to_buffer(self, buf: Buffer):
+		self.data.seek(0)
+		self.data.write_short(self.qos_control)
+		super().write_to_buffer(buf)
+
 
 class QoSData(DataFrame):
 	"""QoS Data frame. Frames with data.
@@ -632,6 +654,12 @@ class QoSData(DataFrame):
 		mac.qos_control = mac.data.read_short()
 		mac.ccmp_params = mac.data.read_long()
 		return mac
+
+	def write_to_buffer(self, buf: Buffer):
+		self.data.seek(0)
+		self.data.write_short(self.qos_control)
+		self.data.write_long(self.ccmp_params)
+		super().write_to_buffer(buf)
 
 
 frame_class_map = {

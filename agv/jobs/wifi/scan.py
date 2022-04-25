@@ -96,11 +96,13 @@ class Scanner(Job):
 		return output
 
 	@classmethod
-	def build_probe_request(cls, ssids: List[str], tags: List[TaggedParameter] = None, 
-		fields: List[RadioTapField] = None) -> bytes:
+	def build_probe_request(cls, transmitter: MACAddress, ssids: List[str], 
+		tags: List[TaggedParameter] = None, fields: List[RadioTapField] = None
+		) -> bytes:
 		"""Builds a probe request.
 
 		Args:
+			transmitter: transmitter station address.
 			ssids: SSIDs to look for.
 			tags: tagged parameter for 802.11 probe request.
 			fields: fields for RadioTap header.
@@ -116,7 +118,7 @@ class Scanner(Job):
 			tags = []
 		tags.append(SSID.build(ssids[0] if len(ssids) == 1 else ""))
 		tags.append(SupportedRates.build([0x82, 0x84, 0x8b, 0x96, 0x12, 0x24, 0x48, 0x6c]))
-		wmac = ProbeRequest.build(interface.mac, tags)
+		wmac = ProbeRequest.build(transmitter, tags)
 		# Build the packet
 		buf = Buffer.from_bytes(b'', byteorder="little")
 		radiotap.write_to_buffer(buf)
@@ -140,7 +142,8 @@ if __name__ == "__main__":
 	sock = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(3))
 	sock.bind((interface.name, 0))
 	# Create job
-	job = Scanner(sock, interface, ssids, Scanner.build_probe_request(ssids), 
+	job = Scanner(sock, interface, ssids, 
+		Scanner.build_probe_request(interface.mac, ssids), 
 		repeat=3, interval=0.1, wait=10 if len(ssids) == 0 else 1)
 	# Stream job results
 	for mac, ssid, settings in job.stream():

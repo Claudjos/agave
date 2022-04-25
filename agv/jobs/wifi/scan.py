@@ -3,9 +3,9 @@
 The module provides also a main to be executed as script.
 
 Usage:
-	python3 -m agave.jobs.wifi.scan <interface> [[SSID], ...]
-	python3 -m agave.jobs.wifi.scan phy0.mon
-	python3 -m agave.jobs.wifi.scan phy0.mon MyWiFi
+	python3 -m agv.jobs.wifi.scan <interface> [[SSID], ...]
+	python3 -m agv.jobs.wifi.scan phy0.mon
+	python3 -m agv.jobs.wifi.scan phy0.mon MyWiFi
 	
 """
 import socket

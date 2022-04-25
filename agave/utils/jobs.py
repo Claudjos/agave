@@ -48,7 +48,8 @@ class Job(BaseJob):
 		or the code using 'stream', perform long blocking operations.
 
 	"""
-	__slots__ = ("wait", "interval", "max_read", "_loop_enabled", "_running", "sock")
+	__slots__ = ("wait", "interval", "max_read", "_loop_enabled", "_running", 
+		"_deadline", "sock")
 
 	def __init__(self, sock: "socket.socket", wait: float = 1, interval: float = 1, max_read: int = None):
 		self.sock: "socket.socket" = sock
@@ -56,6 +57,7 @@ class Job(BaseJob):
 		self.interval: float = interval
 		self.max_read: int = max_read if max_read is not None else SOCKET_MAX_READ
 		self.enable_loop()
+		self._deadline = False
 
 	def process(self, data: bytes, address: SocketAddress) -> Any:
 		"""Invoked for each packet received from the socket."""
@@ -72,6 +74,10 @@ class Job(BaseJob):
 	def enable_loop(self):
 		"""Enables the execution of 'loop'."""
 		self._loop_enabled = True
+
+	def set_deadline(self, x: float):
+		"""Sets a deadline beyond which the loop stops."""
+		self._deadline = time.time() + x
 
 	def set_finished(self):
 		"""Stops the execution of the service. Meant to be used by subclasses."""
@@ -92,7 +98,6 @@ class Job(BaseJob):
 		self._running = True
 		next_execution = time.time() + self.interval
 		timeout = self.interval
-		deadline = False
 		# Run
 		while self._running:
 			# Waits for data
@@ -106,12 +111,12 @@ class Job(BaseJob):
 			if self._loop_enabled and time.time() >= next_execution:
 				if not self.loop():
 					self.disable_loop()
-					deadline = time.time() + self.wait
+					self.set_deadline(self.wait)
 					timeout = self.wait
 				else:
 					next_execution = time.time() + self.interval
 			# Deadline
-			if deadline is not False and time.time() >= deadline:
+			if self._deadline is not False and time.time() >= self._deadline:
 				self._running = False
 		# StopIteration
 		return

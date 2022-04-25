@@ -1,10 +1,10 @@
 """Simple functions to retrieve Service Set informations."""
 import socket
-from typing import Tuple, Union
+from typing import Tuple, Union, Iterable
 from agave.core.ethernet import MACAddress
 from agave.core.wifi.mac import ProbeResponse, Beacon
 from agave.utils.interfaces import NetworkInterface
-from agv.jobs.wifi import Scanner
+from agv.jobs.wifi import Scanner, StationsMapper
 
 
 class ServiceSetNotFound(Exception):
@@ -30,8 +30,7 @@ def get_service_set_by_id(ssid: str, interface: Union[NetworkInterface, str],
 	if isinstance(interface, str):
 		interface = NetworkInterface.get_by_name(interface)
 	if sock is None:
-		sock = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(3))
-		sock.bind((interface.name, 0))
+		sock = create_socket(interface)
 	job = Scanner(sock, interface, [ssid], Scanner.build_probe_request(
 		interface.mac, [ssid]), repeat=3, interval=0.1, wait=1)
 	for mac, ssid, frame in job.stream():
@@ -56,4 +55,29 @@ def get_service_set_address(ssid: str, interface: Union[NetworkInterface, str],
 
 	"""
 	return get_service_set_by_id(ssid, interface, sock)[0]
+
+
+def create_socket(interface: Union[str, NetworkInterface]) -> "socket.socket":
+	"""Creates a socket."""
+	sock = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(3))
+	sock.bind((interface if isinstance(interface, str) else interface.name, 0))
+	return sock
+
+
+def list_bss_clients(bssid: MACAddress, sock: "socket.socket", wait: float = 10) -> Iterable[Tuple[MACAddress]]:
+	"""List clients connected to a BSS.
+
+	Args:
+		bssid: BSSID.
+		sock: socket to use.
+		wait: interval to wait, None to never stop listening.
+
+	Yields:
+		The MAC address of each client.
+
+	"""
+	results = StationsMapper(sock, [bssid], wait=wait).stream()
+	for bssid, client in results:
+		yield client
+	return
 

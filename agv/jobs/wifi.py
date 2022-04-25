@@ -2,6 +2,7 @@
 from agave.core.ethernet import MACAddress
 from agave.core.buffer import Buffer
 from agave.core.wifi.mac import (
+	FRAME_TYPE_DATA_FRAME,
 	FRAME_TYPE_MANAGEMENT_FRAME,
 	FRAME_SUB_TYPE_PROBE_RESPONSE,
 	FRAME_SUB_TYPE_PROBE_REQUEST,
@@ -114,4 +115,43 @@ class Scanner(Job):
 		radiotap.write_to_buffer(buf)
 		wmac.write_to_buffer(buf)
 		return bytes(buf)
+
+
+class StationsMapper(Job):
+
+	__slots__ = ("_bssids", "_cache")
+
+	def __init__(self, sock: "socket.socket", bssids: List[MACAddress], wait: float, **kwargs):
+		super().__init__(sock, wait=wait, **kwargs)
+		self._cache = set()
+		self._bssids = bssids
+		self.disable_loop()
+		if wait is not None:
+			self.set_deadline(wait)
+
+	def process(self, data: bytes, address: SocketAddress) -> Tuple[MACAddress, MACAddress]:
+		buf = Buffer.from_bytes(data, "little")
+		rth = RadioTapHeader.read_from_buffer(buf)
+		frame = WiFiMAC.from_buffer(buf)
+		# gets BSSID and client
+		if frame.type == FRAME_TYPE_DATA_FRAME:
+			if frame.flag_to_ds and not frame.flag_from_ds:
+				bssid = frame.receiver
+				client = frame.transmitter
+			elif not frame.flag_to_ds and frame.flag_from_ds:
+				bssid = frame.transmitter
+				client = frame.receiver
+			else:
+				return None
+			# discard if BSSID is not in the target
+			if self._bssids is not None and bssid not in self._bssids:
+				return None
+			# discard if broadcast or multicast
+			if client.is_broadcast() or client.is_multicast():
+				return None
+			# check cache
+			key = f"{bssid}{client}"
+			if not key in self._cache:
+				self._cache.add(key)
+				return bssid, client
 

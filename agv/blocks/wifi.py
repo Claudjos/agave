@@ -4,7 +4,7 @@ from typing import Tuple, Union
 from agave.core.ethernet import MACAddress
 from agave.core.wifi.mac import ProbeResponse, Beacon
 from agave.utils.interfaces import NetworkInterface
-from agv.jobs.wifi.scan import Scanner
+from agv.jobs.wifi import Scanner
 
 
 class ServiceSetNotFound(Exception):

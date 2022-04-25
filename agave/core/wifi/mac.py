@@ -513,8 +513,15 @@ class AssociationRequest(ManagementFrame):
 		mac = super().read_from_buffer(buf)
 		mac.capabilities = mac.data.read_short()
 		mac.listen_interval = mac.data.read_short()
-		mac.tags = TaggedParameter.parse_all(buf)
+		mac.tags = TaggedParameter.parse_all(mac.data)
 		return mac
+
+	def write_to_buffer(self, buf: Buffer):
+		self.data.seek(0)
+		self.data.write_short(self.capabilities)
+		self.data.write_short(self.listen_interval)
+		self.data.write(b''.join(map(lambda x: bytes(x[1]), self.tags.items())))
+		super().write_to_buffer(buf)
 
 
 class AssociationResponse(ManagementFrame):
@@ -536,8 +543,16 @@ class AssociationResponse(ManagementFrame):
 		mac.capabilities = mac.data.read_short()
 		mac.status_code = mac.data.read_short()
 		mac.association_id = mac.data.read_short()
-		mac.tags = TaggedParameter.parse_all(buf)
+		mac.tags = TaggedParameter.parse_all(mac.data)
 		return mac
+
+	def write_to_buffer(self, buf: Buffer):
+		self.data.seek(0)
+		self.data.write_short(self.capabilities)
+		self.data.write_short(self.status_code)
+		self.data.write_short(self.association_id)
+		self.data.write(b''.join(map(lambda x: bytes(x[1]), self.tags.items())))
+		super().write_to_buffer(buf)
 
 
 class Action(ManagementFrame):

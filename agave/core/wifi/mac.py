@@ -69,20 +69,17 @@ _all_map = {
 }
 
 
-"""
-New models
-"""
-
 class WiFiMAC(Frame):
 	"""Base class for MAC 802.11 Frames.
 
 	Attributes:
 		- fvts (int): frame version, type, and subtype.
 		- flags (int): flags.
+		- duration_id (int): duration id.
 		- fcs (int): Frame Check Sequence, CRC32.
 
 	"""
-	__slots__ = ("fvts", "flags", "fcs")
+	__slots__ = ("fvts", "flags", "duration_id", "fcs")
 
 	BYTEORDER = "little"
 
@@ -96,17 +93,20 @@ class WiFiMAC(Frame):
 		mac.flags = buf.read_byte()
 		assert mac.TYPE == mac.type
 		assert mac.SUBTYPE == mac.subtype
+		mac.duration_id = buf.read_short()
 		return mac
 
 	def write_to_buffer(self, buf: Buffer):
 		buf.write_byte(self.fvts)
 		buf.write_byte(self.flags)
+		buf.write_short(self.duration_id)
 
 	@classmethod
-	def build(cls, flags: int = 0) -> "WiFiMAC":
+	def build(cls, flags: int = 0, duration_id: int = 0) -> "WiFiMAC":
 		mac = cls()
 		mac.fvts = (cls.TYPE << 2) | (cls.SUBTYPE << 4)
 		mac.flags = flags
+		mac.duration_id = duration_id
 		return mac
 
 	@property
@@ -170,20 +170,18 @@ class ControlFrame(WiFiMAC):
 		- transmitter (MACAddress): transmitter address.
 
 	"""
-	__slots__ = ("duration_id", "receiver", "transmitter")
+	__slots__ = ("receiver", "transmitter")
 
 	TYPE = FRAME_TYPE_CONTROL_FRAME
 
 	@classmethod
 	def read_from_buffer(cls, buf: Buffer) -> "ControlFrame":
 		mac = super().read_from_buffer(buf)
-		mac.duration_id = buf.read_short()
 		mac.receiver =  MACAddress(buf.read(6))
 		return mac
 
 	def write_to_buffer(self, buf: Buffer) -> "ControlFrame":
 		super().write_to_buffer(buf)
-		buf.write_short(self.duration_id)
 		buf.write(self.receiver.packed)
 
 
@@ -314,14 +312,13 @@ class ManagementFrame(WiFiMAC):
 
 	"""
 	__slots__ = ("receiver", "transmitter", "destination", "sequence_control", 
-		"tags", "data", "duration_id")
+		"tags", "data")
 
 	TYPE = FRAME_TYPE_MANAGEMENT_FRAME
 
 	@classmethod
 	def read_from_buffer(cls, buf: Buffer) -> "ManagementFrame":
 		mac = super().read_from_buffer(buf)
-		mac.duration_id = buf.read_short()
 		mac.receiver = MACAddress(buf.read(6))
 		mac.transmitter = MACAddress(buf.read(6))
 		mac.destination = MACAddress(buf.read(6))
@@ -333,7 +330,6 @@ class ManagementFrame(WiFiMAC):
 
 	def write_to_buffer(self, buf: Buffer):
 		super().write_to_buffer(buf)
-		buf.write_short(self.duration_id)
 		buf.write(self.receiver.packed)
 		buf.write(self.transmitter.packed)
 		buf.write(self.destination.packed)
@@ -343,7 +339,7 @@ class ManagementFrame(WiFiMAC):
 
 	@classmethod
 	def build(cls, receiver: MACAddress, transmitter: MACAddress, 
-		destination: MACAddress, duration_id: int = 8252, sequence_control: int = 0, 
+		destination: MACAddress, sequence_control: int = 0, 
 		**kwargs) -> "ManagementFrame":
 		"""Builder.
 
@@ -352,7 +348,6 @@ class ManagementFrame(WiFiMAC):
 
 		"""
 		mac = super().build(**kwargs)
-		mac.duration_id = duration_id
 		mac.receiver = receiver
 		mac.transmitter = transmitter
 		mac.destination = destination
@@ -561,14 +556,13 @@ class DataFrame(WiFiMAC):
 		- data (Buffer): unparsed frame data, i.e., Wireless Management.
 
 	"""
-	__slots__ = ("duration_id", "receiver", "transmitter", "destination", "source", "sequence_control", "data")
+	__slots__ = ("receiver", "transmitter", "destination", "source", "sequence_control", "data")
 
 	TYPE = FRAME_TYPE_DATA_FRAME
 
 	@classmethod
 	def read_from_buffer(cls, buf: Buffer) -> "DataFrame":
 		mac = super().read_from_buffer(buf)
-		mac.duration_id = buf.read_short()
 		mac.receiver = MACAddress(buf.read(6))
 		mac.transmitter = MACAddress(buf.read(6))
 		mac.destination = MACAddress(buf.read(6))
@@ -582,7 +576,6 @@ class DataFrame(WiFiMAC):
 
 	def write_to_buffer(self, buf: Buffer):
 		super().write_to_buffer(buf)
-		buf.write_short(self.duration_id)
 		buf.write(self.receiver.packed)
 		buf.write(self.transmitter.packed)
 		buf.write(self.destination.packed)

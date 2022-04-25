@@ -604,7 +604,12 @@ class QoSNull(DataFrame):
 	@classmethod
 	def read_from_buffer(cls, buf: Buffer) -> "QoSNull":
 		mac = super().read_from_buffer(buf)
-		mac.qos_control = mac.data.read_short()
+		try:
+			mac.qos_control = mac.data.read_short()
+		except EndOfBufferError:
+			# Some QoS Null packets don't have fcs
+			mac.qos_control = mac.fcs
+			mac.fcs = None
 		return mac
 
 

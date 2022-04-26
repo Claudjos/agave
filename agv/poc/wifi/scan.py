@@ -1,19 +1,21 @@
 """Actively scan for APs.
 
 Usage:
-	python3 -m agv.poc.wifi.scan <interface> [[SSID], ...]
+	python3 -m agv.poc.wifi.scan <interface> [timeout]
 
 Args:
 	interface: interface to use.
-	SSID: list of SSIDs. If used, scan stops when these SSIDs are found.
 
 Examples:
-	python3 -m agv.poc.wifi.scan phy0.mon
-	python3 -m agv.poc.wifi.scan phy0.mon MyWiFi OtherSSID
+	python3 -m agv.poc.wifi.scan mon0
 	
 """
 import socket, sys
 from agave.core.ethernet import MACAddress
+from agave.core.wifi.tags import (
+	PARAM_DS_PARAMETER_SET, PARAM_RSN_INFORMATION, 
+	TaggedParameterNotFound
+)
 from agave.utils.interfaces import NetworkInterface
 from agv.jobs.wifi import Scanner
 
@@ -25,23 +27,31 @@ if __name__ == "__main__":
 		exit(0)
 	# Parse input
 	interface = NetworkInterface.get_by_name(sys.argv[1])
-	ssids = [sys.argv[i] for i in range(2, len(sys.argv))]
+	wait = float(sys.argv[2]) if len(sys.argv) > 2 else 10
 	# Creates socket
 	sock = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(3))
 	sock.bind((interface.name, 0))
 	# Create job
-	job = Scanner(sock, interface, ssids, 
-		Scanner.build_probe_request(interface.mac, ssids), 
-		repeat=3, interval=0.1, wait=10 if len(ssids) == 0 else 1)
+	job = Scanner(sock, interface, [], 
+		Scanner.build_probe_request(interface.mac, []), 
+		repeat=3, interval=0.1, wait=wait)
 	# Stream job results
-	for mac, ssid, settings in job.stream():
-		print(f"{ssid} ({mac})")
-	# Other
-	others = job.get_others()
-	if len(others) > 0:
-		print("Other APs found:")
-		for mac, ssid, settings in others:
-			print(f"\t{ssid} ({mac})")
+	try:
+		print("{:17} {:2} {:7} {:3} {}".format("BSSID", "Ch", "Privacy", "", "SSID"))
+		for bssid, ssid, frame in job.stream():
+			try:
+				channel = frame.tags.get(PARAM_DS_PARAMETER_SET).channel
+			except TaggedParameterNotFound:
+				channel = ""
+			try:
+				rsn = frame.tags.get(PARAM_RSN_INFORMATION)
+				rsn = "RSN"
+			except TaggedParameterNotFound:
+				rsn = ""
+			privacy = "Secured" if frame.privacy else "OPEN"
+			print(f"{bssid} {channel:2} {privacy:7} {rsn:3} {ssid}")
+	except KeyboardInterrupt:
+		print("\r   ", end="\r")
 	# Requested
 	reqs = job.get_requests()
 	if len(reqs) > 0:

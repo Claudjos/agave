@@ -173,21 +173,22 @@ iwconfig mon0 channel <channel> 	# set the channel, e.g, 1, 6, 11, ...
 ip link set wlan0 up                	# put the interface up again (after use)
 ```
 
-Scanning the current channel for APs.
+Scanning the current channel for APs. The optional argument timeout specify how long to wait in seconds (default 10).
 ```
-python3 -m agv.poc.wifi.scan <interface>
+python3 -m agv.poc.wifi.scan <interface> [timeout]
 python3 -m agv.poc.wifi.scan mon0
+python3 -m agv.poc.wifi.scan mon0 1
 ```
 
-Retrieving BSSID from SSID
+Retrieving BSSID from SSID.
 ```
 python3 -m agv.poc.wifi.bssid <SSID> <interface>
 python3 -m agv.poc.wifi.bssid MyWifi mon0
 ```
 
-Retrieve address of the devices connected to a certain AP. Using the optional argument *wait*, scripts terminates after *wait* seconds.
+Retrieve address of the devices connected to a certain AP. Using the optional argument *timeout*, scripts terminates after *timeout* seconds.
 ```
-python3 -m agv.poc.wifi.devices <SSID|BSSID> <interface> [wait]
+python3 -m agv.poc.wifi.devices <SSID|BSSID> <interface> [timeout]
 python3 -m agv.poc.wifi.devices MyWifi mon0 5
 python3 -m agv.poc.wifi.devices 0a:bb:cc:11:22:33 mon0
 ```

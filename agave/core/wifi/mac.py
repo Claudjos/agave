@@ -391,6 +391,11 @@ class Beacon(ManagementFrame):
 		self.tags.write_to_buffer(self.data)
 		super().write_to_buffer(buf)
 
+	@property
+	def privacy(self) -> bool:
+		"""True if AP/STA can support WEP."""
+		return self.capabilities &0x0010
+
 
 class ProbeResponse(Beacon):
 	"""Probe Response Frame. Sent in response to probe requests,

@@ -69,6 +69,7 @@ class TestFrameControl(unittest.TestCase):
 		self.assertEqual(frame.duration_id, 0)
 		self.assertEqual(frame.receiver, MACAddress("ff:ff:ff:ff:ff:ff"))
 		self.assertEqual(frame.transmitter, MACAddress("00:0c:f6:be:4d:04"))
+		self.assertEqual(frame.bssid, MACAddress("00:0c:f6:be:4d:04"))
 		self.assertEqual(frame.sequence_control, 870 << 4)
 		self.assertEqual(frame.timestamp, 177927680346)
 		self.assertEqual(frame.beacon_interval, 100)
@@ -85,6 +86,7 @@ class TestFrameControl(unittest.TestCase):
 		self.assertEqual(frame.duration_id, 0)
 		self.assertEqual(frame.receiver, MACAddress("ff:ff:ff:ff:ff:ff"))
 		self.assertEqual(frame.transmitter, MACAddress("e8:5a:8b:e2:6a:0b"))
+		self.assertEqual(frame.bssid, MACAddress("ff:ff:ff:ff:ff:ff"))
 		self.assertEqual(frame.sequence_control, 154 << 4)
 		# Checks number of tagged parameters parsed
 		self.assertEqual(len(frame.tags._params), 4)
@@ -98,6 +100,7 @@ class TestFrameControl(unittest.TestCase):
 		self.assertEqual(frame.duration_id, 314)
 		self.assertEqual(frame.receiver, MACAddress("00:0c:f6:be:4d:04"))
 		self.assertEqual(frame.transmitter, MACAddress("7c:f9:0e:48:e4:c4"))
+		self.assertEqual(frame.bssid, MACAddress("00:0c:f6:be:4d:04"))
 		self.assertEqual(frame.sequence_control, 27 << 4)
 		# Checks writing by rewriting the frame
 		self.assertEqual(bytes(frame), self.authentication)
@@ -109,6 +112,7 @@ class TestFrameControl(unittest.TestCase):
 		self.assertEqual(frame.duration_id, 60)
 		self.assertEqual(frame.receiver, MACAddress("00:0c:f6:be:4d:04"))
 		self.assertEqual(frame.transmitter, MACAddress("7c:f9:0e:48:e4:c4"))
+		self.assertEqual(frame.bssid, MACAddress("00:0c:f6:be:4d:04"))
 		self.assertEqual(frame.sequence_control, 3777 << 4)
 		self.assertEqual(frame.reason, Deauthentication.REASON_STA_IS_LEAVING_OR_HAS_LEFT)
 		# Checks writing by rewriting the frame
@@ -128,6 +132,7 @@ class TestFrameControl(unittest.TestCase):
 		self.assertEqual(frame.duration_id, 314)
 		self.assertEqual(frame.receiver, MACAddress("00:0c:f6:be:4d:04"))
 		self.assertEqual(frame.transmitter, MACAddress("7c:f9:0e:48:e4:c4"))
+		self.assertEqual(frame.bssid, MACAddress("00:0c:f6:be:4d:04"))
 		self.assertEqual(frame.sequence_control, 28 << 4)
 		self.assertEqual(frame.capabilities, 0x0431)
 		self.assertEqual(frame.listen_interval, 1)
@@ -144,6 +149,7 @@ class TestFrameControl(unittest.TestCase):
 		self.assertEqual(frame.duration_id, 304)
 		self.assertEqual(frame.receiver, MACAddress("7c:f9:0e:48:e4:c4"))
 		self.assertEqual(frame.transmitter, MACAddress("00:0c:f6:be:4d:04"))
+		self.assertEqual(frame.bssid, MACAddress("00:0c:f6:be:4d:04"))
 		self.assertEqual(frame.sequence_control, 2259 << 4)
 		self.assertEqual(frame.capabilities, 0x0c31)
 		self.assertEqual(frame.status_code, 0)

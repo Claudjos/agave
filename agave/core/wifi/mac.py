@@ -307,13 +307,13 @@ class ManagementFrame(WiFiMAC):
 	Attributes:
 		- receiver (MACAddress): receiver address.
 		- transmitter (MACAddress): transmitter address.
-		- destination (MACAddress): destination address.
+		- bssid (MACAddress): BSS address.
 		- sequence_control (int): sequence and fragment number.
 		- data (Buffer): unparsed frame data, i.e., Wireless Management.
 		- tags (TaggedParameters): list of tag parameters.
 
 	"""
-	__slots__ = ("receiver", "transmitter", "destination", "sequence_control", 
+	__slots__ = ("receiver", "transmitter", "bssid", "sequence_control", 
 		"tags", "data")
 
 	TYPE = FRAME_TYPE_MANAGEMENT_FRAME
@@ -323,7 +323,7 @@ class ManagementFrame(WiFiMAC):
 		mac = super().read_from_buffer(buf)
 		mac.receiver = MACAddress(buf.read(6))
 		mac.transmitter = MACAddress(buf.read(6))
-		mac.destination = MACAddress(buf.read(6))
+		mac.bssid = MACAddress(buf.read(6))
 		mac.sequence_control = buf.read_short()
 		t = buf.read_remaining()
 		mac.data = Buffer.from_bytes(t[:-4], byteorder="little")
@@ -334,7 +334,7 @@ class ManagementFrame(WiFiMAC):
 		super().write_to_buffer(buf)
 		buf.write(self.receiver.packed)
 		buf.write(self.transmitter.packed)
-		buf.write(self.destination.packed)
+		buf.write(self.bssid.packed)
 		buf.write_short(self.sequence_control)
 		buf.write(bytes(self.data))
 		if self.fcs is not None:
@@ -342,7 +342,7 @@ class ManagementFrame(WiFiMAC):
 
 	@classmethod
 	def build(cls, receiver: MACAddress, transmitter: MACAddress, 
-		destination: MACAddress, sequence_control: int = 0, 
+		bssid: MACAddress, sequence_control: int = 0, 
 		**kwargs) -> "ManagementFrame":
 		"""Builder.
 
@@ -353,7 +353,7 @@ class ManagementFrame(WiFiMAC):
 		mac = super().build(**kwargs)
 		mac.receiver = receiver
 		mac.transmitter = transmitter
-		mac.destination = destination
+		mac.bssid = bssid
 		mac.sequence_control = sequence_control
 		mac.data = Buffer.from_bytes(b'', byteorder="little")
 		return mac

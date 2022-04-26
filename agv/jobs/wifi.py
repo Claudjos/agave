@@ -11,7 +11,7 @@ from agave.core.wifi.mac import (
 	WiFiMAC
 )
 from agave.core.wifi.radiotap import RadioTapHeader, RadioTapField
-from agave.core.wifi.tags import SSID, SupportedRates, TaggedParameter
+from agave.core.wifi.tags import SSID, SupportedRates, TaggedParameters
 from agave.utils.jobs import Job, SocketAddress
 from agave.utils.interfaces import NetworkInterface
 from typing import Tuple, List
@@ -50,7 +50,7 @@ class Scanner(Job):
 				frame.subtype == FRAME_SUB_TYPE_PROBE_RESPONSE or
 				frame.subtype == FRAME_SUB_TYPE_BEACON
 			):
-				t = (str(frame.transmitter), str(frame.tags[0].SSID))
+				t = (str(frame.transmitter), str(frame.tags.get(0).SSID))
 				if t not in self._cache:
 					self._cache.add(t)
 					if self._ssids is not None:
@@ -58,13 +58,13 @@ class Scanner(Job):
 							self._ssids.remove(t[1])
 							if len(self._ssids) == 0:
 								self.set_finished()
-							return frame.transmitter, str(frame.tags[0].SSID), frame
+							return frame.transmitter, str(frame.tags.get(0).SSID), frame
 						else:
 							self._others.append((t[0], t[1], frame))
 					else:
-						return frame.transmitter, str(frame.tags[0].SSID), frame
+						return frame.transmitter, str(frame.tags.get(0).SSID), frame
 			if frame.subtype == FRAME_SUB_TYPE_PROBE_REQUEST:
-				t = str(frame.tags[0].SSID)
+				t = str(frame.tags.get(0).SSID)
 				if t != "" and t not in self._cache_req:
 					self._cache_req.add(t)
 
@@ -88,14 +88,14 @@ class Scanner(Job):
 
 	@classmethod
 	def build_probe_request(cls, transmitter: MACAddress, ssids: List[str], 
-		tags: List[TaggedParameter] = None, fields: List[RadioTapField] = None
+		tags: TaggedParameters = None, fields: List[RadioTapField] = None
 		) -> bytes:
 		"""Builds a probe request.
 
 		Args:
 			transmitter: transmitter station address.
 			ssids: SSIDs to look for.
-			tags: tagged parameter for 802.11 probe request.
+			tags: tagged parameters for 802.11 probe request.
 			fields: fields for RadioTap header.
 		
 		Returns:
@@ -106,9 +106,9 @@ class Scanner(Job):
 		radiotap = RadioTapHeader.build(fields)
 		# 802.11
 		if tags is None:
-			tags = []
-		tags.append(SSID.build(ssids[0] if len(ssids) == 1 else ""))
-		tags.append(SupportedRates.build([0x82, 0x84, 0x8b, 0x96, 0x12, 0x24, 0x48, 0x6c]))
+			tags = TaggedParameters()
+		tags.add(SSID.build(ssids[0] if len(ssids) == 1 else ""))
+		tags.add(SupportedRates.build([0x82, 0x84, 0x8b, 0x96, 0x12, 0x24, 0x48, 0x6c]))
 		wmac = ProbeRequest.build(transmitter, tags)
 		# Build the packet
 		buf = Buffer.from_bytes(b'', byteorder="little")

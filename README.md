@@ -38,10 +38,11 @@ To use raw socket:
 - Linux (POSIX?)
 - CAP_NET_RAW capability or SUDO privileges
 
-Preferred system configuration:
+For some scripts the following configuration might be necessary:
 ```
-# Enable IPv4 forwarding
+# Enable IP forwarding
 echo 1 | sudo tee /proc/sys/net/ipv4/conf/*/forwarding
+echo 1 | sudo tee /proc/sys/net/ipv6/conf/*/forwarding
 # Prevents ICMPv4 redirect messages
 echo 0 | sudo tee /proc/sys/net/ipv4/conf/*/send_redirects
 ```
@@ -50,9 +51,9 @@ echo 0 | sudo tee /proc/sys/net/ipv4/conf/*/send_redirects
 
 Retrieve network interfaces information.
 ```
-python3 -m agave.nic.interfaces [interface]
-python3 -m agave.nic.interfaces
-python3 -m agave.nic.interfaces wlan0
+python3 -m agave.utils.interfaces [interface]
+python3 -m agave.utils.interfaces
+python3 -m agave.utils.interfaces wlan0
 ```
 
 ### ARP
@@ -155,4 +156,46 @@ Advertising an interfaces as default router.
 python3 -m agave.ndp.advertise <interface> [[prefix], ...]
 python3 -m agave.ndp.advertise eth0
 python3 -m agave.ndp.advertise eth0 2001:4860:4860::8888/128
+```
+
+### IEEE 802.11 (WiFi)
+__Note__: scripts in this section require an interface in monitor mode.
+```
+iw dev wlan0 interface add mon0 type monitor
+ifconfig mon0 up
+iw mon0 interface del                           # delete after use
+```
+
+__Note__: scripts do not attempt to change the current channel of the interface, it must be done separately.
+```
+ip link set wlan0 down			# put the real interface down
+iwconfig mon0 channel <channel> 	# set the channel, e.g, 1, 6, 11, ...
+ip link set wlan0 up                	# put the interface up again (after use)
+```
+
+Scanning the current channel for APs. The optional argument timeout specify how long to wait in seconds (default 10).
+```
+python3 -m agv.poc.wifi.scan <interface> [timeout]
+python3 -m agv.poc.wifi.scan mon0
+python3 -m agv.poc.wifi.scan mon0 1
+```
+
+Retrieving BSSID from SSID.
+```
+python3 -m agv.poc.wifi.bssid <SSID> <interface>
+python3 -m agv.poc.wifi.bssid MyWifi mon0
+```
+
+Retrieve address of the devices connected to a certain AP. Using the optional argument *timeout*, scripts terminates after *timeout* seconds.
+```
+python3 -m agv.poc.wifi.devices <SSID|BSSID> <interface> [timeout]
+python3 -m agv.poc.wifi.devices MyWifi mon0 5
+python3 -m agv.poc.wifi.devices 0a:bb:cc:11:22:33 mon0
+```
+
+Deauthentication attack. The optional argument *interval* specify the interval between deauthentication frames. If not used, only a frame is sent.
+```
+python3 -m agv.poc.wifi.deauth <SSID|BSSID> <victim> <interface> [interval]
+python3 -m agv.poc.wifi.deauth 0a:bb:cc:11:22:33 00:bb:cc:11:22:33 mon0
+python3 -m agv.poc.wifi.deauth MyWifi 00:bb:cc:11:22:33 mon0 2
 ```

@@ -26,6 +26,36 @@ class MACAddress:
 	def mac_to_str(cls, address: bytes):
 		return ':'.join('%02x'%i for i in address)
 
+	@classmethod
+	def broadcast(cls) -> "MACAddress":
+		return cls(b'\xff\xff\xff\xff\xff\xff')
+
+	def is_ipv4_multicast(self) -> bool:
+		return self.packed[0:3] == b'\x01\x00\x5e'
+
+	def is_ipv6_multicast(self) -> bool:
+		return self.packed[0:2] == b'\x33\x33'
+
+	def is_broadcast(self) -> bool:
+		return self.packed == b'\xff\xff\xff\xff\xff\xff'
+
+	def is_local(self) -> bool:
+		"""True for LAA Locally Administered Addresses. Checks the U/L bit
+		(Universal/Local)."""
+		return self.packed[0] & 0x02 > 0
+
+	def is_universal(self) -> bool:
+		"""True for UAA Universally Administered Addresses."""
+		return not self.is_local()
+
+	def is_multicast(self) -> bool:
+		"""True for multicast addresses. Checks the I/G bit (Individual/Group)."""
+		return self.packed[0] & 0x01 > 0
+
+	def is_unicast(self) -> bool:
+		"""True for unicast addresses."""
+		return not self.is_multicast()
+
 	def __str__(self):
 		return self.mac_to_str(self.packed)
 
@@ -59,6 +89,7 @@ class Ethernet(Frame):
 	def __str__(self):
 		return "({}) {} -> {}".format(
 			self.next_header,
-			mac_to_str(self.source),
-			mac_to_str(self.destination),
+			MACAddress.mac_to_str(self.source),
+			MACAddress.mac_to_str(self.destination),
 		)
+

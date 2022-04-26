@@ -1,10 +1,15 @@
+import logging
 from typing import Dict, List, Tuple
 from agave.core.frame import Frame
 from agave.core.buffer import Buffer, EndOfBufferError
 
 
+logger = logging.getLogger(__name__)
+
+
 PARAM_SSID_PARAMETER_SET = 0
 PARAM_SUPPORTED_RATES = 1
+PARAM_DS_PARAMETER_SET = 3
 PARAM_RSN_INFORMATION = 48
 
 
@@ -60,6 +65,23 @@ class SupportedRates(TaggedParameter):
 		return t
 
 
+class DSParameterSet(TaggedParameter):
+
+	@property
+	def channel(self) -> int:
+		return int.from_bytes(self.data, byteorder="little")
+
+	@channel.setter
+	def channel(self, x: int):
+		self.data = x.to_bytes(1, byteorder="little")
+
+	@classmethod
+	def build(cls, channel: int) -> "DSParameterSet":
+		t = cls(PARAM_DS_PARAMETER_SET, 1, b'\x00')
+		t.channel = channel
+		return t
+
+
 class RSN(TaggedParameter):
 
 	def __init__(self, *args):
@@ -112,6 +134,7 @@ class RSN(TaggedParameter):
 TaggedParameterMap = {
 	PARAM_SSID_PARAMETER_SET: SSID,
 	PARAM_SUPPORTED_RATES: SupportedRates,
+	PARAM_DS_PARAMETER_SET: DSParameterSet,
 	PARAM_RSN_INFORMATION: RSN
 }
 
@@ -170,6 +193,8 @@ class TaggedParameters(Frame):
 				)
 		except EndOfBufferError:
 			pass
+		except Exception as e:
+			logger.exception(e)
 		finally:
 			return params
 

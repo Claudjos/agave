@@ -1,7 +1,10 @@
 import unittest
 from agave.core.wifi.tags import (
-	TaggedParameters, PARAM_SSID_PARAMETER_SET, SSID,
-	PARAM_RSN_INFORMATION, PARAM_SUPPORTED_RATES, SupportedRates
+	TaggedParameters, 
+	PARAM_SSID_PARAMETER_SET, SSID,
+	PARAM_RSN_INFORMATION, 
+	PARAM_SUPPORTED_RATES, SupportedRates,
+	PARAM_DS_PARAMETER_SET, DSParameterSet
 )
 
 
@@ -61,4 +64,15 @@ class TestTaggedParameter(unittest.TestCase):
 		self.assertEqual(rsn.auth_key_management_count, 1)
 		self.assertEqual(rsn.get_auth_key_management_list(), [(b'\x00\x0f\xac', 2)])
 		self.assertEqual(rsn.capabilities, 0)
+
+	def test_generic_read(self):
+		"""Tests parsing."""
+		params = TaggedParameters.from_bytes(self.message)
+		channel = params.get(PARAM_DS_PARAMETER_SET).channel
+		self.assertEqual(channel, 11)
+
+	def test_write_ds_parameter_set(self):
+		"""Tests building/writing."""
+		tag = DSParameterSet.build(11)
+		self.assertEqual(bytes(tag), b'\x03\x01\x0b')
 

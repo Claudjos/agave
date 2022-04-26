@@ -1,4 +1,5 @@
 from typing import Dict, List, Tuple
+from agave.core.frame import Frame
 from agave.core.buffer import Buffer, EndOfBufferError
 
 
@@ -8,27 +9,13 @@ PARAM_RSN_INFORMATION = 48
 
 
 class TaggedParameter:
-
+	"""Base model for a tagged parameter."""
 	__slots__ = ("number", "length", "data")
 
 	def __init__(self, number: int, length: int, data: bytes):
 		self.number: int = number
 		self.length: int = length
 		self.data: bytes = data
-
-	@classmethod
-	def parse_all(cls, buf: Buffer) -> Dict[int, "TagParameter"]:
-		tags = {}
-		try:
-			while True:
-				number = buf.read_byte()
-				length = buf.read_byte()
-				data = buf.read(length)
-				tags[number] = TaggedParameterMap.get(number, cls)(number, length, data)
-		except EndOfBufferError:
-			pass
-		finally:
-			return tags
 
 	def __bytes__(self):
 		return (
@@ -127,4 +114,66 @@ TaggedParameterMap = {
 	PARAM_SUPPORTED_RATES: SupportedRates,
 	PARAM_RSN_INFORMATION: RSN
 }
+
+
+class TaggedParameterNotFound(Exception):
+	pass
+
+
+class TaggedParameters(Frame):
+	"""Tagged parameters list."""
+	__slots__ = ("_params")
+
+	BYTEORDER = "little"
+
+	def __init__(self):
+		self._params = []
+
+	def get(self, x: int, raise_on_miss: bool = True) -> TaggedParameter:
+		"""Gets a parameter by number. In case of multiple parameters
+		with the same number, the first one is returned.
+
+		Args:
+			x: parameter number.
+			raise_on_miss: if False, and no parameter is found, no exception is
+				raised and None is returned.
+
+		Returns:
+			A tagged parameter.
+
+		Raises:
+			TaggedParameterNotFound, if no parameter is found with the given
+				number.
+		"""
+		for p in self._params:
+			if p.number == x:
+				return p
+		if raise_on_miss:
+			raise TaggedParameterNotFound()
+		else:
+			return None
+
+	def add(self, param: TaggedParameter):
+		self._params.append(param)
+
+	@classmethod
+	def read_from_buffer(cls, buf: Buffer) -> "TaggedParameters":
+		params = TaggedParameters()
+		try:
+			while True:
+				number = buf.read_byte()
+				length = buf.read_byte()
+				data = buf.read(length)
+				params.add(
+					TaggedParameterMap.get(number, TaggedParameter)
+					(number, length, data)
+				)
+		except EndOfBufferError:
+			pass
+		finally:
+			return params
+
+	def write_to_buffer(self, buf: Buffer):
+		for p in self._params:
+			buf.write(bytes(p))
 

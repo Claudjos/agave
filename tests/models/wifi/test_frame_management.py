@@ -74,7 +74,7 @@ class TestFrameControl(unittest.TestCase):
 		self.assertEqual(frame.beacon_interval, 100)
 		self.assertEqual(frame.capabilities, 0x0c31)
 		# Checks number of tagged parameters parsed
-		self.assertEqual(len(frame.tags.items()), 3)
+		self.assertEqual(len(frame.tags._params), 3)
 		# Checks writing by rewriting the frame
 		self.assertEqual(bytes(frame), self.beacon)
 
@@ -87,7 +87,7 @@ class TestFrameControl(unittest.TestCase):
 		self.assertEqual(frame.transmitter, MACAddress("e8:5a:8b:e2:6a:0b"))
 		self.assertEqual(frame.sequence_control, 154 << 4)
 		# Checks number of tagged parameters parsed
-		self.assertEqual(len(frame.tags.items()), 4)
+		self.assertEqual(len(frame.tags._params), 4)
 		# Checks writing by rewriting the frame
 		self.assertEqual(bytes(frame), self.probe_request)
 
@@ -132,7 +132,7 @@ class TestFrameControl(unittest.TestCase):
 		self.assertEqual(frame.capabilities, 0x0431)
 		self.assertEqual(frame.listen_interval, 1)
 		# Checks number of tagged parameters parsed
-		self.assertEqual(len(frame.tags.items()), 7)
+		self.assertEqual(len(frame.tags._params), 7)
 		# Checks writing by rewriting the frame
 		self.assertEqual(bytes(frame), self.association_request)
 
@@ -149,7 +149,7 @@ class TestFrameControl(unittest.TestCase):
 		self.assertEqual(frame.status_code, 0)
 		self.assertEqual(frame.association_id, 0xc002)
 		# Checks number of tagged parameters parsed
-		# self.assertEqual(len(frame.tags.items()), 8) # TODO
+		self.assertEqual(len(frame.tags._params), 8)
 		# Checks writing by rewriting the frame
 		self.assertEqual(bytes(frame), self.association_response)
 

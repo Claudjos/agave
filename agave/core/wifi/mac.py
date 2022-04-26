@@ -3,7 +3,7 @@ import struct
 from agave.core.frame import Frame
 from agave.core.buffer import Buffer, EndOfBufferError
 from agave.core.ethernet import MACAddress
-from .tags import TaggedParameter
+from .tags import TaggedParameters, TaggedParameter
 from typing import List
 
 
@@ -310,7 +310,7 @@ class ManagementFrame(WiFiMAC):
 		- destination (MACAddress): destination address.
 		- sequence_control (int): sequence and fragment number.
 		- data (Buffer): unparsed frame data, i.e., Wireless Management.
-		- tags (List[TaggedParameter]): list of tag parameters.
+		- tags (TaggedParameters): list of tag parameters.
 
 	"""
 	__slots__ = ("receiver", "transmitter", "destination", "sequence_control", 
@@ -380,7 +380,7 @@ class Beacon(ManagementFrame):
 		mac.timestamp = mac.data.read_long()
 		mac.beacon_interval = mac.data.read_short()
 		mac.capabilities = mac.data.read_short()
-		mac.tags = TaggedParameter.parse_all(mac.data)
+		mac.tags = TaggedParameters.read_from_buffer(mac.data)
 		return mac
 
 	def write_to_buffer(self, buf: Buffer):
@@ -388,7 +388,7 @@ class Beacon(ManagementFrame):
 		self.data.write_long(self.timestamp)
 		self.data.write_short(self.beacon_interval)
 		self.data.write_short(self.capabilities)
-		self.data.write(b''.join(map(lambda x: bytes(x[1]), self.tags.items())))
+		self.tags.write_to_buffer(self.data)
 		super().write_to_buffer(buf)
 
 
@@ -405,16 +405,16 @@ class ProbeRequest(ManagementFrame):
 	@classmethod
 	def read_from_buffer(cls, buf: Buffer) -> "ProbeRequest":
 		mac = super().read_from_buffer(buf)
-		mac.tags = TaggedParameter.parse_all(mac.data)
+		mac.tags = TaggedParameters.read_from_buffer(mac.data)
 		return mac
 
 	def write_to_buffer(self, buf: Buffer) -> "ProbeRequest":
 		self.data.seek(0)
-		self.data.write(b''.join(map(lambda x: bytes(x[1]), self.tags.items())))
+		self.tags.write_to_buffer(self.data)
 		super().write_to_buffer(buf)
 
 	@classmethod
-	def build(cls, transmitter: MACAddress, params: List[TaggedParameter], 
+	def build(cls, transmitter: MACAddress, params: TaggedParameters, 
 		**kwargs) -> "ProbeRequest":
 		"""Builder.
 
@@ -425,7 +425,7 @@ class ProbeRequest(ManagementFrame):
 		"""
 		destination = MACAddress.broadcast()
 		x = super().build(destination, transmitter, destination)
-		x.tags = {k: v for k,v in map(lambda p: (p.number, p), params)}
+		x.tags = params
 		return x
 
 
@@ -513,14 +513,14 @@ class AssociationRequest(ManagementFrame):
 		mac = super().read_from_buffer(buf)
 		mac.capabilities = mac.data.read_short()
 		mac.listen_interval = mac.data.read_short()
-		mac.tags = TaggedParameter.parse_all(mac.data)
+		mac.tags = TaggedParameters.read_from_buffer(mac.data)
 		return mac
 
 	def write_to_buffer(self, buf: Buffer):
 		self.data.seek(0)
 		self.data.write_short(self.capabilities)
 		self.data.write_short(self.listen_interval)
-		self.data.write(b''.join(map(lambda x: bytes(x[1]), self.tags.items())))
+		self.tags.write_to_buffer(self.data)
 		super().write_to_buffer(buf)
 
 
@@ -543,7 +543,7 @@ class AssociationResponse(ManagementFrame):
 		mac.capabilities = mac.data.read_short()
 		mac.status_code = mac.data.read_short()
 		mac.association_id = mac.data.read_short()
-		mac.tags = TaggedParameter.parse_all(mac.data)
+		mac.tags = TaggedParameters.read_from_buffer(mac.data)
 		return mac
 
 	def write_to_buffer(self, buf: Buffer):
@@ -551,7 +551,7 @@ class AssociationResponse(ManagementFrame):
 		self.data.write_short(self.capabilities)
 		self.data.write_short(self.status_code)
 		self.data.write_short(self.association_id)
-		self.data.write(b''.join(map(lambda x: bytes(x[1]), self.tags.items())))
+		self.tags.write_to_buffer(self.data)
 		super().write_to_buffer(buf)
 
 

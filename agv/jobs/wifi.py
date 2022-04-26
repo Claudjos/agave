@@ -134,24 +134,42 @@ class StationsMapper(Job):
 		rth = RadioTapHeader.read_from_buffer(buf)
 		frame = WiFiMAC.from_buffer(buf)
 		# gets BSSID and client
+		output = []
+		addr1 = addr2 = None
 		if frame.type == FRAME_TYPE_DATA_FRAME:
-			if frame.flag_to_ds and not frame.flag_from_ds:
-				bssid = frame.receiver
-				client = frame.transmitter
-			elif not frame.flag_to_ds and frame.flag_from_ds:
-				bssid = frame.transmitter
-				client = frame.receiver
+			if frame.flags & 0x03:
+				"""WDS. Not sure about this. I believe, in a simple case, receiver
+				and transmitter are BSSs, with destination being a client connected to
+				the receiver, while source is connected to the transmitter."""
+				if self.add(frame.transmitter, frame.source):
+					output.append((frame.transmitter, frame.source))
+				if self.add(frame.receiver, frame.destination):
+					output.append((frame.receiver, frame.destination))
 			else:
-				return None
-			# discard if BSSID is not in the target
-			if self._bssids is not None and bssid not in self._bssids:
-				return None
-			# discard if multicast
-			if client.is_multicast():
-				return None
-			# check cache
-			key = f"{bssid}{client}"
-			if not key in self._cache:
-				self._cache.add(key)
-				return bssid, client
+				if self.add(frame.bssid, frame.destination):
+					output.append((frame.bssid, frame.destination))
+				if self.add(frame.bssid, frame.source):
+					output.append((frame.bssid, frame.source))
+		if output == []:
+			return None
+		else:
+			return output
+
+	def add(self, bssid: MACAddress, client: MACAddress) -> bool:
+		# discard if BSSID and client are equal
+		if bssid == client:
+			return False
+		# discard if BSSID is not in the target
+		if self._bssids is not None and bssid not in self._bssids:
+			return False
+		# discard if multicast
+		if client.is_multicast():
+			return False
+		# check cache
+		key = f"{bssid}{client}"
+		if not key in self._cache:
+			self._cache.add(key)
+			return True
+		else:
+			return False
 

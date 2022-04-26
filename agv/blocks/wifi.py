@@ -76,8 +76,9 @@ def list_bss_clients(bssid: MACAddress, sock: "socket.socket", wait: float = 10)
 		The MAC address of each client.
 
 	"""
-	results = StationsMapper(sock, [bssid], wait=wait).stream()
-	for bssid, client in results:
-		yield client
+	stream = StationsMapper(sock, [bssid], wait=wait).stream()
+	for results in stream:
+		for bssid, client in results:
+			yield client
 	return
 

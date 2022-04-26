@@ -43,10 +43,13 @@ class TestFrameData(unittest.TestCase):
 		# Checks parsing
 		self.assertEqual(frame.duration_id, 0)
 		self.assertEqual(frame.flag_protected, True)
+		self.assertEqual(frame.flag_to_ds, False)
 		self.assertEqual(frame.flag_from_ds, True)
 		self.assertEqual(frame.receiver, MACAddress("01:00:5e:00:00:01"))
 		self.assertEqual(frame.transmitter, MACAddress("00:0c:f6:be:4d:04"))
-		self.assertEqual(frame.destination, MACAddress("00:0c:f6:be:4d:04"))
+		self.assertEqual(frame.destination, MACAddress("01:00:5e:00:00:01"))
+		self.assertEqual(frame.source, MACAddress("00:0c:f6:be:4d:04"))
+		self.assertEqual(frame.bssid, MACAddress("00:0c:f6:be:4d:04"))
 		self.assertEqual(frame.sequence_control, 2860 << 4)
 		self.assertEqual(frame.ccmp_params, 0x00006000185d)
 		# Checks writing by rewriting the frame
@@ -58,10 +61,13 @@ class TestFrameData(unittest.TestCase):
 		# Checks parsing
 		self.assertEqual(frame.duration_id, 36)
 		self.assertEqual(frame.flag_protected, True)
+		self.assertEqual(frame.flag_to_ds, False)
 		self.assertEqual(frame.flag_from_ds, True)
 		self.assertEqual(frame.receiver, MACAddress("7c:f9:0e:48:e4:c4"))
 		self.assertEqual(frame.transmitter, MACAddress("00:0c:f6:be:4d:04"))
-		self.assertEqual(frame.destination, MACAddress("00:0c:f6:be:4d:04"))
+		self.assertEqual(frame.destination, MACAddress("7c:f9:0e:48:e4:c4"))
+		self.assertEqual(frame.source, MACAddress("00:0c:f6:be:4d:04"))
+		self.assertEqual(frame.bssid, MACAddress("00:0c:f6:be:4d:04"))
 		self.assertEqual(frame.sequence_control, 2921 << 4)
 		self.assertEqual(frame.qos_control, 0)
 		self.assertEqual(frame.ccmp_params, 0x000000020000b68)
@@ -73,9 +79,13 @@ class TestFrameData(unittest.TestCase):
 		frame = QoSNull.from_bytes(self.qos_null)
 		# Checks parsing
 		self.assertEqual(frame.duration_id, 314)
+		self.assertEqual(frame.flag_to_ds, True)
+		self.assertEqual(frame.flag_from_ds, False)
 		self.assertEqual(frame.receiver, MACAddress("00:0c:f6:be:4d:04"))
 		self.assertEqual(frame.transmitter, MACAddress("ec:10:7b:ee:e4:05"))
 		self.assertEqual(frame.destination, MACAddress("00:0c:f6:be:4d:04"))
+		self.assertEqual(frame.source, MACAddress("ec:10:7b:ee:e4:05"))
+		self.assertEqual(frame.bssid, MACAddress("00:0c:f6:be:4d:04"))
 		self.assertEqual(frame.sequence_control, 1084 << 4)
 		self.assertEqual(frame.qos_control, 0x0000)
 		# Checks writing by rewriting the frame
@@ -85,9 +95,13 @@ class TestFrameData(unittest.TestCase):
 		"""Tests QoS Null."""
 		frame = QoSNull.from_bytes(self.qos_null_2)
 		self.assertEqual(frame.duration_id, 0)
+		self.assertEqual(frame.flag_to_ds, True)
+		self.assertEqual(frame.flag_from_ds, False)
 		self.assertEqual(frame.receiver, MACAddress("00:0c:f6:be:4d:04"))
 		self.assertEqual(frame.transmitter, MACAddress("3c:a0:67:2e:c2:22"))
 		self.assertEqual(frame.destination, MACAddress("00:0c:f6:be:4d:04"))
+		self.assertEqual(frame.source, MACAddress("3c:a0:67:2e:c2:22"))
+		self.assertEqual(frame.bssid, MACAddress("00:0c:f6:be:4d:04"))
 		self.assertEqual(frame.sequence_control, 0)
 		self.assertEqual(frame.qos_control, 0x0007)
 

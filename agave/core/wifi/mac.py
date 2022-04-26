@@ -585,13 +585,14 @@ class DataFrame(WiFiMAC):
 	Attributes:
 		- receiver (MACAddress): receiver address.
 		- transmitter (MACAddress): transmitter address.
-		- destination (MACAddress): destination address.
-		- source (MACAddress): source address.
+		- address3 (MACAddress): third address of the frame.
+		- address4 (MACAddress): forth address of the frame (used in WDS to
+			indicate the source - Wireless Distribution System).
 		- sequence_control (int): sequence and fragment number.
 		- data (Buffer): unparsed frame data, i.e., Wireless Management.
 
 	"""
-	__slots__ = ("receiver", "transmitter", "destination", "source", "sequence_control", "data")
+	__slots__ = ("receiver", "transmitter", "address3", "address4", "sequence_control", "data")
 
 	TYPE = FRAME_TYPE_DATA_FRAME
 
@@ -600,10 +601,12 @@ class DataFrame(WiFiMAC):
 		mac = super().read_from_buffer(buf)
 		mac.receiver = MACAddress(buf.read(6))
 		mac.transmitter = MACAddress(buf.read(6))
-		mac.destination = MACAddress(buf.read(6))
+		mac.address3 = MACAddress(buf.read(6))
 		mac.sequence_control = buf.read_short()
 		if mac.flag_from_ds and mac.flag_to_ds:
-			mac.source = MACAddress(buf.read(6))
+			mac.address4 = MACAddress(buf.read(6))
+		else:
+			mac.address4 = None
 		t = buf.read_remaining()
 		mac.data = Buffer.from_bytes(t[:-4], byteorder="little")
 		mac.fcs = int.from_bytes(t[-4:], byteorder="little")
@@ -613,12 +616,52 @@ class DataFrame(WiFiMAC):
 		super().write_to_buffer(buf)
 		buf.write(self.receiver.packed)
 		buf.write(self.transmitter.packed)
-		buf.write(self.destination.packed)
+		buf.write(self.address3.packed)
 		buf.write_short(self.sequence_control)
 		if self.flag_from_ds and self.flag_to_ds:
-			buf.write(self.source.packed)
+			buf.write(self.address4.packed)
 		buf.write(bytes(self.data))
 		buf.write_int(self.fcs)
+
+	@property
+	def destination(self):
+		flag = self.flags & 0x03
+		if flag == 3 or flag == 1: 
+			# 0x11 From DS and To DS set
+			# 0x01 To DS
+			return self.address3
+		else:
+			return self.receiver
+
+	@property
+	def source(self):
+		flag = self.flags & 0x03
+		if flag == 0 or flag == 1: 
+			# 0x00 Ad-Hoc network - Independent BSS (IBSS)
+			# 0x01 To DS
+			return self.transmitter
+		elif flag == 2:
+			# 0x02 From DS
+			return self.address3
+		else:
+			# 0x03 WDS
+			return self.address4
+
+	@property
+	def bssid(self):
+		flag = self.flags & 0x03
+		if flag == 0:
+			# 0x00 Ad-Hoc network - Independent BSS (IBSS)
+			return self.address3
+		elif flag == 1:
+			# 0x01 To DS
+			return self.receiver
+		elif flag == 2:
+			# 0x02 From DS
+			return self.transmitter
+		else:
+			# 0x03 WDS - Both receiver and transmitter are BSSIDs ?
+			return None
 
 
 class Null(DataFrame):

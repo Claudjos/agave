@@ -146,8 +146,8 @@ class StationsMapper(Job):
 			# discard if BSSID is not in the target
 			if self._bssids is not None and bssid not in self._bssids:
 				return None
-			# discard if broadcast or multicast
-			if client.is_broadcast() or client.is_multicast():
+			# discard if multicast
+			if client.is_multicast():
 				return None
 			# check cache
 			key = f"{bssid}{client}"

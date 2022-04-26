@@ -38,10 +38,11 @@ To use raw socket:
 - Linux (POSIX?)
 - CAP_NET_RAW capability or SUDO privileges
 
-Preferred system configuration:
+For some scripts the following configuration might be necessary:
 ```
-# Enable IPv4 forwarding
+# Enable IP forwarding
 echo 1 | sudo tee /proc/sys/net/ipv4/conf/*/forwarding
+echo 1 | sudo tee /proc/sys/net/ipv6/conf/*/forwarding
 # Prevents ICMPv4 redirect messages
 echo 0 | sudo tee /proc/sys/net/ipv4/conf/*/send_redirects
 ```

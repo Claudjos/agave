@@ -103,12 +103,12 @@ class WiFiMAC(Frame):
 		buf.write_short(self.duration_id)
 
 	@classmethod
-	def build(cls, flags: int = 0, duration_id: int = 0) -> "WiFiMAC":
+	def build(cls, flags: int = 0, duration_id: int = 0, fcs: int = None) -> "WiFiMAC":
 		mac = cls()
 		mac.fvts = (cls.TYPE << 2) | (cls.SUBTYPE << 4)
 		mac.flags = flags
 		mac.duration_id = duration_id
-		mac.fcs = None
+		mac.fcs = fcs
 		return mac
 
 	@property
@@ -359,9 +359,9 @@ class ManagementFrame(WiFiMAC):
 		return mac
 
 
-class Beacon(ManagementFrame):
-	"""Beacon Frame. Sent periodically by AP to advertise their
-	presence.
+class ProbeResponse(ManagementFrame):
+	"""Probe Response Frame. Sent in response to probe requests,
+	advertise the AP.
 
 	Attributes:
 		timestamp (int): timestamp.
@@ -372,7 +372,7 @@ class Beacon(ManagementFrame):
 	"""
 	__slots__ = ("timestamp", "beacon_interval", "capabilities")
 
-	SUBTYPE = FRAME_SUB_TYPE_BEACON
+	SUBTYPE = FRAME_SUB_TYPE_PROBE_RESPONSE
 
 	@classmethod
 	def read_from_buffer(cls, buf: Buffer) -> "Beacon":
@@ -396,11 +396,25 @@ class Beacon(ManagementFrame):
 		"""True if AP/STA can support WEP."""
 		return self.capabilities &0x0010
 
+	@classmethod
+	def build(cls, receiver: MACAddress, bssid: MACAddress, params: TaggedParameters, timestamp: int = 0, 
+		beacon_interval: int = 100, capabilities: int = 0, **kwargs) -> "ProbeResponse":
+		x = super().build(receiver, bssid, bssid, **kwargs)
+		x.timestamp = timestamp
+		x.beacon_interval = beacon_interval
+		x.capabilities = capabilities
+		x.tags = params
+		return x
 
-class ProbeResponse(Beacon):
-	"""Probe Response Frame. Sent in response to probe requests,
-	advertise the AP."""
-	SUBTYPE = FRAME_SUB_TYPE_PROBE_RESPONSE
+
+class Beacon(ProbeResponse):
+	"""Beacon Frame. Sent periodically by AP to advertise their
+	presence."""
+	SUBTYPE = FRAME_SUB_TYPE_BEACON
+
+	@classmethod
+	def build(cls, *args, **kwargs) -> "Beacon":
+		return super().build(MACAddress.broadcast(), *args, **kwargs)
 
 
 class ProbeRequest(ManagementFrame):
@@ -429,7 +443,7 @@ class ProbeRequest(ManagementFrame):
 			kwargs; keyword argument for ManagementFrame.build.
 		"""
 		destination = MACAddress.broadcast()
-		x = super().build(destination, transmitter, destination)
+		x = super().build(destination, transmitter, destination, **kwargs)
 		x.tags = params
 		return x
 
@@ -637,7 +651,6 @@ class DataFrame(WiFiMAC):
 		x.address4 = address4
 		x.sequence_control = sequence_control
 		x.data = Buffer.from_bytes(data, byteorder="little")
-		x.fcs = None
 		return x
 
 	def write_to_buffer(self, buf: Buffer):

@@ -3,8 +3,8 @@ from tests.dummy import DummyInterface, DummySock
 from agave.models.arp import ARP, OPERATION_REQUEST
 from agave.models.buffer import Buffer
 from agave.models.ethernet import MACAddress, ETHER_TYPE_ARP
-from agv.jobs.arp.spoof import Spoofer
-from agv.jobs.arp.utils import create_filter, _parse
+from agv.v4.arp.spoof import Spoofer
+from agv.v4.arp.utils import create_filter, _parse
 from ipaddress import IPv4Network, IPv4Address 
 
 

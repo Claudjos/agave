@@ -6,7 +6,7 @@ from agave.models.ip import (
 )
 from agave.models.icmpv6 import ICMPv6, TYPE_ROUTER_SOLICITATION
 from agave.models.ndp import RouterSolicitation, RouterAdvertisement, MTU
-from agave.ndp.routers import LowLevelRouterSoliciter, RouterSoliciter
+from agv.v6.ndp.routers import LowLevelRouterSoliciter, RouterSoliciter
 from ipaddress import IPv6Address 
 
 

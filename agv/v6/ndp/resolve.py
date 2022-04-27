@@ -10,8 +10,8 @@ Usage:
 """
 import socket, array
 from typing import Union, Iterator, Tuple
-from agv.jobs.arp.utils import Host
-from agv.jobs.arp.resolve import MACAddressNotFoundError
+from agv.v4.arp.utils import Host
+from agv.v4.arp.resolve import MACAddressNotFoundError
 from agave.models.ethernet import MACAddress
 from agave.utils.jobs import SocketAddress, Job, SendMsgArgs
 from agave.models.ndp import (

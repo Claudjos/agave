@@ -1,13 +1,12 @@
 import socket, select
 from typing import Tuple, Union,Callable
-from agave.core.buffer import Buffer
-from agave.core.arp import ARP, OPERATION_REQUEST
-from agave.core.ethernet import Ethernet, ETHER_TYPE_ARP, MACAddress
+from agave.models.buffer import Buffer
+from agave.models.arp import ARP, OPERATION_REQUEST
+from agave.models.ethernet import Ethernet, ETHER_TYPE_ARP, MACAddress
 from ipaddress import IPv4Address, IPv4Network
 
 
 HOST = Host = Tuple[MACAddress, IPv4Address]
-SOCKET_MAX_READ = 65535
 SOCKET_PROTO = socket.htons(ETHER_TYPE_ARP)
 
 

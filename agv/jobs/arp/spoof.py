@@ -9,10 +9,10 @@ Usage:
 	python3 -m agave.arp.spoof <target: subnet|ip> [<victim: subnet|ip>] [-f]
 
 """
-from agave.core.helpers import Job, SocketAddress
-from agave.core.arp import ARP, OPERATION_REQUEST
-from agave.core.ethernet import ETHER_TYPE_ARP, MACAddress
-from agave.nic.interfaces import NetworkInterface
+from agave.models.arp import ARP, OPERATION_REQUEST
+from agave.models.ethernet import ETHER_TYPE_ARP, MACAddress
+from agave.utils.interfaces import NetworkInterface
+from agave.utils.jobs import Job, SocketAddress
 from .utils import create_filter, _parse, _create_socket
 from .resolve import resolve
 from ipaddress import IPv4Address, IPv4Network

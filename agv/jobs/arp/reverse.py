@@ -15,10 +15,10 @@ import socket
 from typing import Union
 from .utils import _parse as parse_arp
 from .utils import Host
-from agave.core.ethernet import MACAddress, ETHER_TYPE_RARP
-from agave.core.arp import ARP, OPERATION_REPLY_REVERSE
-from agave.core.helpers import SocketAddress, Job
-from agave.nic.interfaces import NetworkInterface
+from agave.models.ethernet import MACAddress, ETHER_TYPE_RARP
+from agave.models.arp import ARP, OPERATION_REPLY_REVERSE
+from agave.utils.jobs import SocketAddress, Job
+from agave.utils.interfaces import NetworkInterface
 from ipaddress import IPv4Address
 
 

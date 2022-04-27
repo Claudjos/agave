@@ -1,10 +1,10 @@
 import unittest
 from tests.dummy import DummyInterface, DummySock
-from agave.core.arp import ARP, OPERATION_REQUEST
-from agave.core.buffer import Buffer
-from agave.core.ethernet import MACAddress, ETHER_TYPE_ARP
-from agave.arp.spoof import Spoofer
-from agave.arp.utils import create_filter, _parse
+from agave.models.arp import ARP, OPERATION_REQUEST
+from agave.models.buffer import Buffer
+from agave.models.ethernet import MACAddress, ETHER_TYPE_ARP
+from agv.jobs.arp.spoof import Spoofer
+from agv.jobs.arp.utils import create_filter, _parse
 from ipaddress import IPv4Network, IPv4Address 
 
 

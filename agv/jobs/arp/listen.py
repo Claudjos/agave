@@ -7,11 +7,11 @@ Note:
 """
 import socket, time
 from typing import Tuple
-from agave.core import arp
-from agave.core.ethernet import MACAddress
-from agave.core.helpers import Job, SocketAddress
+from agave.models import arp
+from agave.models.ethernet import MACAddress
+from agave.utils.jobs import Job, SocketAddress
 from ipaddress import ip_address, ip_network, IPv4Address
-from .utils import _create_socket, _parse, SOCKET_MAX_READ, Host
+from .utils import _create_socket, _parse, Host
 
 
 class Listener(Job):

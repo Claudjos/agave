@@ -8,9 +8,9 @@ Usage:
 if __name__ == "__main__":
 
 	import sys
-	from agave.core.arp import ARP, OPERATION_REQUEST
-	from agave.core.ethernet import ETHER_TYPE_ARP, MACAddress
-	from agave.nic.interfaces import NetworkInterface
+	from agave.models.arp import ARP, OPERATION_REQUEST
+	from agave.models.ethernet import ETHER_TYPE_ARP, MACAddress
+	from agave.utils.interfaces import NetworkInterface
 	from .utils import create_filter, _create_socket
 	from .resolve import resolve_mac
 	from .spoof import Spoofer

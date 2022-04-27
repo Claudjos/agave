@@ -1,8 +1,8 @@
 import unittest
 from tests.dummy import DummyInterface
-from agave.core.arp import ARP
-from agave.core.ethernet import MACAddress, ETHER_TYPE_ARP
-from agave.arp.resolve import Resolver
+from agave.models.arp import ARP
+from agave.models.ethernet import MACAddress, ETHER_TYPE_ARP
+from agv.jobs.arp.resolve import Resolver
 from ipaddress import IPv4Network, IPv4Address 
 
 

@@ -1,13 +1,13 @@
 """Actively scan for APs.
 
 Usage:
-	python3 -m agv.poc.wifi.scan <interface> [timeout]
+	python3 -m agv.wifi.scan <interface> [timeout]
 
 Args:
 	interface: interface to use.
 
 Examples:
-	python3 -m agv.poc.wifi.scan mon0
+	python3 -m agv.wifi.scan mon0
 	
 """
 import socket, sys
@@ -17,7 +17,8 @@ from agave.models.wifi.tags import (
 	TaggedParameterNotFound
 )
 from agave.utils.interfaces import NetworkInterface
-from agv.jobs.wifi import Scanner
+from .jobs import Scanner
+from .utils import create_socket
 
 
 if __name__ == "__main__":
@@ -28,11 +29,8 @@ if __name__ == "__main__":
 	# Parse input
 	interface = NetworkInterface.get_by_name(sys.argv[1])
 	wait = float(sys.argv[2]) if len(sys.argv) > 2 else 10
-	# Creates socket
-	sock = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(3))
-	sock.bind((interface.name, 0))
 	# Create job
-	job = Scanner(sock, interface, [], 
+	job = Scanner(create_socket(interface), interface, [], 
 		Scanner.build_probe_request(interface.mac, []), 
 		repeat=3, interval=0.1, wait=wait)
 	# Stream job results

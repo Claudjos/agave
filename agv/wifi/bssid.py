@@ -1,19 +1,19 @@
 """Retrieves BSSID given a SSID.
 
 Usage:
-	python3 -m agv.poc.wifi.bssid <ssid> <interface>
+	python3 -m agv.wifi.bssid <ssid> <interface>
 
 Args:
 	ssid: SSID.
 	interface: interface to use.
 
 Examples:
-	python3 -m agv.poc.wifi.bssid MyWifi mon0
+	python3 -m agv.wifi.bssid MyWifi mon0
 
 """
 import sys
 from agave.utils.interfaces import NetworkInterfaceNotFound
-from agv.blocks.wifi import ServiceSetNotFound, get_service_set_address
+from .jobs import ServiceSetNotFound, get_service_set_address
 
 
 if __name__ == "__main__":

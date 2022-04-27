@@ -1,7 +1,7 @@
 """Miscellaneous code to reuse in scripts."""
 from agave.models.ethernet import MACAddress
 from agave.utils.interfaces import NetworkInterfaceNotFound, NetworkInterface
-from agv.blocks.wifi import ServiceSetNotFound, get_service_set_address
+from .jobs import ServiceSetNotFound, get_service_set_address
 
 
 def read_mac_or_die(x: str) -> MACAddress:

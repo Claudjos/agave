@@ -1,7 +1,7 @@
 """Deauthentication Attack.
 
 Usage:
-	python3 -m agv.poc.wifi.deauth <bss> <victim> <interface> [repeat]
+	python3 -m agv.wifi.deauth <bss> <victim> <interface> [repeat]
 
 Args:
 	bss: SSID or BSSID.
@@ -11,9 +11,9 @@ Args:
 		Default don't repeat.
 
 Examples:
-	python3 -m agv.poc.wifi.deauth MyWifi 00:aa:11:bb:22:cc mon0 3
-	python3 -m agv.poc.wifi.deauth MyWifi 00:aa:11:bb:22:cc mon0
-	python3 -m agv.poc.wifi.deauth dd:aa:11:bb:ee:cc 00:aa:11:bb:22:cc mon0
+	python3 -m agv.wifi.deauth MyWifi 00:aa:11:bb:22:cc mon0 3
+	python3 -m agv.wifi.deauth MyWifi 00:aa:11:bb:22:cc mon0
+	python3 -m agv.wifi.deauth dd:aa:11:bb:ee:cc 00:aa:11:bb:22:cc mon0
 
 """
 import time, sys
@@ -22,8 +22,9 @@ from agave.models.buffer import Buffer
 from agave.models.wifi.radiotap import RadioTapHeader
 from agave.models.wifi.mac import Deauthentication
 from agave.utils.interfaces import NetworkInterfaceNotFound
-from agv.blocks.wifi import ServiceSetNotFound, get_service_set_address, create_socket
-from agv.misc import read_interface_or_die, read_bssid_or_die, read_mac_or_die
+from .jobs import ServiceSetNotFound, get_service_set_address
+from .utils import create_socket
+from .misc import read_interface_or_die, read_bssid_or_die, read_mac_or_die
 
 
 if __name__ == "__main__":

@@ -140,7 +140,7 @@ class StationsMapper(Job):
 		output = []
 		addr1 = addr2 = None
 		if frame.type == FRAME_TYPE_DATA_FRAME:
-			if frame.flags & 0x03:
+			if frame.flags & 0x03 == 3:
 				"""WDS. Not sure about this. I believe, in a simple case, receiver
 				and transmitter are BSSs, with destination being a client connected to
 				the receiver, while source is connected to the transmitter."""

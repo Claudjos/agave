@@ -1,6 +1,6 @@
 import unittest
-from agave.core.arp import *
-from agave.core.buffer import Buffer
+from agave.models.arp import *
+from agave.models.buffer import Buffer
 
 
 class TestARP(unittest.TestCase):

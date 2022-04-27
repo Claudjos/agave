@@ -20,8 +20,8 @@ Todo:
 
 """
 from typing import List
-from agave.core.frame import Frame
-from agave.core.buffer import Buffer
+from ..frame import Frame
+from ..buffer import Buffer
 
 
 FIELD_TSFT  				= 0X00000001

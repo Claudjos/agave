@@ -1,5 +1,5 @@
 import unittest
-from agave.core.wifi.tags import (
+from agave.models.wifi.tags import (
 	TaggedParameters, 
 	PARAM_SSID_PARAMETER_SET, SSID,
 	PARAM_RSN_INFORMATION, 

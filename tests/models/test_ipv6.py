@@ -1,6 +1,6 @@
 import unittest
-from agave.core.ip import IPv6, PROTO_UDP
-from agave.core.buffer import Buffer
+from agave.models.ip import IPv6, PROTO_UDP
+from agave.models.buffer import Buffer
 from ipaddress import IPv6Address
 
 

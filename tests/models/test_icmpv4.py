@@ -1,6 +1,6 @@
 import unittest
-from agave.core.icmpv4 import ICMPv4, TYPE_ECHO_MESSAGE
-from agave.core.buffer import Buffer
+from agave.models.icmpv4 import ICMPv4, TYPE_ECHO_MESSAGE
+from agave.models.buffer import Buffer
 
 
 class TestICMPv4(unittest.TestCase):

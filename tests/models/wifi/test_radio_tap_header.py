@@ -1,6 +1,6 @@
 import unittest
-from agave.core.wifi.radiotap import RadioTapHeader
-from agave.core.buffer import Buffer
+from agave.models.wifi.radiotap import RadioTapHeader
+from agave.models.buffer import Buffer
 
 
 class TestRadioTap(unittest.TestCase):

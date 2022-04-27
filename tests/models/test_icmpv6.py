@@ -1,7 +1,7 @@
 import unittest
-from agave.core.ip import IPv6, PROTO_ICMPv6
-from agave.core.icmpv6 import ICMPv6, TYPE_ROUTER_SOLICITATION
-from agave.core.buffer import Buffer
+from agave.models.ip import IPv6, PROTO_ICMPv6
+from agave.models.icmpv6 import ICMPv6, TYPE_ROUTER_SOLICITATION
+from agave.models.buffer import Buffer
 from ipaddress import IPv6Address
 
 

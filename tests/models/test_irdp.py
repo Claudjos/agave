@@ -1,7 +1,7 @@
 import unittest
-from agave.core.irdp import IRDP, TYPE_ROUTER_ADVERTISMENT_MESSAGE
+from agave.models.irdp import IRDP, TYPE_ROUTER_ADVERTISMENT_MESSAGE
+from agave.models.buffer import Buffer
 from ipaddress import IPv4Address
-from agave.core.buffer import Buffer
 
 
 class TestIRDP(unittest.TestCase):

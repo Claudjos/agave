@@ -1,6 +1,6 @@
 import unittest
-from agave.core.ethernet import Ethernet, ETHER_TYPE_IPV4, MACAddress
-from agave.core.buffer import Buffer
+from agave.models.ethernet import Ethernet, ETHER_TYPE_IPV4, MACAddress
+from agave.models.buffer import Buffer
 
 
 class TestEthernet(unittest.TestCase):

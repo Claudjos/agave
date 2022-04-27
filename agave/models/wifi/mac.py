@@ -1,8 +1,8 @@
 """Temporary structure from 802.11 MAC frame."""
 import struct
-from agave.core.frame import Frame
-from agave.core.buffer import Buffer, EndOfBufferError
-from agave.core.ethernet import MACAddress
+from ..frame import Frame
+from ..buffer import Buffer, EndOfBufferError
+from ..ethernet import MACAddress
 from .tags import TaggedParameters, TaggedParameter
 from typing import List
 

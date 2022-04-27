@@ -1,11 +1,11 @@
 import unittest
-from agave.core.icmpv6 import ICMPv6
-from agave.core.ndp import (
+from agave.models.icmpv6 import ICMPv6
+from agave.models.ndp import (
 	NeighborSolicitation, NeighborAdvertisement, RouterSolicitation,
 	SourceLinkLayerAddress, TargetLinkLayerAddress, RouterAdvertisement,
 	PrefixInformation, MTU
 )
-from agave.core.ethernet import MACAddress
+from agave.models.ethernet import MACAddress
 from ipaddress import IPv6Address, IPv6Network
 
 

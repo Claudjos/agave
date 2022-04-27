@@ -1,7 +1,7 @@
 import logging
 from typing import Dict, List, Tuple
-from agave.core.frame import Frame
-from agave.core.buffer import Buffer, EndOfBufferError
+from ..frame import Frame
+from ..buffer import Buffer, EndOfBufferError
 
 
 logger = logging.getLogger(__name__)

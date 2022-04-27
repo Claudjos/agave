@@ -1,6 +1,6 @@
 import unittest
-from agave.core.ethernet import MACAddress
-from agave.core.wifi.mac import QoSNull, QoSData, Data
+from agave.models.ethernet import MACAddress
+from agave.models.wifi.mac import QoSNull, QoSData, Data
 
 
 class TestFrameData(unittest.TestCase):

@@ -4,8 +4,8 @@ Utilities to parse/dump packets from/to file.
 """
 import time
 from sys import byteorder
-from agave.core.pcapng import *
-from agave.core.buffer import EndOfBufferError
+from agave.models.pcapng import *
+from agave.models.buffer import EndOfBufferError
 from agave.nic.interfaces import NetworkInterface
 from typing import Iterator, Tuple
 from ipaddress import IPv6Network

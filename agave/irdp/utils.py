@@ -2,13 +2,13 @@
 
 """
 import socket, struct
-from agave.core.helpers import Job, SocketAddress, SendMsgArgs
 from typing import Union, Iterator, Tuple, Any, Callable
-from agave.core.buffer import Buffer
-from agave.core.ethernet import Ethernet, ETHER_TYPE_IPV4
-from agave.core.ip import IPv4, PROTO_ICMP
-from agave.core.icmpv4 import ICMPv4
-from agave.nic.interfaces import NetworkInterface
+from agave.models.buffer import Buffer
+from agave.models.ethernet import Ethernet, ETHER_TYPE_IPV4
+from agave.models.ip import IPv4, PROTO_ICMP
+from agave.models.icmpv4 import ICMPv4
+from agave.utils.jobs import Job, SocketAddress, SendMsgArgs
+from agave.utils.interfaces import NetworkInterface
 from ipaddress import IPv4Address
 
 

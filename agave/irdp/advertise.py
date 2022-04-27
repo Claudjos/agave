@@ -12,10 +12,10 @@ Example:
 """
 import socket, array
 from typing import Union, Iterator, Iterable, Tuple
-from agave.core.helpers import SocketAddress, Job, SendMsgArgs
-from agave.core.irdp import IRDP, ROUTER_ADVERTISMENT_MULTICAST_ADDRESS, ROUTER_SOLICITATION_MULTICAST_ADDRESS
-from agave.core.icmpv4 import ICMPv4, TYPE_ROUTER_SOLICITATION_MESSAGE
-from agave.nic.interfaces import NetworkInterface
+from agave.models.irdp import IRDP, ROUTER_ADVERTISMENT_MULTICAST_ADDRESS, ROUTER_SOLICITATION_MULTICAST_ADDRESS
+from agave.models.icmpv4 import ICMPv4, TYPE_ROUTER_SOLICITATION_MESSAGE
+from agave.utils.interfaces import NetworkInterface
+from agave.utils.jobs import SocketAddress, Job, SendMsgArgs
 from .utils import join_group
 from ipaddress import IPv4Address, IPv4Network
 

@@ -11,8 +11,8 @@ Examples:
 	
 """
 import socket, sys
-from agave.core.ethernet import MACAddress
-from agave.core.wifi.tags import (
+from agave.models.ethernet import MACAddress
+from agave.models.wifi.tags import (
 	PARAM_DS_PARAMETER_SET, PARAM_RSN_INFORMATION, 
 	TaggedParameterNotFound
 )

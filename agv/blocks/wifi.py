@@ -1,8 +1,8 @@
 """Simple functions to retrieve Service Set informations."""
 import socket
 from typing import Tuple, Union, Iterable
-from agave.core.ethernet import MACAddress
-from agave.core.wifi.mac import ProbeResponse, Beacon
+from agave.models.ethernet import MACAddress
+from agave.models.wifi.mac import ProbeResponse, Beacon
 from agave.utils.interfaces import NetworkInterface
 from agv.jobs.wifi import Scanner, StationsMapper
 

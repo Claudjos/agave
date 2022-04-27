@@ -17,10 +17,10 @@ Examples:
 
 """
 import time, sys
-from agave.core.ethernet import MACAddress
-from agave.core.buffer import Buffer
-from agave.core.wifi.radiotap import RadioTapHeader
-from agave.core.wifi.mac import Deauthentication
+from agave.models.ethernet import MACAddress
+from agave.models.buffer import Buffer
+from agave.models.wifi.radiotap import RadioTapHeader
+from agave.models.wifi.mac import Deauthentication
 from agave.utils.interfaces import NetworkInterfaceNotFound
 from agv.blocks.wifi import ServiceSetNotFound, get_service_set_address, create_socket
 from agv.misc import read_interface_or_die, read_bssid_or_die, read_mac_or_die

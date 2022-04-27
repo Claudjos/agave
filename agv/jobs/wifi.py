@@ -1,7 +1,7 @@
 """WiFi Jobs."""
-from agave.core.ethernet import MACAddress
-from agave.core.buffer import Buffer
-from agave.core.wifi.mac import (
+from agave.models.ethernet import MACAddress
+from agave.models.buffer import Buffer
+from agave.models.wifi.mac import (
 	FRAME_TYPE_DATA_FRAME,
 	FRAME_TYPE_MANAGEMENT_FRAME,
 	FRAME_SUB_TYPE_PROBE_RESPONSE,
@@ -10,8 +10,8 @@ from agave.core.wifi.mac import (
 	ProbeRequest,
 	WiFiMAC
 )
-from agave.core.wifi.radiotap import RadioTapHeader, RadioTapField
-from agave.core.wifi.tags import SSID, SupportedRates, TaggedParameters
+from agave.models.wifi.radiotap import RadioTapHeader, RadioTapField
+from agave.models.wifi.tags import SSID, SupportedRates, TaggedParameters
 from agave.utils.jobs import Job, SocketAddress
 from agave.utils.interfaces import NetworkInterface
 from typing import Tuple, List

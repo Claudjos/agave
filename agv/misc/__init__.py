@@ -1,5 +1,5 @@
 """Miscellaneous code to reuse in scripts."""
-from agave.core.ethernet import MACAddress
+from agave.models.ethernet import MACAddress
 from agave.utils.interfaces import NetworkInterfaceNotFound, NetworkInterface
 from agv.blocks.wifi import ServiceSetNotFound, get_service_set_address
 

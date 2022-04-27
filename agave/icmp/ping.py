@@ -14,9 +14,9 @@ Example:
 
 """
 import socket
-from agave.core.helpers import Job, SocketAddress
-from agave.core.icmpv4 import ICMPv4, TYPE_ECHO_REPLY, TYPE_DESTINATION_UNREACHABLE
-from agave.core.ip import IPv4
+from agave.utils.jobs import Job, SocketAddress
+from agave.models.icmpv4 import ICMPv4, TYPE_ECHO_REPLY, TYPE_DESTINATION_UNREACHABLE
+from agave.models.ip import IPv4
 from ipaddress import IPv4Address, IPv4Network, ip_network
 from typing import List, Tuple, Iterator
 

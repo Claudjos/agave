@@ -10,22 +10,22 @@ Usage:
 """
 import socket, array
 from typing import Union, Iterator, Tuple
-from agave.arp.utils import Host
-from agave.core.helpers import SocketAddress, Job, SendMsgArgs
-from agave.core.ndp import (
+from agv.jobs.arp.utils import Host
+from agave.models.ndp import (
 	SourceLinkLayerAddress, RouterSolicitation,
 	TargetLinkLayerAddress, RouterAdvertisement,
 	NDP_OPTION_TYPE_TARGET_LINK_LAYER_ADDRESS
 )
-from agave.core.ip import (
+from agave.models.ip import (
 	IPV6_ALL_ROUTERS_MULTICAST_SITE_LOCAL,
 	IPV6_ALL_ROUTERS_MULTICAST_INTERFACE_LOCAL,
 	IPV6_ALL_ROUTERS_MULTICAST_LINK_LOCAL,
 	IPV6_ALL_NODES_MULTICAST_INTERFACE_LOCAL,
 	IPV6_ALL_NODES_MULTICAST_LINK_LOCAL
 )
-from agave.core.icmpv6 import ICMPv6, TYPE_ROUTER_ADVERTISEMENT
-from agave.nic.interfaces import NetworkInterface
+from agave.models.icmpv6 import ICMPv6, TYPE_ROUTER_ADVERTISEMENT
+from agave.utils.interfaces import NetworkInterface
+from agave.utils.jobs import SocketAddress, Job, SendMsgArgs
 from .utils import NDPLinkLayerJob, handle_link_layer, create_ndp_socket, join_group
 from ipaddress import IPv6Address, IPv6Network
 

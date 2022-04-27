@@ -13,12 +13,11 @@ Example:
 import socket, array
 from typing import Union, Iterator, Iterable, Tuple
 from .utils import join_group
-from agave.core.helpers import SocketAddress, Job, SendMsgArgs
-from agave.core.ndp import ( 
+from agave.models.ndp import ( 
 	NDP, SourceLinkLayerAddress, RouterAdvertisement, PrefixInformation
 )
-from agave.core.icmpv6 import ICMPv6, TYPE_ROUTER_SOLICITATION
-from agave.core.ip import (
+from agave.models.icmpv6 import ICMPv6, TYPE_ROUTER_SOLICITATION
+from agave.models.ip import (
 	IPv6, PROTO_ICMPv6,
 	IPV6_ALL_NODES_MULTICAST_INTERFACE_LOCAL,
 	IPV6_ALL_NODES_MULTICAST_LINK_LOCAL,
@@ -26,7 +25,8 @@ from agave.core.ip import (
 	IPV6_ALL_ROUTERS_MULTICAST_LINK_LOCAL,
 	IPV6_ALL_ROUTERS_MULTICAST_SITE_LOCAL
 )
-from agave.nic.interfaces import NetworkInterface
+from agave.utils.jobs import SocketAddress, Job, SendMsgArgs
+from agave.utils.interfaces import NetworkInterface
 from ipaddress import IPv6Address, IPv6Network
 
 

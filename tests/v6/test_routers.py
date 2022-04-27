@@ -1,11 +1,11 @@
 import unittest
 from tests.dummy import DummyInterface, DummySock
-from agave.core.ethernet import ETHER_TYPE_IPV6, Ethernet
-from agave.core.ip import (
+from agave.models.ethernet import ETHER_TYPE_IPV6, Ethernet
+from agave.models.ip import (
 	IPv6, PROTO_ICMPv6, IPV6_ALL_ROUTERS_MULTICAST_INTERFACE_LOCAL
 )
-from agave.core.icmpv6 import ICMPv6, TYPE_ROUTER_SOLICITATION
-from agave.core.ndp import RouterSolicitation, RouterAdvertisement, MTU
+from agave.models.icmpv6 import ICMPv6, TYPE_ROUTER_SOLICITATION
+from agave.models.ndp import RouterSolicitation, RouterAdvertisement, MTU
 from agave.ndp.routers import LowLevelRouterSoliciter, RouterSoliciter
 from ipaddress import IPv6Address 
 

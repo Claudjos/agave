@@ -617,6 +617,29 @@ class DataFrame(WiFiMAC):
 		mac.fcs = int.from_bytes(t[-4:], byteorder="little")
 		return mac
 
+	@classmethod
+	def build(cls, receiver: MACAddress, transmitter: MACAddress,
+		address3: MACAddress, address4: MACAddress = None, 
+		sequence_control: int = 0, data: bytes = b'', **kwargs) -> "DataFrame":
+		"""Builder method.
+
+		Args:
+			**kwargs: keyword argument for WiFiMAC.build.
+		
+		Returns:
+			An instance of this class.
+
+		"""
+		x = super().build(**kwargs)
+		x.receiver = receiver
+		x.transmitter = transmitter
+		x.address3 = address3
+		x.address4 = address4
+		x.sequence_control = sequence_control
+		x.data = Buffer.from_bytes(data, byteorder="little")
+		x.fcs = None
+		return x
+
 	def write_to_buffer(self, buf: Buffer):
 		super().write_to_buffer(buf)
 		buf.write(self.receiver.packed)
@@ -626,7 +649,8 @@ class DataFrame(WiFiMAC):
 		if self.flag_from_ds and self.flag_to_ds:
 			buf.write(self.address4.packed)
 		buf.write(bytes(self.data))
-		buf.write_int(self.fcs)
+		if self.fcs is not None:
+			buf.write_int(self.fcs)
 
 	@property
 	def destination(self):

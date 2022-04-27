@@ -1,6 +1,6 @@
 import unittest
 from agave.utils.pcapng import StreamLoader, StreamDumper
-from agave.core.pcapng import (
+from agave.models.pcapng import (
 	LINKTYPE_ETHERNET, OPTION_TYPE_COMMENT, OPTION_TYPE_IF_NAME, OPTION_TYPE_IF_IPV4ADDR, 
 	OPTION_TYPE_IF_IPV6ADDR, OPTION_TYPE_IF_MACADDR
 )

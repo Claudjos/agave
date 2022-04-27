@@ -1,8 +1,8 @@
 """Dummy class for testing. """
 from typing import Tuple, List, Iterable
-from agave.core.helpers import SocketAddress, AncillaryData
-from agave.core.buffer import Buffer
-from agave.core.ethernet import MACAddress
+from agave.utils.jobs import SocketAddress, AncillaryData
+from agave.models.buffer import Buffer
+from agave.models.ethernet import MACAddress
 from ipaddress import IPv6Address, IPv6Network, IPv4Address, IPv4Network
 
 

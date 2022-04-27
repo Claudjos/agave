@@ -13,9 +13,9 @@ Note:
 """
 from typing import Tuple, Any, List
 from sys import byteorder
-from agave.core.frame import Frame
-from agave.core.buffer import Buffer, EndOfBufferError
-from agave.core.ethernet import MACAddress
+from agave.models.frame import Frame
+from agave.models.buffer import Buffer, EndOfBufferError
+from agave.models.ethernet import MACAddress
 from ipaddress import IPv4Address, IPv6Address, IPv6Network
 
 

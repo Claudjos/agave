@@ -48,6 +48,8 @@ class Scanner(Job):
 		buf = Buffer.from_bytes(data, "little")
 		rth = RadioTapHeader.read_from_buffer(buf)
 		frame = WiFiMAC.from_buffer(buf)
+		if frame is None:
+			return None
 		if frame.type == FRAME_TYPE_MANAGEMENT_FRAME:
 			if (
 				frame.subtype == FRAME_SUB_TYPE_PROBE_RESPONSE or
@@ -133,12 +135,12 @@ class StationsMapper(Job):
 			self.set_deadline(wait)
 
 	def process(self, data: bytes, address: SocketAddress) -> Tuple[MACAddress, MACAddress]:
+		output = []
 		buf = Buffer.from_bytes(data, "little")
 		rth = RadioTapHeader.read_from_buffer(buf)
 		frame = WiFiMAC.from_buffer(buf)
-		# gets BSSID and client
-		output = []
-		addr1 = addr2 = None
+		if frame is None:
+			return None
 		if frame.type == FRAME_TYPE_DATA_FRAME:
 			if frame.flags & 0x03 == 3:
 				"""WDS. Not sure about this. I believe, in a simple case, receiver

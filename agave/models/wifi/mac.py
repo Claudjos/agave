@@ -715,9 +715,6 @@ class Null(DataFrame):
 class Data(DataFrame):
 	"""Data frame. Frames with data.
 
-	Todos:
-		* understand is ccmp is always present, not clear.
-
 	Attributes:
 		- ccmp_params (int): CCMP parameters.
 
@@ -727,12 +724,14 @@ class Data(DataFrame):
 	@classmethod
 	def read_from_buffer(cls, buf: Buffer) -> "Data":
 		mac = super().read_from_buffer(buf)
-		mac.ccmp_params = mac.data.read_long()
+		if mac.flag_protected:
+			mac.ccmp_params = mac.data.read_long()
 		return mac
 
 	def write_to_buffer(self, buf: Buffer):
 		self.data.seek(0)
-		self.data.write_long(self.ccmp_params)
+		if self.flag_protected:
+			self.data.write_long(self.ccmp_params)
 		super().write_to_buffer(buf)
 
 
@@ -766,9 +765,6 @@ class QoSNull(DataFrame):
 class QoSData(DataFrame):
 	"""QoS Data frame. Frames with data.
 
-	Todos:
-		* understand is ccmp is always present, not clear.
-
 	Attributes:
 		- qos_control (int): QoS control.
 		- ccmp_params (int): CCMP parameters.
@@ -780,13 +776,15 @@ class QoSData(DataFrame):
 	def read_from_buffer(cls, buf: Buffer) -> "QoSData":
 		mac = super().read_from_buffer(buf)
 		mac.qos_control = mac.data.read_short()
-		mac.ccmp_params = mac.data.read_long()
+		if mac.flag_protected:
+			mac.ccmp_params = mac.data.read_long()
 		return mac
 
 	def write_to_buffer(self, buf: Buffer):
 		self.data.seek(0)
 		self.data.write_short(self.qos_control)
-		self.data.write_long(self.ccmp_params)
+		if self.flag_protected:
+			self.data.write_long(self.ccmp_params)
 		super().write_to_buffer(buf)
 
 

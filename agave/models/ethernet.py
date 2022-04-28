@@ -6,6 +6,7 @@ ETHER_TYPE_ARP = 0x0806
 ETHER_TYPE_RARP = 0x8035
 ETHER_TYPE_IPV4 = 0x0800
 ETHER_TYPE_IPV6 = 0x86dd
+ETHER_TYPE_EAP = 0x888E	 	# EAP (Extensible Authentication Protocol) Over LAN, 802.1X EAPOL 
 
 
 class MACAddress:
@@ -55,6 +56,10 @@ class MACAddress:
 	def is_unicast(self) -> bool:
 		"""True for unicast addresses."""
 		return not self.is_multicast()
+
+	@property
+	def oui(self) -> bytes:
+		return self.packed[0:3]
 
 	def __str__(self):
 		return self.mac_to_str(self.packed)

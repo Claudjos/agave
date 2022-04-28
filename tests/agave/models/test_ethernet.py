@@ -49,6 +49,7 @@ class TestEthernet(unittest.TestCase):
 		self.assertEqual(mac.is_local(), True)
 		self.assertEqual(mac.is_broadcast(), False)
 		mac = MACAddress("00:0c:f6:be:4d:04")
+		self.assertEqual(mac.oui, b'\x00\x0c\xf6')
 		self.assertEqual(mac.is_ipv4_multicast(), False)
 		self.assertEqual(mac.is_ipv6_multicast(), False)
 		self.assertEqual(mac.is_multicast(), False)

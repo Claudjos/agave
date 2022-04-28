@@ -43,7 +43,7 @@ class MACAddress:
 	def is_local(self) -> bool:
 		"""True for LAA Locally Administered Addresses. Checks the U/L bit
 		(Universal/Local)."""
-		return self.packed[0] & 0x02 > 0
+		return self.packed[0] & 0x02 == 0x02
 
 	def is_universal(self) -> bool:
 		"""True for UAA Universally Administered Addresses."""
@@ -51,7 +51,7 @@ class MACAddress:
 
 	def is_multicast(self) -> bool:
 		"""True for multicast addresses. Checks the I/G bit (Individual/Group)."""
-		return self.packed[0] & 0x01 > 0
+		return self.packed[0] & 0x01 == 0x01
 
 	def is_unicast(self) -> bool:
 		"""True for unicast addresses."""

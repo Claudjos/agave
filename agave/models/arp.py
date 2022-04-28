@@ -174,3 +174,14 @@ class ARP(Frame):
 		eth_frame.write_to_buffer(buf)
 		arp_frame.write_to_buffer(buf)
 		return bytes(buf)
+
+	@classmethod
+	def probe(cls, sender_mac: MACAddress, target_ipv4: IPv4Address) -> "ARP":
+		"""Builds a ARP Probe. This kind of request is used to check if an IPv4
+		is in use."""
+		return cls.build(
+			OPERATION_REQUEST,
+			sender_mac.packed, b'\x00\x00\x00\x00',
+			b'\x00\x00\x00\x00\x00\x00', target_ipv4.packed
+		)
+

@@ -177,6 +177,32 @@ class IPv4(FrameWithChecksum):
 		buf.write(payload)
 		return bytes(buf)
 
+	@classmethod
+	def build_pseudo_header(
+		cls,
+		source: IPv4Address,
+		destination: IPv4Address,
+		packet_length: int,
+		next_header: int
+	) -> bytes:
+		"""Builds the pseudo header necessary to upper protocols
+		for checksum calculation.
+
+		Args:
+			source: source address.
+			destination: destination address.
+			packet_length: upper layer header and data size.
+			next_header: upper layer protocol.
+
+		"""
+		return (
+			source.packed +
+			destination.packed +
+			b'\x00' +
+			next_header.to_bytes(1, byteorder="big") +
+			packet_length.to_bytes(2, byteorder="big")
+		)
+
 
 class IPv6(Frame):
 	"""IPv6 header, RFC 8200.

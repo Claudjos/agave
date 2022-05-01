@@ -26,7 +26,7 @@ class Frame:
 
 class FrameWithChecksum(Frame):
 
-	__slots__ = ()
+	__slots__ = ("checksum")
 
 	def compute_checksum(self):
 		raise NotImplementedError()
@@ -40,6 +40,11 @@ class FrameWithChecksum(Frame):
 
 	def is_checksum_valid(self):
 		return self.compute_checksum() == 0
+
+
+def compute_checksum_from_bytes(data: bytes) -> int:
+	return compute_checksum_from_buffer(
+		Buffer.from_bytes(data), int(len(data) / 2))
 
 
 def compute_checksum_from_buffer(buf: Buffer, words: int) -> int:

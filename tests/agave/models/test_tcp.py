@@ -4,7 +4,7 @@ from agave.models.ip import IPv4, PROTO_TCP
 from ipaddress import IPv4Address
 
 
-class TestTCO(unittest.TestCase):
+class TestTCP(unittest.TestCase):
 
 	syn_packet = (
 		b'\xda\xee\x13\x88\x65\x82\x7a\x41\x00\x00\x00\x00\xa0\x02\xff\xd7'

@@ -1,8 +1,8 @@
-from .frame import Frame, compute_checksum_from_bytes, bit_property
+from .frame import FrameWithChecksum, bit_property
 from .buffer import Buffer
 
 
-class TCP(Frame):
+class TCP(FrameWithChecksum):
 	"""TCP Header.
 	
 	Attributes:
@@ -69,11 +69,4 @@ class TCP(Frame):
 	rst = bit_property("_flags", 0x04, "Reset connection.")
 	syn = bit_property("_flags", 0x02, "Synchronize sequence numbers.")
 	fin = bit_property("_flags", 0x01, "Finalize.")
-
-	def compute_checksum(self, pseudo_header: bytes, payload: bytes) -> int:
-		"""Computes the checksum."""
-		return compute_checksum_from_bytes(pseudo_header + bytes(self) + payload)
-
-	def is_checksum_valid(self, pseudo_header: bytes, payload: bytes) -> bool:
-		return self.compute_checksum(pseudo_header, payload) == 0
 

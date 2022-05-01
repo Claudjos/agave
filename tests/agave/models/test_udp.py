@@ -30,8 +30,5 @@ class TestUDP(unittest.TestCase):
 			PROTO_UDP,
 			len(self.upd_packet)
 		)
-		self.assertEqual(packet.checksum, 0x93b0)
-		self.assertEqual(
-			packet.compute_checksum(pseudo_header, payload),
-			packet.checksum
-		)
+		self.assertTrue(packet.is_checksum_valid(pseudo_header, payload))
+

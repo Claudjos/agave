@@ -1,5 +1,5 @@
 """ICMPv4 protocol."""
-from .frame import FrameWithChecksum, Frame
+from .frame import _FrameWithChecksum, Frame
 from .buffer import Buffer
 from .ethernet import Ethernet
 from .ip import IPv4
@@ -22,7 +22,7 @@ REDIRECT_CODE_SERVICE_AND_NETWORK = 2
 REDIRECT_CODE_SERVICE_AND_HOST = 3
 
 
-class ICMPv4(FrameWithChecksum):
+class ICMPv4(_FrameWithChecksum):
 	"""ICMPv4 message, RFC 792.
 
 	Attributes:

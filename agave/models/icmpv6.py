@@ -1,5 +1,5 @@
 """ICMPv6 protocol."""
-from .frame import FrameWithChecksum
+from .frame import _FrameWithChecksum
 from .buffer import Buffer
 
 from .frame import Frame
@@ -20,7 +20,7 @@ TYPE_NEIGHBOR_ADVERTISEMENT = 136
 TYPE_REDIRECT_MESSAGE = 137
 
 
-class ICMPv6(FrameWithChecksum):
+class ICMPv6(_FrameWithChecksum):
 	"""ICMPv6 message, RFC 4443.
 
 	Attributes:

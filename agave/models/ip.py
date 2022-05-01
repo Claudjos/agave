@@ -1,5 +1,5 @@
 """IP protocol."""
-from .frame import Frame, FrameWithChecksum
+from .frame import Frame, _FrameWithChecksum
 from .buffer import Buffer
 from ipaddress import ip_address, IPv4Address, IPv6Address
 
@@ -29,7 +29,7 @@ IPV6_ALL_ROUTERS_MULTICAST_LINK_LOCAL = "FF02:0:0:0:0:0:0:2"
 IPV6_ALL_ROUTERS_MULTICAST_SITE_LOCAL = "FF05:0:0:0:0:0:0:2"
 
 
-class IPv4(FrameWithChecksum):
+class IPv4(_FrameWithChecksum):
 	"""IPv4 header.
 
 	Attributes:

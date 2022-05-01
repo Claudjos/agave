@@ -1,8 +1,8 @@
-from .frame import Frame, compute_checksum_from_bytes
+from .frame import FrameWithChecksum
 from .buffer import Buffer
 
 
-class UDP(Frame):
+class UDP(FrameWithChecksum):
 	"""UDP Header.
 	
 	Attributes:
@@ -28,12 +28,4 @@ class UDP(Frame):
 		buf.write_short(self.destination)
 		buf.write_short(self.length)
 		buf.write_short(self.checksum)
-
-	def compute_checksum(self, pseudo_header: bytes, payload: bytes) -> int:
-		"""Computes the UDP checksum."""
-		t = self.checksum
-		self.checksum = 0
-		c = compute_checksum_from_bytes(pseudo_header + bytes(self) + payload)
-		self.checksum = t
-		return c
 

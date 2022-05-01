@@ -24,8 +24,8 @@ class Frame:
 		return bytes(buf)
 
 
-class FrameWithChecksum(Frame):
-
+class _FrameWithChecksum(Frame):
+	"""Legacy version."""
 	__slots__ = ("checksum")
 
 	def compute_checksum(self):
@@ -40,6 +40,21 @@ class FrameWithChecksum(Frame):
 
 	def is_checksum_valid(self):
 		return self.compute_checksum() == 0
+
+
+class FrameWithChecksum(Frame):
+
+	__slots__ = ("checksum")
+
+	def _compute_checksum(self, pseudo_header: bytes, payload: bytes) -> int:
+		return compute_checksum_from_bytes(pseudo_header + bytes(self) + payload)
+
+	def is_checksum_valid(self, pseudo_header: bytes, payload: bytes) -> bool:
+		return self._compute_checksum(pseudo_header, payload) == 0
+
+	def set_checksum(self, pseudo_header: bytes, payload: bytes):
+		self.checksum = 0
+		self.checksum = self._compute_checksum()
 
 
 def compute_checksum_from_bytes(data: bytes) -> int:

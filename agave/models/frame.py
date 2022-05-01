@@ -67,3 +67,29 @@ def compute_checksum_from_buffer(buf: Buffer, words: int) -> int:
 		csum = csum & 0x00ffff
 		csum += carry
 	return 0xffff - csum
+
+
+def bit_getter(field: int, bitmask: int) -> int:
+	def t(self) -> bool:
+		return getattr(self, field) & bitmask == bitmask
+	return t
+
+
+def bit_setter(field: int, bitmask: int):
+	def t(self, x: bool):
+		data = getattr(self, field)
+		data &= ~bitmask
+		if x:
+			data |= bitmask
+		setattr(self, field, data)
+	return t
+
+
+def bit_property(field: str, bitmask: int, docstring: str):
+	return property(
+		bit_getter(field, bitmask),
+		bit_setter(field, bitmask),
+		None,
+		docstring
+	)
+

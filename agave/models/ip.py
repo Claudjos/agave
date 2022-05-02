@@ -1,5 +1,5 @@
 """IP protocol."""
-from .frame import Frame, FrameWithChecksum
+from .frame import Frame, _FrameWithChecksum
 from .buffer import Buffer
 from ipaddress import ip_address, IPv4Address, IPv6Address
 
@@ -29,7 +29,7 @@ IPV6_ALL_ROUTERS_MULTICAST_LINK_LOCAL = "FF02:0:0:0:0:0:0:2"
 IPV6_ALL_ROUTERS_MULTICAST_SITE_LOCAL = "FF05:0:0:0:0:0:0:2"
 
 
-class IPv4(FrameWithChecksum):
+class IPv4(_FrameWithChecksum):
 	"""IPv4 header.
 
 	Attributes:
@@ -176,6 +176,32 @@ class IPv4(FrameWithChecksum):
 		ip_frame.write_to_buffer(buf)
 		buf.write(payload)
 		return bytes(buf)
+
+	@classmethod
+	def build_pseudo_header(
+		cls,
+		source: IPv4Address,
+		destination: IPv4Address,
+		packet_length: int,
+		next_header: int
+	) -> bytes:
+		"""Builds the pseudo header necessary to upper protocols
+		for checksum calculation.
+
+		Args:
+			source: source address.
+			destination: destination address.
+			packet_length: upper layer header and data size.
+			next_header: upper layer protocol.
+
+		"""
+		return (
+			source.packed +
+			destination.packed +
+			b'\x00' +
+			next_header.to_bytes(1, byteorder="big") +
+			packet_length.to_bytes(2, byteorder="big")
+		)
 
 
 class IPv6(Frame):

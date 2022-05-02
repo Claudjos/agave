@@ -24,9 +24,9 @@ class Frame:
 		return bytes(buf)
 
 
-class FrameWithChecksum(Frame):
-
-	__slots__ = ()
+class _FrameWithChecksum(Frame):
+	"""Legacy version."""
+	__slots__ = ("checksum")
 
 	def compute_checksum(self):
 		raise NotImplementedError()
@@ -40,6 +40,26 @@ class FrameWithChecksum(Frame):
 
 	def is_checksum_valid(self):
 		return self.compute_checksum() == 0
+
+
+class FrameWithChecksum(Frame):
+
+	__slots__ = ("checksum")
+
+	def _compute_checksum(self, pseudo_header: bytes, payload: bytes) -> int:
+		return compute_checksum_from_bytes(pseudo_header + bytes(self) + payload)
+
+	def is_checksum_valid(self, pseudo_header: bytes, payload: bytes) -> bool:
+		return self._compute_checksum(pseudo_header, payload) == 0
+
+	def set_checksum(self, pseudo_header: bytes, payload: bytes):
+		self.checksum = 0
+		self.checksum = self._compute_checksum()
+
+
+def compute_checksum_from_bytes(data: bytes) -> int:
+	return compute_checksum_from_buffer(
+		Buffer.from_bytes(data), int(len(data) / 2))
 
 
 def compute_checksum_from_buffer(buf: Buffer, words: int) -> int:
@@ -62,3 +82,29 @@ def compute_checksum_from_buffer(buf: Buffer, words: int) -> int:
 		csum = csum & 0x00ffff
 		csum += carry
 	return 0xffff - csum
+
+
+def bit_getter(field: int, bitmask: int) -> int:
+	def t(self) -> bool:
+		return getattr(self, field) & bitmask == bitmask
+	return t
+
+
+def bit_setter(field: int, bitmask: int):
+	def t(self, x: bool):
+		data = getattr(self, field)
+		data &= ~bitmask
+		if x:
+			data |= bitmask
+		setattr(self, field, data)
+	return t
+
+
+def bit_property(field: str, bitmask: int, docstring: str):
+	return property(
+		bit_getter(field, bitmask),
+		bit_setter(field, bitmask),
+		None,
+		docstring
+	)
+

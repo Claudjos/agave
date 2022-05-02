@@ -1,8 +1,14 @@
 """IP protocol."""
 from .frame import Frame, _FrameWithChecksum
 from .buffer import Buffer
-from ipaddress import ip_address, IPv4Address, IPv6Address
+from typing import Union
+from ipaddress import (
+	ip_address, IPv4Address, IPv6Address, IPv4Network, IPv6Network
+)
 
+
+IP_ADDRESS = Union[IPv4Address, IPv6Address]
+IP_NETWORK = Union[IPv4Network, IPv6Network]
 
 PROTO_ICMP = 0x01
 PROTO_TCP = 0x06
@@ -22,6 +28,9 @@ IPv6_EXTENSION = [
 	PROTO_IPv6_OPTS
 ]
 
+IPV4_ALL_NODES_MULTICAST = "224.0.0.1"
+IPV4_ALL_ROUTERS_MULTICAST = "224.0.0.2"
+
 IPV6_ALL_NODES_MULTICAST_INTERFACE_LOCAL = "FF01:0:0:0:0:0:0:1"
 IPV6_ALL_NODES_MULTICAST_LINK_LOCAL = "FF02:0:0:0:0:0:0:1"
 IPV6_ALL_ROUTERS_MULTICAST_INTERFACE_LOCAL = "FF01:0:0:0:0:0:0:2"
@@ -29,7 +38,44 @@ IPV6_ALL_ROUTERS_MULTICAST_LINK_LOCAL = "FF02:0:0:0:0:0:0:2"
 IPV6_ALL_ROUTERS_MULTICAST_SITE_LOCAL = "FF05:0:0:0:0:0:0:2"
 
 
-class IPv4(_FrameWithChecksum):
+class IPHeader:
+	"""Common properties for IP headers.
+
+	Attributes:
+		source (IP_ADDRESS): source address.
+		destination (IP_ADDRESS): destination address.
+
+	"""
+	def get_upper_layer_protocol(self) -> int:
+		"""Returns payload protocol."""
+		raise NotImplementedError()
+
+	def get_upper_layer_length(self) -> int:
+		"""Returns payload length."""
+		raise NotImplementedError()
+
+	def get_pseudo_header(self) -> bytes:
+		"""Returns a pseudo header for checksum computation of transport
+		layer protocols."""
+		return self.build_pseudo_header(self.source, self.destination,
+			self.get_upper_layer_protocol(), self.get_upper_layer_length())
+
+	@classmethod
+	def build_pseudo_header(cls, source: IP_ADDRESS, destination: IP_ADDRESS,
+		protocol: int, payload_length: int) -> bytes:
+		"""Returns a pseudo header for checksum computation of transport
+		layer protocols."""
+		raise NotImplementedError()
+
+	def __str__(self):
+		return "({}) {} -> {}".format(
+			self.get_upper_layer_protocol(),
+			self.source,
+			self.destination
+		)
+
+
+class IPv4(IPHeader, _FrameWithChecksum):
 	"""IPv4 header.
 
 	Attributes:
@@ -51,14 +97,14 @@ class IPv4(_FrameWithChecksum):
 	"""
 	__slots__ = (
 		"version", "ihl", "dscp", "ecn", "total_length", "identification",
-		"flags", "fragment_offset", "ttl", "protocol", "checksum", "source",
-		"destination", "options"
+		"flags", "fragment_offset", "ttl", "protocol", "source", "destination",
+		"options"
 	)
 
 	def __init__(self, ihl: int, dscp: int, ecn: int, total_length: int,
 		identification: int, flags: int, fragment_offset: int, ttl: int,
-		protocol: int, checksum: int, source: bytes, destination: bytes,
-		options: bytes
+		protocol: int, checksum: int, source: IPv4Address, 
+		destination: IPv4Address, options: bytes
 	):
 		self.version: int = 4
 		self.ihl: int = ihl
@@ -71,8 +117,8 @@ class IPv4(_FrameWithChecksum):
 		self.ttl: int = ttl
 		self.protocol: int = protocol
 		self.checksum: int = checksum
-		self.source: bytes = source
-		self.destination: bytes = destination
+		self.source: IPv4Address = source
+		self.destination: IPv4Address = destination
 		self.options: bytes = options
 
 	@classmethod
@@ -100,8 +146,8 @@ class IPv4(_FrameWithChecksum):
 		ttl = buf.read_byte()
 		protocol = buf.read_byte()
 		checksum = buf.read_short()
-		source = buf.read(4)
-		destination = buf.read(4)
+		source = IPv4Address(buf.read(4))
+		destination = IPv4Address(buf.read(4))
 		options = buf.read(ihl * 4 - 20)
 		return cls(ihl, dscp, ecn, total_length, identification, flags,
 			fragment_offset, ttl, protocol, checksum, source, destination, options)
@@ -121,8 +167,8 @@ class IPv4(_FrameWithChecksum):
 		buf.write_byte(self.ttl)
 		buf.write_byte(self.protocol)
 		buf.write_short(self.checksum)
-		buf.write(self.source)
-		buf.write(self.destination)
+		buf.write(self.source.packed)
+		buf.write(self.destination.packed)
 		buf.write(self.options)
 
 	def compute_checksum(self) -> int:
@@ -139,13 +185,6 @@ class IPv4(_FrameWithChecksum):
 		# Computes the checksum
 		words = self.ihl * 2
 		return self.compute_checksum_from_buffer(buf, words)
-
-	def __str__(self):
-		return "({}) {} -> {}".format(
-			self.protocol,
-			str(ip_address(self.source)),
-			str(ip_address(self.destination))
-		)
 
 	@classmethod
 	def create_message(
@@ -168,8 +207,8 @@ class IPv4(_FrameWithChecksum):
 			ttl=ttl,
 			protocol=proto,
 			checksum=0,
-			source=source.packed,
-			destination=destination.packed,
+			source=source,
+			destination=destination,
 			options=b''
 		)
 		ip_frame.set_checksum()
@@ -203,8 +242,18 @@ class IPv4(_FrameWithChecksum):
 			packet_length.to_bytes(2, byteorder="big")
 		)
 
+	def get_upper_layer_protocol(self) -> int:
+		return self.protocol
 
-class IPv6(Frame):
+	def get_upper_layer_length(self) -> int:
+		return self.total_length - self.ihl * 4
+
+	@property
+	def hop_limit(self):
+		return self.ttl
+
+
+class IPv6(IPHeader, Frame):
 	"""IPv6 header, RFC 8200.
 
 	Attributes:
@@ -295,32 +344,13 @@ class IPv6(Frame):
 		buf.write(self.destination.packed)
 		buf.write(self.extensions)
 
-	def __str__(self):
-		return "({}) {} -> {}".format(
-			self.next_header,
-			self.source,
-			self.destination
-		)
+	def get_upper_layer_protocol(self) -> int:
+		"""Breaks with extensions."""
+		return self.next_header
 
-	def get_pseudo_header(self) -> bytes:
-		"""Builds the pseudo header for this IPv6 message.
-
-		Returns:
-			The pseudo header.
-
-		Todo:
-			* replace next_header with upper layer protocol, or
-				this will break with extensions.
-			* replace payload_length with upper protocol packet
-				size, or this will break with extensions.
-
-		"""
-		return self.build_pseudo_header(
-			self.source,
-			self.destination,
-			self.payload_length,
-			self.next_header
-		)
+	def get_upper_layer_length(self) -> int:
+		"""Breaks with extensions."""
+		return self.payload_length
 
 	@classmethod
 	def build_pseudo_header(
@@ -347,3 +377,24 @@ class IPv6(Frame):
 			b'\x00\x00\x00' +
 			next_header.to_bytes(1, byteorder="big")
 		)
+
+
+def read_from_buffer(buf: Buffer) -> IPHeader:
+	"""Reads an IP header from buffer.
+
+	Returns:
+		The IP header.
+
+	Raises:
+		ValueError, if the buffer doesn't contain an IP header version
+			4 or 6.
+	"""
+	buf.mark()
+	version = buf.read_byte() >> 4 & 0x0f
+	buf.restore()
+	if version == 4:
+		return IPv4.read_from_buffer(buf)
+	if version == 6:
+		return IPv6.read_from_buffer(buf)
+	raise ValueError(f"Buffer contained unsupported protocol header version {version}")
+

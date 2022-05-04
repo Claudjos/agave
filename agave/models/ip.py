@@ -1,5 +1,5 @@
 """IP protocol."""
-from .frame import Frame, _FrameWithChecksum
+from .frame import Frame, FrameWithChecksum
 from .buffer import Buffer
 from typing import Union
 from ipaddress import (
@@ -75,7 +75,7 @@ class IPHeader:
 		)
 
 
-class IPv4(IPHeader, _FrameWithChecksum):
+class IPv4(IPHeader, FrameWithChecksum):
 	"""IPv4 header.
 
 	Attributes:
@@ -170,21 +170,6 @@ class IPv4(IPHeader, _FrameWithChecksum):
 		buf.write(self.source.packed)
 		buf.write(self.destination.packed)
 		buf.write(self.options)
-
-	def compute_checksum(self) -> int:
-		"""Compute the checksum for this message.
-
-		Returns:
-			The checksum for this message.
-
-		"""
-		# Writes header to buffer
-		buf = Buffer.from_bytes()
-		self.write_to_buffer(buf)
-		buf.rewind()
-		# Computes the checksum
-		words = self.ihl * 2
-		return self.compute_checksum_from_buffer(buf, words)
 
 	@classmethod
 	def create_message(

@@ -4,7 +4,8 @@ from .icmpv4 import (
 	TYPE_ROUTER_SOLICITATION_MESSAGE
 )
 from ..buffer import Buffer
-from typing import List
+from typing import List, Iterable, Tuple
+from ipaddress import IPv4Address
 
 
 ROUTER_ADVERTISMENT_MULTICAST_ADDRESS = "224.0.0.1"		# all hosts
@@ -39,6 +40,14 @@ class IRDP(ICMPv4):
 	@life_time.setter
 	def life_time(self,a):
 		self.rest_of_the_header = ( self.rest_of_the_header & 0xffff0000 ) | ( a & 0x0000ffff )
+
+	def get_addresses(self) -> Iterable[Tuple[int, IPv4Address]]:
+		for offset in range(0, len(self.data), 8):
+			yield (
+				IPv4Address(self.data[offset:offset+4]),
+				int.from_bytes(self.data[offset+4:offset+8], byteorder="big")
+			)
+		return
 
 	@classmethod
 	def advertise(cls, addresses: List[bytes], prefereces: List[int],

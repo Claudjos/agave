@@ -4,8 +4,8 @@ from agave.models.ethernet import ETHER_TYPE_IPV6, Ethernet
 from agave.models.ip import (
 	IPv6, PROTO_ICMPv6, IPV6_ALL_ROUTERS_MULTICAST_INTERFACE_LOCAL
 )
-from agave.models.icmpv6 import ICMPv6, TYPE_ROUTER_SOLICITATION
-from agave.models.ndp import RouterSolicitation, RouterAdvertisement, MTU
+from agave.models.icmp.icmpv6 import ICMPv6, TYPE_ROUTER_SOLICITATION
+from agave.models.icmp.ndp import RouterSolicitation, RouterAdvertisement, MTU
 from agv.v6.ndp.routers import LowLevelRouterSoliciter, RouterSoliciter
 from ipaddress import IPv6Address 
 

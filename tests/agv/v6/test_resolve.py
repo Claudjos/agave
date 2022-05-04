@@ -1,8 +1,8 @@
 import unittest
 from tests.dummy import DummyInterface, DummySock
 from agave.models.ethernet import MACAddress
-from agave.models.icmpv6 import ICMPv6
-from agave.models.ndp import NeighborSolicitation, NeighborAdvertisement, TargetLinkLayerAddress
+from agave.models.icmp.icmpv6 import ICMPv6
+from agave.models.icmp.ndp import NeighborSolicitation, NeighborAdvertisement, TargetLinkLayerAddress
 from agv.v6.ndp.resolve import NeighborSoliciter
 from ipaddress import IPv6Address, IPv6Network
 

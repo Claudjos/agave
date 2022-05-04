@@ -14,12 +14,12 @@ from agv.v4.arp.utils import Host
 from agv.v4.arp.resolve import MACAddressNotFoundError
 from agave.models.ethernet import MACAddress
 from agave.utils.jobs import SocketAddress, Job, SendMsgArgs
-from agave.models.ndp import (
+from agave.models.icmp.ndp import (
 	SourceLinkLayerAddress, NeighborSolicitation,
 	TargetLinkLayerAddress, NeighborAdvertisement,
 	NDP_OPTION_TYPE_TARGET_LINK_LAYER_ADDRESS
 )
-from agave.models.icmpv6 import ICMPv6, TYPE_NEIGHBOR_ADVERTISEMENT
+from agave.models.icmp.icmpv6 import ICMPv6, TYPE_NEIGHBOR_ADVERTISEMENT
 from agave.utils.interfaces import NetworkInterface
 from .utils import NDPLinkLayerJob, handle_link_layer, create_ndp_socket
 from ipaddress import IPv6Address, IPv6Network

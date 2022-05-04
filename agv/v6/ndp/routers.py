@@ -11,7 +11,7 @@ Usage:
 import socket, array
 from typing import Union, Iterator, Tuple
 from agv.v4.arp.utils import Host
-from agave.models.ndp import (
+from agave.models.icmp.ndp import (
 	SourceLinkLayerAddress, RouterSolicitation,
 	TargetLinkLayerAddress, RouterAdvertisement,
 	NDP_OPTION_TYPE_TARGET_LINK_LAYER_ADDRESS
@@ -23,7 +23,7 @@ from agave.models.ip import (
 	IPV6_ALL_NODES_MULTICAST_INTERFACE_LOCAL,
 	IPV6_ALL_NODES_MULTICAST_LINK_LOCAL
 )
-from agave.models.icmpv6 import ICMPv6, TYPE_ROUTER_ADVERTISEMENT
+from agave.models.icmp.icmpv6 import ICMPv6, TYPE_ROUTER_ADVERTISEMENT
 from agave.utils.interfaces import NetworkInterface
 from agave.utils.jobs import SocketAddress, Job, SendMsgArgs
 from .utils import NDPLinkLayerJob, handle_link_layer, create_ndp_socket, join_group

@@ -13,10 +13,10 @@ Example:
 import socket, array
 from typing import Union, Iterator, Iterable, Tuple
 from .utils import join_group
-from agave.models.ndp import ( 
+from agave.models.icmp.ndp import ( 
 	NDP, SourceLinkLayerAddress, RouterAdvertisement, PrefixInformation
 )
-from agave.models.icmpv6 import ICMPv6, TYPE_ROUTER_SOLICITATION
+from agave.models.icmp.icmpv6 import ICMPv6, TYPE_ROUTER_SOLICITATION
 from agave.models.ip import (
 	IPv6, PROTO_ICMPv6,
 	IPV6_ALL_NODES_MULTICAST_INTERFACE_LOCAL,

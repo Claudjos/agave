@@ -74,8 +74,7 @@ def generate_packets(self, _generate_packets: Callable) -> Iterator[SendMsgArgs]
 		ip = IPv6(0, 0, len(data), PROTO_ICMPv6, 255,
 			self.interface.ipv6, dest_ip)
 		# Calculates checksum for ICMPv6
-		icmp.set_pseudo_header(ip.get_pseudo_header())
-		icmp.set_checksum()
+		icmp.set_checksum(pseudo_header=ip.get_pseudo_header())
 		# Creates EthernetII header
 		dest_mac = NDP.map_multicast_over_ethernet(dest_ip).packed
 		dest_mac = b'\xff\xff\xff\xff\xff\xff'	# see module comments

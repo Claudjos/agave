@@ -13,7 +13,8 @@ Example:
 
 """
 import socket, time, sys
-from agave.models import ip, icmpv4
+from agave.models import ip
+from agave.models.icmp import icmpv4
 from agave.models.buffer import Buffer
 from ipaddress import IPv4Address
 

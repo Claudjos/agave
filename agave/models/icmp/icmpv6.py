@@ -1,10 +1,10 @@
 """ICMPv6 protocol."""
-from .frame import _FrameWithChecksum
-from .buffer import Buffer
+from ..frame import FrameWithChecksum
+from ..buffer import Buffer
 
-from .frame import Frame
-from .ethernet import Ethernet
-from .ip import IPv6
+from ..frame import Frame
+from ..ethernet import Ethernet
+from ..ip import IPv6
 from typing import List
 
 
@@ -20,7 +20,7 @@ TYPE_NEIGHBOR_ADVERTISEMENT = 136
 TYPE_REDIRECT_MESSAGE = 137
 
 
-class ICMPv6(_FrameWithChecksum):
+class ICMPv6(FrameWithChecksum):
 	"""ICMPv6 message, RFC 4443.
 
 	Attributes:
@@ -76,37 +76,6 @@ class ICMPv6(_FrameWithChecksum):
 		buf.write_byte(self.code)
 		buf.write_short(self.checksum)
 		buf.write(self.body)
-
-	def set_pseudo_header(self, header: bytes):
-		"""Sets the pseudo header to use when
-		calculating checksum.
-		
-		Args:
-			header: the pseudo header.
-
-		"""
-		self._pseudo_header = header
-
-	def compute_checksum(self) -> int:
-		"""Compute the checksum for this message.
-
-		Returns:
-			The checksum for this message.
-
-		"""
-		# Writes header to buffer
-		buf = Buffer.from_bytes()
-		buf.write(self._pseudo_header)
-		self.write_to_buffer(buf)
-		words = 2 + int(len(self.body) / 2) + int(len(self._pseudo_header) / 2)
-		# Pads (?)
-		if len(self.body) % 2 == 1:
-			buf.write_byte(0)
-			words +=1
-		buf.rewind()
-		# Compute
-		t = self.compute_checksum_from_buffer(buf, words)
-		return t
 
 	@classmethod
 	def parse(cls, data: bytes, network: bool = False, link: bool = False) -> List[Frame]:

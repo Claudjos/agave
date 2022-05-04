@@ -14,24 +14,24 @@ from agv.v4.arp.utils import Host
 from agv.v4.arp.resolve import MACAddressNotFoundError
 from agave.models.ethernet import MACAddress
 from agave.utils.jobs import SocketAddress, Job, SendMsgArgs
-from agave.models.ndp import (
+from agave.models.icmp.ndp import (
 	SourceLinkLayerAddress, NeighborSolicitation,
 	TargetLinkLayerAddress, NeighborAdvertisement,
 	NDP_OPTION_TYPE_TARGET_LINK_LAYER_ADDRESS
 )
-from agave.models.icmpv6 import ICMPv6, TYPE_NEIGHBOR_ADVERTISEMENT
+from agave.models.icmp.icmpv6 import ICMPv6, TYPE_NEIGHBOR_ADVERTISEMENT
 from agave.utils.interfaces import NetworkInterface
-from .utils import NDPLinkLayerJob, handle_link_layer, create_ndp_socket
+from .utils import create_ndp_socket
 from ipaddress import IPv6Address, IPv6Network
 
 
-class NeighborSoliciter(NDPLinkLayerJob):
+class NeighborSoliciter(Job):
 
 	__slots__ = ("_cache", "_count", "interface", "repeat", "subnet", "_request_to_send")
 
-	def __init__(self, sock: "socket", interface: NetworkInterface, subnet: IPv6Network, repeat: int, **args):
-		super().__init__(sock, interface, **args)
-		#self.interface: NetworkInterface = interface
+	def __init__(self, sock: "socket", interface: NetworkInterface, subnet: IPv6Network, repeat: int, **kwargs):
+		super().__init__(sock, **kwargs)
+		self.interface: NetworkInterface = interface
 		self.subnet: IPv6Network = subnet
 		self.repeat: int = repeat
 		self._cache: set = set()
@@ -75,9 +75,6 @@ class NeighborSoliciter(NDPLinkLayerJob):
 						(str(NeighborSolicitation.compute_solicited_node_multicast_address(host)), 0)
 					)
 		return
-
-
-LowLevelNeighborSoliciter = handle_link_layer(NeighborSoliciter)
 
 
 def resolve_mac(
@@ -141,12 +138,7 @@ def resolve(
 		interface = NetworkInterface.get_by_host(subnet.network_address)
 	if sock is None:
 		sock = create_ndp_socket()
-	if sock.family == socket.AF_INET6:
-		return NeighborSoliciter(sock, interface, subnet, repeat, wait=wait, interval=interval).stream()
-	if sock.family == socket.AF_PACKET:
-		return LowLevelNeighborSoliciter(sock, interface, subnet, repeat, wait=wait, interval=interval).stream()
-	else:
-		raise ValueError("Socket family must be either AF_INET6 or AF_PACKET.")
+	return NeighborSoliciter(sock, interface, subnet, repeat, wait=wait, interval=interval).stream()
 
 
 if __name__ == "__main__":

@@ -28,32 +28,38 @@ class Buffer:
 			else:
 				return t
 
+	def read_number(self, length: int) -> int:
+		return int.from_bytes(self.read(length), byteorder=self._byteorder)
+
 	def read_byte(self) -> int:
-		return int.from_bytes(self.read(1), byteorder=self._byteorder)
+		return self.read_number(1)
 
 	def read_short(self) -> int:
-		return int.from_bytes(self.read(2), byteorder=self._byteorder)
+		return self.read_number(2)
 
 	def read_int(self) -> int:
-		return int.from_bytes(self.read(4), byteorder=self._byteorder)
+		return self.read_number(4)
 
 	def read_long(self) -> int:
-		return int.from_bytes(self.read(8), byteorder=self._byteorder)
+		return self.read_number(8)
 
 	def write(self, data: bytes):
 		self._buf.write(data)
 
+	def write_number(self, number: int, length: int):
+		self.write(number.to_bytes(length, byteorder=self._byteorder))
+
 	def write_byte(self, number: int):
-		return self.write(number.to_bytes(1, byteorder=self._byteorder))
+		self.write_number(number, 1)
 
 	def write_short(self, number: int):
-		return self.write(number.to_bytes(2, byteorder=self._byteorder))
+		self.write_number(number, 2)
 
 	def write_int(self, number: int):
-		return self.write(number.to_bytes(4, byteorder=self._byteorder))
+		self.write_number(number, 4)
 
 	def write_long(self, number: int):
-		return self.write(number.to_bytes(8, byteorder=self._byteorder))
+		self.write_number(number, 8)
 
 	def __bytes__(self):
 		self._buf.seek(0)

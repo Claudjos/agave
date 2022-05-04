@@ -24,24 +24,6 @@ class Frame:
 		return bytes(buf)
 
 
-class _FrameWithChecksum(Frame):
-	"""Legacy version."""
-	__slots__ = ("checksum")
-
-	def compute_checksum(self):
-		raise NotImplementedError()
-
-	def set_checksum(self):
-		self.checksum = 0
-		self.checksum = self.compute_checksum()
-
-	def compute_checksum_from_buffer(self, buf: Buffer, words: int):
-		return compute_checksum_from_buffer(buf, words)
-
-	def is_checksum_valid(self):
-		return self.compute_checksum() == 0
-
-
 class FrameWithChecksum(Frame):
 
 	__slots__ = ("checksum")
@@ -49,12 +31,12 @@ class FrameWithChecksum(Frame):
 	def _compute_checksum(self, pseudo_header: bytes, payload: bytes) -> int:
 		return compute_checksum_from_bytes(pseudo_header + bytes(self) + payload)
 
-	def is_checksum_valid(self, pseudo_header: bytes, payload: bytes) -> bool:
+	def is_checksum_valid(self, pseudo_header: bytes = b'', payload: bytes = b'') -> bool:
 		return self._compute_checksum(pseudo_header, payload) == 0
 
-	def set_checksum(self, pseudo_header: bytes, payload: bytes):
+	def set_checksum(self, pseudo_header: bytes = b'', payload: bytes = b''):
 		self.checksum = 0
-		self.checksum = self._compute_checksum()
+		self.checksum = self._compute_checksum(pseudo_header, payload)
 
 
 def compute_checksum_from_bytes(data: bytes) -> int:
@@ -104,6 +86,68 @@ def bit_property(field: str, bitmask: int, docstring: str):
 	return property(
 		bit_getter(field, bitmask),
 		bit_setter(field, bitmask),
+		None,
+		docstring
+	)
+
+
+def unumber_getter(field: str, offset: int, length: int):
+	def t(self) -> int:
+		b = getattr(self, field)
+		b.seek(offset)
+		return b.read_number(length)
+	return t
+
+
+def unumber_setter(field: str, offset: int, length: int):
+	def t(self, x: int):
+		b = getattr(self, field)
+		b.seek(offset)
+		b.write_number(x, length)
+	return t
+
+
+def unumber_property(field: str, offset: int, length: int, docstring: str = ""):
+	return property(
+		unumber_getter(field, offset, length),
+		unumber_setter(field, offset, length),
+		None,
+		docstring
+	)
+
+
+def ubyte_property(field: str, offset: int, docstring: str):
+	return unumber_property(field, offset, 1, docstring)
+
+
+def ushort_property(field: str, offset: int, docstring: str):
+	return unumber_property(field, offset, 2, docstring)
+
+
+def uint_property(field: str, offset: int, docstring: str):
+	return unumber_property(field, offset, 4, docstring)
+
+
+def bytes_getter(field: str, offset: int, length: int):
+	def t(self) -> bytes:
+		b = getattr(self, field)
+		b.seek(offset)
+		return b.read(length)
+	return t
+
+
+def bytes_setter(field: str, offset: int):
+	def t(self, x: bytes):
+		b = getattr(self, field)
+		b.seek(offset)
+		b.write(x)
+	return t
+
+
+def bytes_property(field: str, offset: int, length: int, docstring: str = ""):
+	return property(
+		bytes_getter(field, offset, length),
+		bytes_setter(field, offset),
 		None,
 		docstring
 	)

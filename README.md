@@ -126,9 +126,9 @@ python3 -m agv.v4.irdp.solicit
 ```
 Advertising a list of routers.
 ```
-python3 -m agv.v4.irdp.advertise <preference> <router> [...[<preference> <router>]]
-python3 -m agv.v4.irdp.advertise 100 192.168.1.10
-python3 -m agv.v4.irdp.advertise 100 192.168.1.10 50 192.168.1.20
+python3 -m agv.v4.irdp.advertise <router> <preference> ...
+python3 -m agv.v4.irdp.advertise 192.168.1.10 100
+python3 -m agv.v4.irdp.advertise 192.168.1.10 100 192.168.1.20 50
 ```
 
 ### ICMPv6

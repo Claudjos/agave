@@ -1,11 +1,12 @@
 """Neighbor Discovery for IP version 6 (IPv6), RFC 4861."""
 from typing import Tuple, List
-from .ethernet import MACAddress
+from ..frame import bit_property, bytes_property, ubyte_property, uint_property
+from ..buffer import Buffer
+from ..ethernet import MACAddress
 from .icmpv6 import (
 	ICMPv6, TYPE_NEIGHBOR_ADVERTISEMENT, TYPE_NEIGHBOR_SOLICITATION,
 	TYPE_ROUTER_ADVERTISEMENT, TYPE_ROUTER_SOLICITATION
 )
-from .buffer import Buffer
 from ipaddress import IPv6Address, IPv6Network
 
 
@@ -85,81 +86,14 @@ class PrefixInformation(Option):
 		if isinstance(self.body, bytes):
 			self.body = Buffer.from_bytes(self.body)
 
-	@property
-	def prefix_length(self) -> int:
-		self.body.seek(0)
-		return self.body.read_byte()
-
-	@property
-	def l_flag(self) -> bool:
-		self.body.seek(1)
-		return int(self.body.read_byte()) & 0x80 > 0
-
-	@property
-	def a_flag(self) -> bool:
-		self.body.seek(1)
-		return int(self.body.read_byte()) & 0x40 > 0
-
-	@property
-	def valid_lifetime(self) -> int:
-		self.body.seek(2)
-		return self.body.read_int()
-
-	@property
-	def preferred_lifetime(self) -> int:
-		self.body.seek(6)
-		return self.body.read_int()
-
-	@property
-	def reserved_2(self) -> int:
-		self.body.seek(10)
-		return self.body.read_int()
-
-	@property
-	def prefix(self) -> bytes:
-		self.body.seek(14)
-		return self.body.read(16)
-
-	@prefix_length.setter
-	def prefix_length(self, x: int):
-		self.body.seek(0)
-		self.body.write_byte(x)
-
-	@l_flag.setter
-	def l_flag(self, x: bool):
-		self.body.seek(1)
-		t = int(self.body.read_byte())
-		t |= 0x80 if x else 0
-		self.body.seek(1)
-		self.body.write_byte(t)
-
-	@a_flag.setter
-	def a_flag(self, x: bool):
-		self.body.seek(1)
-		t = int(self.body.read_byte())
-		t |= 0x40 if x else 0
-		self.body.seek(1)
-		self.body.write_byte(t)
-
-	@valid_lifetime.setter
-	def valid_lifetime(self, x: int):
-		self.body.seek(2)
-		self.body.write_int(x)
-
-	@preferred_lifetime.setter
-	def preferred_lifetime(self, x: int):
-		self.body.seek(6)
-		self.body.write_int(x)
-
-	@reserved_2.setter
-	def reserved_2(self, x: int):
-		self.body.seek(10)
-		self.body.write_int(x)
-
-	@prefix.setter
-	def prefix(self, x: bytes):
-		self.body.seek(14)
-		self.body.write(x)
+	prefix_length = ubyte_property("body", 0, "Prefix Length.")
+	reserved_1 =  ubyte_property("body", 1, "LA Flags + Reserved 1.")
+	l_flag = bit_property("reserved_1", 0x80, "L Flag.")
+	a_flag = bit_property("reserved_1", 0x40, "A Flag.")
+	valid_lifetime = uint_property("body", 2, "Valid Lifetime.")
+	preferred_lifetime = uint_property("body", 6, "Preferred Lifetime")
+	reserved_2 = uint_property("body", 10, "Reserved 2.")
+	prefix = bytes_property("body", 14, 16, "Prefix.")
 
 	@classmethod
 	def build(cls, network: IPv6Network, valid_lifetime: int, preferred_lifetime: int,
@@ -289,29 +223,9 @@ class NeighborAdvertisement(NeighborMessage):
 
 	ICMP_TYPE = TYPE_NEIGHBOR_ADVERTISEMENT
 
-	@property
-	def router_flag(self) -> bool:
-		return self.reserved & 0x80000000 > 0
-
-	@property
-	def solicited_flag(self) -> bool:
-		return self.reserved & 0x40000000 > 0
-
-	@property
-	def override_flag(self) -> bool:
-		return self.reserved & 0x20000000 > 0
-
-	@router_flag.setter
-	def router_flag(self, x: bool):
-		self.reserved |= 0x80000000 if x else 0
-
-	@solicited_flag.setter
-	def solicited_flag(self, x: bool):
-		self.reserved |= 0x40000000 if x else 0
-
-	@override_flag.setter
-	def override_flag(self, x: bool):
-		self.reserved |= 0x20000000 if x else 0
+	router_flag = bit_property("reserved", 0x80000000, "Router Flag")
+	solicited_flag = bit_property("reserved", 0x40000000, "Solicited Flag")
+	override_flag = bit_property("reserved", 0x20000000, "Override Flag")
 
 
 class RouterSolicitation(NDP):
@@ -373,18 +287,6 @@ class RouterAdvertisement(NDP):
 		return ICMPv6(TYPE_ROUTER_ADVERTISEMENT, 0, 0, bytes(buf) + 
 			self.options_packed(self.options))
 
-	@property
-	def m_flag(self) -> bool:
-		return self.reserved & 0x80 > 0
+	m_flag = bit_property("reserved", 0x80, "M Flag")
+	o_flag = bit_property("reserved", 0x40, "O Flag")
 
-	@property
-	def o_flag(self) -> bool:
-		return self.reserved & 0x40 > 0
-
-	@m_flag.setter
-	def m_flag(self, x: bool):
-		self.reserved |= 0x80 if x else 0
-
-	@o_flag.setter
-	def o_flag(self, x: bool):
-		self.reserved |= 0x40 if x else 0

@@ -3,21 +3,21 @@
 """
 import socket, array
 from typing import Union, Iterator, Iterable, Tuple
-from agave.models.irdp import IRDP, ROUTER_SOLICITATION_MULTICAST_ADDRESS, ROUTER_ADVERTISMENT_MULTICAST_ADDRESS
-from agave.models.icmpv4 import ICMPv4, TYPE_ROUTER_ADVERTISMENT_MESSAGE
+from agave.models.icmp.irdp import IRDP, ROUTER_SOLICITATION_MULTICAST_ADDRESS, ROUTER_ADVERTISMENT_MULTICAST_ADDRESS
+from agave.models.icmp.icmpv4 import ICMPv4, TYPE_ROUTER_ADVERTISMENT_MESSAGE
 from agave.utils.interfaces import NetworkInterface
 from agave.utils.jobs import SocketAddress, Job, SendMsgArgs
-from .utils import IRDPLinkLayerJob, handle_link_layer, create_irdp_socket, join_group
+from .utils import create_irdp_socket, join_group
 from ipaddress import IPv4Address, IPv4Network
 
 
-class RouterSoliciter(IRDPLinkLayerJob):
+class RouterSoliciter(Job):
 
 	__slots__ = ("_cache", "interface", "repeat", "_request_to_send")
 
 	def __init__(self, sock: "socket", interface: NetworkInterface, repeat: int, **kwargs):
-		super().__init__(sock, interface, **kwargs)
-		#self.interface: NetworkInterface = interface
+		super().__init__(sock, **kwargs)
+		self.interface: NetworkInterface = interface
 		self.repeat: int = repeat
 		self._request_to_send: Iterator[Tuple[bytes, SocketAddress]] = self.generate_packets()
 		self._cache = set()
@@ -38,14 +38,9 @@ class RouterSoliciter(IRDPLinkLayerJob):
 	def generate_packets(self) -> Iterator[SendMsgArgs]:
 		message = bytes(IRDP.solicitation())
 		ancdata_multicast = [(socket.IPPROTO_IP, socket.IP_TTL, array.array("i", [1]))]
-		ancdata_broadcast = [(socket.IPPROTO_IP, socket.IP_TTL, array.array("i", [255]))]
 		for _ in range(0, self.repeat):
 			yield [message], ancdata_multicast, 0, (ROUTER_SOLICITATION_MULTICAST_ADDRESS, 0)
-			yield [message], ancdata_broadcast, 0, ("255.255.255.255", 0)
 		return
-
-
-LowLevelRouterSoliciter = handle_link_layer(RouterSoliciter)
 
 
 def routers(
@@ -72,13 +67,8 @@ def routers(
 		interface = NetworkInterface.get_by_name(interface)
 	if sock is None:
 		sock = create_irdp_socket()
-	if sock.family == socket.AF_INET:
-		join_group(sock, ROUTER_ADVERTISMENT_MULTICAST_ADDRESS)
-		return RouterSoliciter(sock, interface, repeat, wait=wait, interval=interval).stream()
-	elif sock.family == socket.AF_PACKET:
-		return LowLevelRouterSoliciter(sock, interface, repeat, wait=wait, interval=interval).stream()
-	else:
-		raise ValueError("Socket family must be either AF_INET or AF_PACKET.")
+	join_group(sock, ROUTER_ADVERTISMENT_MULTICAST_ADDRESS)
+	return RouterSoliciter(sock, interface, repeat, wait=wait, interval=interval).stream()
 
 
 if __name__ == "__main__":

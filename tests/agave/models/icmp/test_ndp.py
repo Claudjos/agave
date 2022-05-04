@@ -1,6 +1,6 @@
 import unittest
-from agave.models.icmpv6 import ICMPv6
-from agave.models.ndp import (
+from agave.models.icmp.icmpv6 import ICMPv6
+from agave.models.icmp.ndp import (
 	NeighborSolicitation, NeighborAdvertisement, RouterSolicitation,
 	SourceLinkLayerAddress, TargetLinkLayerAddress, RouterAdvertisement,
 	PrefixInformation, MTU

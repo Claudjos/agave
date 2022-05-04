@@ -90,3 +90,65 @@ def bit_property(field: str, bitmask: int, docstring: str):
 		docstring
 	)
 
+
+def unumber_getter(field: str, offset: int, length: int):
+	def t(self) -> int:
+		b = getattr(self, field)
+		b.seek(offset)
+		return b.read_number(length)
+	return t
+
+
+def unumber_setter(field: str, offset: int, length: int):
+	def t(self, x: int):
+		b = getattr(self, field)
+		b.seek(offset)
+		b.write_number(x, length)
+	return t
+
+
+def unumber_property(field: str, offset: int, length: int, docstring: str = ""):
+	return property(
+		unumber_getter(field, offset, length),
+		unumber_setter(field, offset, length),
+		None,
+		docstring
+	)
+
+
+def ubyte_property(field: str, offset: int, docstring: str):
+	return unumber_property(field, offset, 1, docstring)
+
+
+def ushort_property(field: str, offset: int, docstring: str):
+	return unumber_property(field, offset, 2, docstring)
+
+
+def uint_property(field: str, offset: int, docstring: str):
+	return unumber_property(field, offset, 4, docstring)
+
+
+def bytes_getter(field: str, offset: int, length: int):
+	def t(self) -> bytes:
+		b = getattr(self, field)
+		b.seek(offset)
+		return b.read(length)
+	return t
+
+
+def bytes_setter(field: str, offset: int):
+	def t(self, x: bytes):
+		b = getattr(self, field)
+		b.seek(offset)
+		b.write(x)
+	return t
+
+
+def bytes_property(field: str, offset: int, length: int, docstring: str = ""):
+	return property(
+		bytes_getter(field, offset, length),
+		bytes_setter(field, offset),
+		None,
+		docstring
+	)
+

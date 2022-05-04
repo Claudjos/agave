@@ -1,5 +1,6 @@
 """Neighbor Discovery for IP version 6 (IPv6), RFC 4861."""
 from typing import Tuple, List
+from ..frame import bit_property
 from ..buffer import Buffer
 from ..ethernet import MACAddress
 from .icmpv6 import (
@@ -289,29 +290,9 @@ class NeighborAdvertisement(NeighborMessage):
 
 	ICMP_TYPE = TYPE_NEIGHBOR_ADVERTISEMENT
 
-	@property
-	def router_flag(self) -> bool:
-		return self.reserved & 0x80000000 > 0
-
-	@property
-	def solicited_flag(self) -> bool:
-		return self.reserved & 0x40000000 > 0
-
-	@property
-	def override_flag(self) -> bool:
-		return self.reserved & 0x20000000 > 0
-
-	@router_flag.setter
-	def router_flag(self, x: bool):
-		self.reserved |= 0x80000000 if x else 0
-
-	@solicited_flag.setter
-	def solicited_flag(self, x: bool):
-		self.reserved |= 0x40000000 if x else 0
-
-	@override_flag.setter
-	def override_flag(self, x: bool):
-		self.reserved |= 0x20000000 if x else 0
+	router_flag = bit_property("reserved", 0x80000000, "Router Flag")
+	solicited_flag = bit_property("reserved", 0x40000000, "Solicited Flag")
+	override_flag = bit_property("reserved", 0x20000000, "Override Flag")
 
 
 class RouterSolicitation(NDP):
@@ -373,18 +354,6 @@ class RouterAdvertisement(NDP):
 		return ICMPv6(TYPE_ROUTER_ADVERTISEMENT, 0, 0, bytes(buf) + 
 			self.options_packed(self.options))
 
-	@property
-	def m_flag(self) -> bool:
-		return self.reserved & 0x80 > 0
+	m_flag = bit_property("reserved", 0x80, "M Flag")
+	o_flag = bit_property("reserved", 0x40, "O Flag")
 
-	@property
-	def o_flag(self) -> bool:
-		return self.reserved & 0x40 > 0
-
-	@m_flag.setter
-	def m_flag(self, x: bool):
-		self.reserved |= 0x80 if x else 0
-
-	@o_flag.setter
-	def o_flag(self, x: bool):
-		self.reserved |= 0x40 if x else 0

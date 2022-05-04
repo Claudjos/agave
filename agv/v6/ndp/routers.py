@@ -26,17 +26,17 @@ from agave.models.ip import (
 from agave.models.icmp.icmpv6 import ICMPv6, TYPE_ROUTER_ADVERTISEMENT
 from agave.utils.interfaces import NetworkInterface
 from agave.utils.jobs import SocketAddress, Job, SendMsgArgs
-from .utils import NDPLinkLayerJob, handle_link_layer, create_ndp_socket, join_group
+from .utils import create_ndp_socket, join_group
 from ipaddress import IPv6Address, IPv6Network
 
 
-class RouterSoliciter(NDPLinkLayerJob):
+class RouterSoliciter(Job):
 
 	__slots__ = ("_cache", "interface", "repeat", "_request_to_send")
 
 	def __init__(self, sock: "socket", interface: NetworkInterface, repeat: int, **kwargs):
-		super().__init__(sock, interface, **kwargs)
-		#self.interface: NetworkInterface = interface
+		super().__init__(sock, **kwargs)
+		self.interface: NetworkInterface = interface
 		self.repeat: int = repeat
 		self._request_to_send: Iterator[Tuple[bytes, SocketAddress]] = self.generate_packets()
 		self._cache = set()
@@ -67,9 +67,6 @@ class RouterSoliciter(NDPLinkLayerJob):
 		return
 
 
-LowLevelRouterSoliciter = handle_link_layer(RouterSoliciter)
-
-
 def routers(
 	interface: Union[str, NetworkInterface],
 	sock: "socket.socket" = None,
@@ -94,14 +91,9 @@ def routers(
 		interface = NetworkInterface.get_by_name(interface)
 	if sock is None:
 		sock = create_ndp_socket()
-	if sock.family == socket.AF_INET6:
-		join_group(sock, IPV6_ALL_NODES_MULTICAST_INTERFACE_LOCAL)
-		join_group(sock, IPV6_ALL_NODES_MULTICAST_LINK_LOCAL)
-		return RouterSoliciter(sock, interface, repeat, wait=wait, interval=interval).stream()
-	elif sock.family == socket.AF_PACKET:
-		return LowLevelRouterSoliciter(sock, interface, repeat, wait=wait, interval=interval).stream()
-	else:
-		raise ValueError("Socket family must be either AF_INET6 or AF_PACKET.")
+	join_group(sock, IPV6_ALL_NODES_MULTICAST_INTERFACE_LOCAL)
+	join_group(sock, IPV6_ALL_NODES_MULTICAST_LINK_LOCAL)
+	return RouterSoliciter(sock, interface, repeat, wait=wait, interval=interval).stream()
 
 
 if __name__ == "__main__":

@@ -16,7 +16,7 @@ from agave.models.icmp.irdp import IRDP, ROUTER_ADVERTISMENT_MULTICAST_ADDRESS, 
 from agave.models.icmp.icmpv4 import ICMPv4, TYPE_ROUTER_SOLICITATION_MESSAGE
 from agave.utils.interfaces import NetworkInterface
 from agave.utils.jobs import SocketAddress, Job, SendMsgArgs
-from .utils import join_group
+from .utils import join_group, create_irdp_socket
 from ipaddress import IPv4Address, IPv4Network
 
 
@@ -37,9 +37,7 @@ class RouterAdvertiser(Job):
 
 	def loop(self) -> bool:
 		ancdata_multicast = [(socket.IPPROTO_IP, socket.IP_TTL, array.array("i", [1]))]
-		ancdata_broadcast = [(socket.IPPROTO_IP, socket.IP_TTL, array.array("i", [255]))]
 		self.sock.sendmsg([self.message], ancdata_multicast, 0, (ROUTER_ADVERTISMENT_MULTICAST_ADDRESS, 0))
-		self.sock.sendmsg([self.message], ancdata_broadcast, 0, ("255.255.255.255", 0))
 		return True
 
 	def stream(self):
@@ -58,9 +56,8 @@ if __name__ == "__main__":
 	elif (len(sys.argv) -1 ) % 2 != 0:
 		print("Malformed arguments")
 	else:
-		# creates socket and enable broadcast messages
-		rawsocket = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP)
-		rawsocket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+		# creates socket
+		rawsocket = create_irdp_socket()
 		join_group(rawsocket, ROUTER_SOLICITATION_MULTICAST_ADDRESS)
 		# parses arguments
 		preferences = []

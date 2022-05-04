@@ -21,7 +21,7 @@ class Pinger(Job):
 		self.subnet = subnet
 		self.packets_to_send = self.generate_echo_requests(subnet, repeat)
 		self._cache = set()
-		self._count = self.subnet.num_addresses
+		self._count = len(list(self.subnet.hosts()))
 		self.sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_RECVHOPLIMIT, 1);
 
 	def loop(self) -> bool:
@@ -45,10 +45,10 @@ class Pinger(Job):
 			result = True, IPv6Address(address[0]), hop_limit
 		if icmp_h.type == TYPE_DESTINATION_UNREACHABLE:
 			ip_frame = IPv6.from_bytes(icmp_h.body[4:])
-			destination = IPv6Address(ip_frame.destination)
-			if destination not in self._cache:# and ip_frame.is_checksum_valid():
+			destination = str(IPv6Address(ip_frame.destination))
+			if destination not in self._cache:
 				self._count -= 1
-				self._cache.add(str(destination))
+				self._cache.add(destination)
 		if self._count < 1:
 			self.set_finished()
 		return result

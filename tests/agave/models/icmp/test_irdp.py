@@ -1,6 +1,5 @@
 import unittest
 from agave.models.icmp.irdp import IRDP, TYPE_ROUTER_ADVERTISMENT_MESSAGE
-from agave.models.buffer import Buffer
 from ipaddress import IPv4Address
 
 
@@ -20,13 +19,12 @@ class TestIRDP(unittest.TestCase):
 		self.assertEqual(len(addresses), 1) 							# number of addresses
 		self.assertEqual(addresses[0][0], IPv4Address("192.168.0.1")) 	# router
 		self.assertEqual(addresses[0][1], 10) 							# preference
-		
 		# reassemble
 		self.assertEqual(bytes(packet), self.IRDP_header)
 
 	def test_advertise_builder(self):
 		"""Recreates the test packet."""
-		packet = IRDP.advertise([IPv4Address("192.168.0.1").packed], [10], 1800)
+		packet = IRDP.advertise([(IPv4Address("192.168.0.1"), 10)], 1800)
 		self.assertEqual(packet.is_checksum_valid(), True)
 		self.assertEqual(bytes(packet), self.IRDP_header)
 

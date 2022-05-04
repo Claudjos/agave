@@ -3,11 +3,11 @@ Advertises routers from a static list. This implementation is not conform
 to RFC 1256.
 
 Usage:
-	python3 -m agave.irdp.advertise <preference> <router> [...[<preference> <router>]]
+	python3 -m agv.v4.irdp.advertise <router> <preference> [...[<router> <preference>]]
 
 Example:
-	python3 -m agave.irdp.advertise 100 192.168.1.2
-	python3 -m agave.irdp.advertise 100 192.168.1.2 40 192.168.1.5
+	python3 -m agv.v4.irdp.advertise 192.168.1.2 100
+	python3 -m agv.v4.irdp.advertise 192.168.1.2 100 192.168.1.5 40
 
 """
 import socket, array
@@ -60,12 +60,10 @@ if __name__ == "__main__":
 		rawsocket = create_irdp_socket()
 		join_group(rawsocket, ROUTER_SOLICITATION_MULTICAST_ADDRESS)
 		# parses arguments
-		preferences = []
 		addresses = []
 		for i in range(1, len(sys.argv), 2):
-			preferences.append(int(sys.argv[i]))
-			addresses.append(IPv4Address(sys.argv[i+1]).packed)
+			addresses.append((IPv4Address(sys.argv[i]), int(sys.argv[i+1])))
 		# builds job & run
-		job = RouterAdvertiser(rawsocket, IRDP.advertise(addresses, preferences), interval=300)
+		job = RouterAdvertiser(rawsocket, IRDP.advertise(addresses), interval=300)
 		print("Running...")
 		job.run()

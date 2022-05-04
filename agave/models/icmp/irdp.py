@@ -50,22 +50,26 @@ class IRDP(ICMPv4):
 		return
 
 	@classmethod
-	def advertise(cls, addresses: List[bytes], prefereces: List[int],
-		life_time: int = 1800
-	):
-		length = len(addresses)
-		if length != len(prefereces):
-			raise ValueError()
+	def advertise(cls, addresses: List[Tuple[IPv4Address, int]], 
+		life_time: int = 1800) -> "IRDP":
+		"""Builds an IRDP advertisement message.
 
+		Args:
+			addresses: list of pairs router IP, preference.
+			life_time: life time.
+
+		Returns:
+			An instance of this class.
+
+		"""
 		buf = Buffer.from_bytes()
-		for i in range(0, length):
-			buf.write(addresses[i])
-			buf.write_int(prefereces[i])
-
+		for router_address, preference in addresses:
+			buf.write(router_address.packed)
+			buf.write_int(preference)
 		frame = cls(TYPE_ROUTER_ADVERTISMENT_MESSAGE, 0, 0, 0, bytes(buf))
 		frame.life_time = life_time
 		frame.address_entry_size = 2
-		frame.num_address = length
+		frame.num_address = len(addresses)
 		frame.set_checksum()
 		return frame
 

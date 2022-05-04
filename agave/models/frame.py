@@ -24,24 +24,6 @@ class Frame:
 		return bytes(buf)
 
 
-class _FrameWithChecksum(Frame):
-	"""Legacy version."""
-	__slots__ = ("checksum")
-
-	def compute_checksum(self):
-		raise NotImplementedError()
-
-	def set_checksum(self):
-		self.checksum = 0
-		self.checksum = self.compute_checksum()
-
-	def compute_checksum_from_buffer(self, buf: Buffer, words: int):
-		return compute_checksum_from_buffer(buf, words)
-
-	def is_checksum_valid(self):
-		return self.compute_checksum() == 0
-
-
 class FrameWithChecksum(Frame):
 
 	__slots__ = ("checksum")

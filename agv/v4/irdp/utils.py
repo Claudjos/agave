@@ -6,7 +6,7 @@ from typing import Union, Iterator, Tuple, Any, Callable
 from agave.models.buffer import Buffer
 from agave.models.ethernet import Ethernet, ETHER_TYPE_IPV4
 from agave.models.ip import IPv4, PROTO_ICMP
-from agave.models.icmpv4 import ICMPv4
+from agave.models.icmp.icmpv4 import ICMPv4
 from agave.utils.jobs import Job, SocketAddress, SendMsgArgs
 from agave.utils.interfaces import NetworkInterface
 from ipaddress import IPv4Address

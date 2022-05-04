@@ -12,8 +12,8 @@ Example:
 """
 import socket, array
 from typing import Union, Iterator, Iterable, Tuple
-from agave.models.irdp import IRDP, ROUTER_ADVERTISMENT_MULTICAST_ADDRESS, ROUTER_SOLICITATION_MULTICAST_ADDRESS
-from agave.models.icmpv4 import ICMPv4, TYPE_ROUTER_SOLICITATION_MESSAGE
+from agave.models.icmp.irdp import IRDP, ROUTER_ADVERTISMENT_MULTICAST_ADDRESS, ROUTER_SOLICITATION_MULTICAST_ADDRESS
+from agave.models.icmp.icmpv4 import ICMPv4, TYPE_ROUTER_SOLICITATION_MESSAGE
 from agave.utils.interfaces import NetworkInterface
 from agave.utils.jobs import SocketAddress, Job, SendMsgArgs
 from .utils import join_group

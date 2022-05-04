@@ -12,7 +12,7 @@ Example:
 """
 import socket
 from agave.utils.jobs import Job, SocketAddress
-from agave.models.icmpv4 import ICMPv4, TYPE_ADDRESS_MASK_REQUEST, TYPE_ADDRESS_MASK_REPLY
+from agave.models.icmp.icmpv4 import ICMPv4, TYPE_ADDRESS_MASK_REQUEST, TYPE_ADDRESS_MASK_REPLY
 from agave.models.ip import IPv4
 from ipaddress import IPv4Address
 from typing import Tuple, Union

@@ -49,12 +49,12 @@ class FrameWithChecksum(Frame):
 	def _compute_checksum(self, pseudo_header: bytes, payload: bytes) -> int:
 		return compute_checksum_from_bytes(pseudo_header + bytes(self) + payload)
 
-	def is_checksum_valid(self, pseudo_header: bytes, payload: bytes) -> bool:
+	def is_checksum_valid(self, pseudo_header: bytes = b'', payload: bytes = b'') -> bool:
 		return self._compute_checksum(pseudo_header, payload) == 0
 
-	def set_checksum(self, pseudo_header: bytes, payload: bytes):
+	def set_checksum(self, pseudo_header: bytes = b'', payload: bytes = b''):
 		self.checksum = 0
-		self.checksum = self._compute_checksum()
+		self.checksum = self._compute_checksum(pseudo_header, payload)
 
 
 def compute_checksum_from_bytes(data: bytes) -> int:

@@ -1,5 +1,5 @@
 """ICMPv4 protocol."""
-from ..frame import _FrameWithChecksum, Frame
+from ..frame import FrameWithChecksum, Frame
 from ..buffer import Buffer
 from ..ethernet import Ethernet
 from ..ip import IPv4
@@ -22,7 +22,7 @@ REDIRECT_CODE_SERVICE_AND_NETWORK = 2
 REDIRECT_CODE_SERVICE_AND_HOST = 3
 
 
-class ICMPv4(_FrameWithChecksum):
+class ICMPv4(FrameWithChecksum):
 	"""ICMPv4 message, RFC 792.
 
 	Attributes:
@@ -135,25 +135,6 @@ class ICMPv4(_FrameWithChecksum):
 			sequence_number | (identifier << 16),
 			b'\x00\x00\x00\x00'
 		)
-
-	def compute_checksum(self) -> int:
-		"""Compute the checksum for this message.
-
-		Returns:
-			The checksum for this message.
-
-		"""
-		# Writes header to buffer
-		buf = Buffer.from_bytes()
-		self.write_to_buffer(buf)
-		words = 4 + int(len(self.data) / 2)
-		# Pads
-		if len(self.data) % 2 == 1:
-			buf.write_byte(0)
-			words +=1
-		buf.rewind()
-		# Compute
-		return self.compute_checksum_from_buffer(buf, words)
 
 	def __str__(self):
 		return "ICMP {} {}".format(self.type, self.code)

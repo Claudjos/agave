@@ -1,5 +1,5 @@
 import unittest
-from agave.models.icmpv4 import ICMPv4, TYPE_ECHO_MESSAGE
+from agave.models.icmp.icmpv4 import ICMPv4, TYPE_ECHO_MESSAGE
 from agave.models.buffer import Buffer
 
 

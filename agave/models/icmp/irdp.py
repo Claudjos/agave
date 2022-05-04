@@ -3,7 +3,7 @@ from .icmpv4 import (
 	ICMPv4, TYPE_ROUTER_ADVERTISMENT_MESSAGE, 
 	TYPE_ROUTER_SOLICITATION_MESSAGE
 )
-from .buffer import Buffer
+from ..buffer import Buffer
 from typing import List
 
 

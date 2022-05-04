@@ -1,11 +1,11 @@
 """Neighbor Discovery for IP version 6 (IPv6), RFC 4861."""
 from typing import Tuple, List
-from .ethernet import MACAddress
+from ..buffer import Buffer
+from ..ethernet import MACAddress
 from .icmpv6 import (
 	ICMPv6, TYPE_NEIGHBOR_ADVERTISEMENT, TYPE_NEIGHBOR_SOLICITATION,
 	TYPE_ROUTER_ADVERTISEMENT, TYPE_ROUTER_SOLICITATION
 )
-from .buffer import Buffer
 from ipaddress import IPv6Address, IPv6Network
 
 

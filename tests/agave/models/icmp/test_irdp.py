@@ -1,5 +1,5 @@
 import unittest
-from agave.models.irdp import IRDP, TYPE_ROUTER_ADVERTISMENT_MESSAGE
+from agave.models.icmp.irdp import IRDP, TYPE_ROUTER_ADVERTISMENT_MESSAGE
 from agave.models.buffer import Buffer
 from ipaddress import IPv4Address
 

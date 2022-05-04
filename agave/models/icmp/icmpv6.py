@@ -1,10 +1,10 @@
 """ICMPv6 protocol."""
-from .frame import _FrameWithChecksum
-from .buffer import Buffer
+from ..frame import _FrameWithChecksum
+from ..buffer import Buffer
 
-from .frame import Frame
-from .ethernet import Ethernet
-from .ip import IPv6
+from ..frame import Frame
+from ..ethernet import Ethernet
+from ..ip import IPv6
 from typing import List
 
 

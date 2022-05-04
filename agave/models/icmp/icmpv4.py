@@ -1,8 +1,8 @@
 """ICMPv4 protocol."""
-from .frame import _FrameWithChecksum, Frame
-from .buffer import Buffer
-from .ethernet import Ethernet
-from .ip import IPv4
+from ..frame import _FrameWithChecksum, Frame
+from ..buffer import Buffer
+from ..ethernet import Ethernet
+from ..ip import IPv4
 from typing import List
 
 

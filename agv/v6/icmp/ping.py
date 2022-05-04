@@ -8,7 +8,7 @@ message was received.
 """
 import socket, array
 from agave.utils.jobs import Job, SocketAddress
-from agave.models.icmpv6 import ICMPv6, TYPE_ECHO_REPLY, TYPE_DESTINATION_UNREACHABLE
+from agave.models.icmp.icmpv6 import ICMPv6, TYPE_ECHO_REPLY, TYPE_DESTINATION_UNREACHABLE
 from agave.models.ip import IPv6, PROTO_ICMPv6
 from ipaddress import IPv6Address, IPv6Network, ip_network
 from typing import List, Tuple, Iterator
